@@ -1,111 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tauheed Model School - Online Examination Portal</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tauheed Model School - Online Examination Portal</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #172033;
-        }
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
 
-        header {
-            background: #123b63;
-            color: white;
-            padding: 28px 20px;
-            text-align: center;
-        }
+body{
+    font-family:Arial,sans-serif;
+    background:#f4f7fb;
+    color:#172033;
+}
 
-        header h1 {
-            font-size: 30px;
-            margin-bottom: 8px;
-        }
+header{
+    background:#123b63;
+    color:white;
+    padding:28px 20px;
+    text-align:center;
+}
 
-        header p {
-            font-size: 16px;
-            opacity: 0.9;
-        }
+header h1{
+    font-size:30px;
+    margin-bottom:8px;
+}
 
-        .container {
-            max-width: 1000px;
-            margin: 45px auto;
-            padding: 0 20px;
-        }
+header p{
+    opacity:.9;
+}
 
-        .welcome {
-            text-align: center;
-            margin-bottom: 35px;
-        }
+.container{
+    max-width:1000px;
+    margin:40px auto;
+    padding:0 20px;
+}
 
-        .welcome h2 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
+.welcome{
+    text-align:center;
+    margin-bottom:30px;
+}
 
-        .welcome p {
-            color: #667085;
-        }
+.welcome h2{
+    font-size:28px;
+    margin-bottom:10px;
+}
 
-        .portals {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-        }
+.welcome p{
+    color:#667085;
+}
 
-        .card {
-            background: white;
-            padding: 30px 20px;
-            border-radius: 14px;
-            text-align: center;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-        }
+.portals{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+}
 
-        .card .icon {
-            font-size: 42px;
-            margin-bottom: 15px;
-        }
+.card{
+    background:white;
+    padding:30px 20px;
+    border-radius:14px;
+    text-align:center;
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+}
 
-        .card h3 {
-            margin-bottom: 10px;
-        }
+.icon{
+    font-size:42px;
+    margin-bottom:15px;
+}
 
-        .card p {
-            color: #667085;
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 20px;
-        }
+.card h3{
+    margin-bottom:10px;
+}
 
-        button {
-            border: none;
-            background: #123b63;
-            color: white;
-            padding: 11px 22px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 15px;
-        }
+.card p{
+    color:#667085;
+    font-size:14px;
+    line-height:1.5;
+    margin-bottom:20px;
+}
 
-        button:hover {
-            background: #0d2c4a;
-        }
+button{
+    border:none;
+    background:#123b63;
+    color:white;
+    padding:11px 22px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:15px;
+}
 
-        footer {
-            text-align: center;
-            padding: 25px;
-            color: #667085;
-            font-size: 14px;
-        }
-    </style>
+button:hover{
+    background:#0d2c4a;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    border:1px solid #d0d5dd;
+    border-radius:8px;
+    margin:8px 0 15px;
+    font-size:15px;
+}
+
+.hidden{
+    display:none;
+}
+
+.test-card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    margin-bottom:15px;
+    box-shadow:0 3px 12px rgba(0,0,0,.07);
+}
+
+.test-card h3{
+    margin-bottom:8px;
+}
+
+.test-card p{
+    color:#667085;
+    margin-bottom:15px;
+}
+
+.question{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    margin-bottom:18px;
+    box-shadow:0 3px 12px rgba(0,0,0,.07);
+}
+
+.option{
+    display:block;
+    background:#f8fafc;
+    padding:12px;
+    margin-top:10px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.option:hover{
+    background:#eef4fa;
+}
+
+.result-box{
+    background:white;
+    padding:35px;
+    text-align:center;
+    border-radius:15px;
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+}
+
+.result-box h2{
+    margin-bottom:15px;
+}
+
+.big-score{
+    font-size:42px;
+    font-weight:bold;
+    color:#123b63;
+    margin:20px;
+}
+
+.back{
+    background:#667085;
+    margin-bottom:20px;
+}
+
+.timer{
+    position:sticky;
+    top:10px;
+    background:#123b63;
+    color:white;
+    padding:12px;
+    border-radius:8px;
+    text-align:center;
+    margin-bottom:20px;
+    z-index:10;
+}
+</style>
 </head>
 
 <body>
@@ -117,6 +198,9 @@
 
 <div class="container">
 
+<!-- HOME -->
+<div id="home">
+
     <div class="welcome">
         <h2>Welcome</h2>
         <p>Online testing and examination system</p>
@@ -127,17 +211,15 @@
         <div class="card">
             <div class="icon">🎓</div>
             <h3>Student Portal</h3>
-            <p>Access your assigned online tests using your test link.</p>
-            <button onclick="alert('Student Portal coming soon')">
-                Enter
-            </button>
+            <p>Access your assigned online tests.</p>
+            <button onclick="showStudentLogin()">Enter</button>
         </div>
 
         <div class="card">
             <div class="icon">👨‍🏫</div>
             <h3>Teacher Portal</h3>
-            <p>Create tests, manage questions and view student results.</p>
-            <button onclick="alert('Teacher Portal coming soon')">
+            <p>Create tests and manage questions.</p>
+            <button onclick="alert('Teacher Portal will be added next.')">
                 Enter
             </button>
         </div>
@@ -145,19 +227,557 @@
         <div class="card">
             <div class="icon">🔐</div>
             <h3>Admin Portal</h3>
-            <p>Manage the school examination system and users.</p>
-            <button onclick="alert('Admin Portal coming soon')">
+            <p>Manage the examination system.</p>
+            <button onclick="alert('Admin Portal will be added next.')">
                 Enter
             </button>
         </div>
 
     </div>
+</div>
+
+
+<!-- STUDENT LOGIN -->
+<div id="studentLogin" class="hidden">
+
+    <button class="back" onclick="goHome()">← Back</button>
+
+    <div class="card">
+
+        <h2>Student Login</h2>
+
+        <p style="color:#667085;margin:10px 0 20px;">
+            Enter your roll number and class.
+        </p>
+
+        <label>Roll Number</label>
+        <input id="rollno" type="text" placeholder="Enter roll number">
+
+        <label>Class</label>
+        <input id="classname" type="text" placeholder="Example: 9th">
+
+        <button onclick="studentLogin()">Login</button>
+
+        <p id="loginMessage"
+           style="color:#d92d20;margin-top:15px;"></p>
+
+    </div>
+</div>
+
+
+<!-- TEST LIST -->
+<div id="testList" class="hidden">
+
+    <button class="back" onclick="goHome()">← Logout</button>
+
+    <div class="welcome">
+        <h2>Available Tests</h2>
+        <p id="studentWelcome"></p>
+    </div>
+
+    <div id="testsContainer"></div>
 
 </div>
 
-<footer>
-    © Tauheed Model School — Online Examination Portal
+
+<!-- TEST PAGE -->
+<div id="testPage" class="hidden">
+
+    <div class="timer">
+        Time Remaining: <span id="timer">00:00</span>
+    </div>
+
+    <h2 id="testTitle" style="margin-bottom:20px;"></h2>
+
+    <div id="questionsContainer"></div>
+
+    <button onclick="submitTest()">Submit Test</button>
+
+</div>
+
+
+<!-- RESULT -->
+<div id="resultPage" class="hidden">
+
+    <div class="result-box">
+
+        <h2>Test Submitted Successfully 🎉</h2>
+
+        <p>Your score is:</p>
+
+        <div class="big-score">
+            <span id="score"></span> /
+            <span id="totalMarks"></span>
+        </div>
+
+        <button onclick="goHome()">Return Home</button>
+
+    </div>
+
+</div>
+
+</div>
+
+<footer style="text-align:center;padding:25px;color:#667085;">
+© Tauheed Model School — Online Examination Portal
 </footer>
+
+
+<script>
+
+const SUPABASE_URL =
+"https://ykvegtlzgzyfwmlvmpti.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_elTo8AsqYV5HQs5RG26OFg_IPsqv1UW";
+
+const db = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+let currentStudent = null;
+let currentTest = null;
+let currentQuestions = [];
+let timerInterval = null;
+let remainingSeconds = 0;
+
+
+/* SHOW / HIDE */
+
+function hideAll(){
+
+    document.getElementById("home").classList.add("hidden");
+    document.getElementById("studentLogin").classList.add("hidden");
+    document.getElementById("testList").classList.add("hidden");
+    document.getElementById("testPage").classList.add("hidden");
+    document.getElementById("resultPage").classList.add("hidden");
+
+}
+
+
+function showStudentLogin(){
+
+    hideAll();
+
+    document
+        .getElementById("studentLogin")
+        .classList.remove("hidden");
+
+}
+
+
+function goHome(){
+
+    clearInterval(timerInterval);
+
+    currentStudent = null;
+    currentTest = null;
+    currentQuestions = [];
+
+    hideAll();
+
+    document
+        .getElementById("home")
+        .classList.remove("hidden");
+
+}
+
+
+/* STUDENT LOGIN */
+
+async function studentLogin(){
+
+    const rollno =
+        document.getElementById("rollno").value.trim();
+
+    const classname =
+        document.getElementById("classname").value.trim();
+
+    const message =
+        document.getElementById("loginMessage");
+
+    message.textContent = "";
+
+    if(!rollno || !classname){
+
+        message.textContent =
+            "Please enter roll number and class.";
+
+        return;
+    }
+
+    const {data,error} = await db
+        .from("students")
+        .select("*")
+        .eq("rollno",rollno)
+        .eq("classname",classname)
+        .maybeSingle();
+
+    if(error){
+
+        console.error(error);
+
+        message.textContent =
+            "Database error. Please try again.";
+
+        return;
+    }
+
+    if(!data){
+
+        message.textContent =
+            "Student not found. Check roll number and class.";
+
+        return;
+    }
+
+    currentStudent = data;
+
+    document.getElementById("studentWelcome").textContent =
+        "Welcome, " + data.name +
+        " — Roll No: " + data.rollno;
+
+    await loadTests();
+
+}
+
+
+/* LOAD TESTS */
+
+async function loadTests(){
+
+    hideAll();
+
+    document
+        .getElementById("testList")
+        .classList.remove("hidden");
+
+    const container =
+        document.getElementById("testsContainer");
+
+    container.innerHTML =
+        "<p>Loading tests...</p>";
+
+    const {data,error} = await db
+        .from("tests")
+        .select("*")
+        .eq("is_active",true)
+        .eq("class_name",currentStudent.classname)
+        .order("created_at",{ascending:false});
+
+    if(error){
+
+        console.error(error);
+
+        container.innerHTML =
+            "<p style='color:red;'>Unable to load tests.</p>";
+
+        return;
+    }
+
+    if(!data || data.length === 0){
+
+        container.innerHTML =
+            "<div class='card'><h3>No active tests</h3><p>There are currently no tests available for your class.</p></div>";
+
+        return;
+    }
+
+    container.innerHTML = "";
+
+    data.forEach(test => {
+
+        const div =
+            document.createElement("div");
+
+        div.className = "test-card";
+
+        div.innerHTML = `
+            <h3>${escapeHtml(test.title)}</h3>
+
+            <p>
+                Subject: ${escapeHtml(test.subject || "")}<br>
+                Chapter: ${escapeHtml(test.chapter || "")}<br>
+                Duration: ${test.duration_minutes} minutes<br>
+                Total Marks: ${test.total_marks}
+            </p>
+
+            <button onclick="startTest('${test.id}')">
+                Start Test
+            </button>
+        `;
+
+        container.appendChild(div);
+
+    });
+
+}
+
+
+/* START TEST */
+
+async function startTest(testId){
+
+    const {data,error} = await db
+        .from("tests")
+        .select("*")
+        .eq("id",testId)
+        .maybeSingle();
+
+    if(error || !data){
+
+        alert("Unable to open test.");
+
+        return;
+    }
+
+    currentTest = data;
+
+    const response =
+        await db
+        .from("questions")
+        .select("*")
+        .eq("test_id",testId);
+
+    if(response.error){
+
+        console.error(response.error);
+
+        alert("Unable to load questions.");
+
+        return;
+    }
+
+    currentQuestions = response.data || [];
+
+    if(currentQuestions.length === 0){
+
+        alert("This test has no questions yet.");
+
+        return;
+    }
+
+    hideAll();
+
+    document
+        .getElementById("testPage")
+        .classList.remove("hidden");
+
+    document.getElementById("testTitle").textContent =
+        currentTest.title;
+
+    renderQuestions();
+
+    startTimer(currentTest.duration_minutes);
+
+}
+
+
+/* RENDER QUESTIONS */
+
+function renderQuestions(){
+
+    const container =
+        document.getElementById("questionsContainer");
+
+    container.innerHTML = "";
+
+    currentQuestions.forEach((q,index) => {
+
+        const div =
+            document.createElement("div");
+
+        div.className = "question";
+
+        div.innerHTML = `
+            <h3>
+                ${index + 1}. ${escapeHtml(q.question_text)}
+            </h3>
+
+            <label class="option">
+                <input type="radio"
+                       name="q${q.id}"
+                       value="A">
+                ${escapeHtml(q.option_a)}
+            </label>
+
+            <label class="option">
+                <input type="radio"
+                       name="q${q.id}"
+                       value="B">
+                ${escapeHtml(q.option_b)}
+            </label>
+
+            <label class="option">
+                <input type="radio"
+                       name="q${q.id}"
+                       value="C">
+                ${escapeHtml(q.option_c)}
+            </label>
+
+            <label class="option">
+                <input type="radio"
+                       name="q${q.id}"
+                       value="D">
+                ${escapeHtml(q.option_d)}
+            </label>
+        `;
+
+        container.appendChild(div);
+
+    });
+
+}
+
+
+/* TIMER */
+
+function startTimer(minutes){
+
+    clearInterval(timerInterval);
+
+    remainingSeconds =
+        Number(minutes) * 60;
+
+    updateTimer();
+
+    timerInterval =
+        setInterval(() => {
+
+            remainingSeconds--;
+
+            updateTimer();
+
+            if(remainingSeconds <= 0){
+
+                clearInterval(timerInterval);
+
+                alert("Time is over. Your test will be submitted.");
+
+                submitTest();
+
+            }
+
+        },1000);
+
+}
+
+
+function updateTimer(){
+
+    const min =
+        Math.floor(remainingSeconds / 60);
+
+    const sec =
+        remainingSeconds % 60;
+
+    document.getElementById("timer").textContent =
+        String(min).padStart(2,"0") +
+        ":" +
+        String(sec).padStart(2,"0");
+
+}
+
+
+/* SUBMIT TEST */
+
+async function submitTest(){
+
+    if(!currentTest || !currentStudent){
+
+        return;
+    }
+
+    clearInterval(timerInterval);
+
+    let score = 0;
+
+    let totalMarks = 0;
+
+    currentQuestions.forEach(q => {
+
+        totalMarks += Number(q.marks || 0);
+
+        const selected =
+            document.querySelector(
+                `input[name="q${q.id}"]:checked`
+            );
+
+        if(selected &&
+           selected.value === q.correct_option){
+
+            score += Number(q.marks || 0);
+
+        }
+
+    });
+
+
+    const {error} = await db
+        .from("result")
+        .insert({
+
+            test_id: currentTest.id,
+
+            student_id: currentStudent.id,
+
+            score: score,
+
+            total_marks: totalMarks,
+
+            submitted_at: new Date().toISOString()
+
+        });
+
+
+    if(error){
+
+        console.error(error);
+
+        alert(
+            "Result could not be saved. Please contact school administration."
+        );
+
+        return;
+    }
+
+
+    document.getElementById("score").textContent =
+        score;
+
+    document.getElementById("totalMarks").textContent =
+        totalMarks;
+
+    hideAll();
+
+    document
+        .getElementById("resultPage")
+        .classList.remove("hidden");
+
+}
+
+
+/* SECURITY / DISPLAY */
+
+function escapeHtml(value){
+
+    if(value === null || value === undefined){
+
+        return "";
+
+    }
+
+    return String(value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+</script>
 
 </body>
 </html>
