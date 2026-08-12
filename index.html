@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Tauheed Model School - Online Examination Portal</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -240,14 +241,23 @@ label{
     color:white;
 }
 
-.results-table tr:hover{
-    background:#f8fafc;
-}
-
 .no-results{
     text-align:center;
     padding:30px;
     color:#667085;
+}
+
+.admin-menu{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+}
+
+.small-card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 3px 12px rgba(0,0,0,.07);
 }
 
 footer{
@@ -268,6 +278,7 @@ footer{
 <div class="container">
 
 <!-- HOME -->
+
 <div id="home">
 
 <div class="welcome">
@@ -294,10 +305,8 @@ footer{
 <div class="card">
 <div class="icon">🔐</div>
 <h3>Admin Portal</h3>
-<p>Manage the school examination system.</p>
-<button onclick="alert('Admin Portal will be added next.')">
-Enter
-</button>
+<p>Manage students, teachers and examination system.</p>
+<button onclick="showAdminLogin()">Enter</button>
 </div>
 
 </div>
@@ -305,6 +314,7 @@ Enter
 
 
 <!-- STUDENT LOGIN -->
+
 <div id="studentLogin" class="hidden">
 
 <button class="back" onclick="goHome()">← Back</button>
@@ -313,28 +323,25 @@ Enter
 
 <h2>Student Login</h2>
 
-<p style="color:#667085;margin:10px 0 20px;">
-Enter your roll number and class.
-</p>
+<label>Username</label>
+<input id="studentUsername" type="text" placeholder="Enter username">
 
-<label>Roll Number</label>
-<input id="rollno" type="text" placeholder="Enter roll number">
-
-<label>Class</label>
-<input id="classname" type="text" placeholder="Example: 9th">
+<label>Password</label>
+<input id="studentPassword" type="password" placeholder="Enter password">
 
 <button onclick="studentLogin()">Login</button>
 
-<p id="loginMessage" class="message"></p>
+<p id="studentLoginMessage" class="message"></p>
 
 </div>
 </div>
 
 
 <!-- STUDENT TEST LIST -->
+
 <div id="testList" class="hidden">
 
-<button class="back" onclick="goHome()">← Logout</button>
+<button class="back" onclick="studentLogout()">← Logout</button>
 
 <div class="welcome">
 <h2>Available Tests</h2>
@@ -347,10 +354,12 @@ Enter your roll number and class.
 
 
 <!-- TEST PAGE -->
+
 <div id="testPage" class="hidden">
 
 <div class="timer">
-Time Remaining: <span id="timer">00:00</span>
+Time Remaining:
+<span id="timer">00:00</span>
 </div>
 
 <h2 id="testTitle" style="margin-bottom:20px;"></h2>
@@ -363,6 +372,7 @@ Time Remaining: <span id="timer">00:00</span>
 
 
 <!-- RESULT -->
+
 <div id="resultPage" class="hidden">
 
 <div class="result-box">
@@ -376,14 +386,14 @@ Time Remaining: <span id="timer">00:00</span>
 <span id="totalMarks"></span>
 </div>
 
-<button onclick="goHome()">Return Home</button>
+<button onclick="studentLogout()">Return Home</button>
 
 </div>
-
 </div>
 
 
 <!-- TEACHER LOGIN -->
+
 <div id="teacherLogin" class="hidden">
 
 <button class="back" onclick="goHome()">← Back</button>
@@ -392,15 +402,11 @@ Time Remaining: <span id="timer">00:00</span>
 
 <h2>Teacher Login</h2>
 
-<p style="color:#667085;margin:10px 0 20px;">
-Enter your teacher credentials.
-</p>
-
 <label>Username</label>
-<input id="teacherUsername" type="text" placeholder="Username">
+<input id="teacherUsername" type="text">
 
 <label>Password</label>
-<input id="teacherPassword" type="password" placeholder="Password">
+<input id="teacherPassword" type="password">
 
 <button onclick="teacherLogin()">Login</button>
 
@@ -411,6 +417,7 @@ Enter your teacher credentials.
 
 
 <!-- TEACHER DASHBOARD -->
+
 <div id="teacherDashboard" class="hidden">
 
 <button class="back" onclick="teacherLogout()">← Logout</button>
@@ -420,27 +427,24 @@ Enter your teacher credentials.
 <p id="teacherWelcome"></p>
 </div>
 
-
-<!-- CREATE TEST -->
-
 <div class="card">
 
-<h3 style="margin-bottom:20px;">Create New Test</h3>
+<h3>Create New Test</h3>
 
 <label>Test Title</label>
-<input id="newTitle" type="text" placeholder="Example: English Test 1">
+<input id="newTitle" type="text">
 
 <label>Class</label>
-<input id="newClass" type="text" placeholder="Example: 9th">
+<input id="newClass" type="text">
 
 <label>Subject</label>
-<input id="newSubject" type="text" placeholder="Example: English">
+<input id="newSubject" type="text">
 
 <label>Chapter</label>
-<input id="newChapter" type="text" placeholder="Example: Chapter 1">
+<input id="newChapter" type="text">
 
 <label>Duration (Minutes)</label>
-<input id="newDuration" type="number" min="1" placeholder="10">
+<input id="newDuration" type="number" min="1">
 
 <div id="teacherQuestions"></div>
 
@@ -454,27 +458,20 @@ Save & Publish Test
 
 </div>
 
-
-<!-- RESULTS BUTTON -->
-
 <div class="card">
 
 <h3>Student Results</h3>
 
-<p>
-View submitted test results of students.
-</p>
+<p>View submitted test results.</p>
 
-<button onclick="loadResults()">
-View Results
-</button>
+<button onclick="loadResults()">View Results</button>
 
 </div>
 
 </div>
 
 
-<!-- RESULTS PAGE -->
+<!-- TEACHER RESULTS -->
 
 <div id="teacherResults" class="hidden">
 
@@ -483,18 +480,130 @@ View Results
 </button>
 
 <div class="welcome">
-
 <h2>Student Results</h2>
-
 <p>Submitted examination results</p>
-
 </div>
 
 <div class="card">
-
 <div id="resultsContainer">
-<p>Loading results...</p>
+Loading results...
 </div>
+</div>
+
+</div>
+
+
+<!-- ADMIN LOGIN -->
+
+<div id="adminLogin" class="hidden">
+
+<button class="back" onclick="goHome()">← Back</button>
+
+<div class="card">
+
+<h2>Admin Login</h2>
+
+<label>Username</label>
+<input id="adminUsername" type="text" placeholder="Username">
+
+<label>Password</label>
+<input id="adminPassword" type="password" placeholder="Password">
+
+<button onclick="adminLogin()">Login</button>
+
+<p id="adminLoginMessage" class="message"></p>
+
+</div>
+</div>
+
+
+<!-- ADMIN DASHBOARD -->
+
+<div id="adminDashboard" class="hidden">
+
+<button class="back" onclick="adminLogout()">← Logout</button>
+
+<div class="welcome">
+<h2>Admin Dashboard</h2>
+<p id="adminWelcome"></p>
+</div>
+
+
+<div class="admin-menu">
+
+<div class="small-card">
+
+<h3>Add Student</h3>
+
+<label>Name</label>
+<input id="studentName" type="text">
+
+<label>Roll Number</label>
+<input id="studentRoll" type="text">
+
+<label>Class</label>
+<input id="studentClass" type="text">
+
+<label>Username</label>
+<input id="studentNewUsername" type="text">
+
+<label>Password</label>
+<input id="studentNewPassword" type="password">
+
+<button class="success" onclick="createStudent()">
+Create Student
+</button>
+
+<p id="studentCreateMessage" class="message"></p>
+
+</div>
+
+
+<div class="small-card">
+
+<h3>Add Teacher</h3>
+
+<label>Name</label>
+<input id="teacherName" type="text">
+
+<label>Username</label>
+<input id="teacherNewUsername" type="text">
+
+<label>Password</label>
+<input id="teacherNewPassword" type="password">
+
+<label>Class</label>
+<input id="teacherClass" type="text">
+
+<button class="success" onclick="createTeacher()">
+Create Teacher
+</button>
+
+<p id="teacherCreateMessage" class="message"></p>
+
+</div>
+
+</div>
+
+
+<div class="card">
+
+<h3>Students</h3>
+
+<button onclick="loadStudents()">Refresh Students</button>
+
+<div id="studentsAdminList"></div>
+
+</div>
+
+
+<div class="card">
+
+<h3>Teachers</h3>
+
+<button onclick="loadTeachers()">Refresh Teachers</button>
+
+<div id="teachersAdminList"></div>
 
 </div>
 
@@ -516,32 +625,44 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
 "sb_publishable_elTo8AsqYV5HQs5RG26OFg_IPsqv1UW";
 
-const db = supabase.createClient(
+const db =
+supabase.createClient(
 SUPABASE_URL,
 SUPABASE_KEY
 );
 
 
+const CREATE_USER_FUNCTION =
+SUPABASE_URL + "/functions/v1/create-user";
+
+
 let currentStudent = null;
 let currentTeacher = null;
+let currentAdmin = null;
 let currentTest = null;
 let currentQuestions = [];
 let timerInterval = null;
 let remainingSeconds = 0;
 
 
-/* SHOW / HIDE */
-
 function hideAll(){
 
-document.getElementById("home").classList.add("hidden");
-document.getElementById("studentLogin").classList.add("hidden");
-document.getElementById("testList").classList.add("hidden");
-document.getElementById("testPage").classList.add("hidden");
-document.getElementById("resultPage").classList.add("hidden");
-document.getElementById("teacherLogin").classList.add("hidden");
-document.getElementById("teacherDashboard").classList.add("hidden");
-document.getElementById("teacherResults").classList.add("hidden");
+const pages = [
+"home",
+"studentLogin",
+"testList",
+"testPage",
+"resultPage",
+"teacherLogin",
+"teacherDashboard",
+"teacherResults",
+"adminLogin",
+"adminDashboard"
+];
+
+pages.forEach(id => {
+document.getElementById(id).classList.add("hidden");
+});
 
 }
 
@@ -552,6 +673,7 @@ clearInterval(timerInterval);
 
 currentStudent = null;
 currentTeacher = null;
+currentAdmin = null;
 currentTest = null;
 currentQuestions = [];
 
@@ -584,26 +706,38 @@ document
 }
 
 
-/* STUDENT LOGIN */
+function showAdminLogin(){
+
+hideAll();
+
+document
+.getElementById("adminLogin")
+.classList.remove("hidden");
+
+}
+
+
+/* =========================
+STUDENT LOGIN
+========================= */
 
 async function studentLogin(){
 
-const rollno =
-document.getElementById("rollno").value.trim();
+const username =
+document.getElementById("studentUsername").value.trim();
 
-const classname =
-document.getElementById("classname").value.trim();
+const password =
+document.getElementById("studentPassword").value;
 
 const message =
-document.getElementById("loginMessage");
+document.getElementById("studentLoginMessage");
 
 message.textContent = "";
 
-
-if(!rollno || !classname){
+if(!username || !password){
 
 message.textContent =
-"Please enter roll number and class.";
+"Please enter username and password.";
 
 return;
 }
@@ -612,8 +746,8 @@ return;
 const {data,error} = await db
 .from("students")
 .select("*")
-.eq("roll_number",rollno)
-.eq("class_name",classname)
+.eq("username",username)
+.eq("password",password)
 .maybeSingle();
 
 
@@ -631,7 +765,7 @@ return;
 if(!data){
 
 message.textContent =
-"Student not found. Check roll number and class.";
+"Invalid username or password.";
 
 return;
 }
@@ -639,10 +773,11 @@ return;
 
 currentStudent = data;
 
-
 document.getElementById("studentWelcome").textContent =
-"Welcome, " + data.name +
-" — Roll No: " + data.roll_number;
+"Welcome, " +
+(data.name || username) +
+" — Roll No: " +
+data.roll_number;
 
 
 await loadTests();
@@ -650,7 +785,9 @@ await loadTests();
 }
 
 
-/* LOAD TESTS */
+/* =========================
+LOAD TESTS
+========================= */
 
 async function loadTests(){
 
@@ -659,6 +796,7 @@ hideAll();
 document
 .getElementById("testList")
 .classList.remove("hidden");
+
 
 const container =
 document.getElementById("testsContainer");
@@ -689,7 +827,10 @@ return;
 if(!data || data.length === 0){
 
 container.innerHTML =
-"<div class='card'><h3>No active tests</h3><p>There are currently no tests available for your class.</p></div>";
+"<div class='card'>" +
+"<h3>No active tests</h3>" +
+"<p>There are currently no tests available for your class.</p>" +
+"</div>";
 
 return;
 }
@@ -729,7 +870,9 @@ container.appendChild(div);
 }
 
 
-/* START TEST */
+/* =========================
+START TEST
+========================= */
 
 async function startTest(testId){
 
@@ -786,8 +929,10 @@ document
 .getElementById("testPage")
 .classList.remove("hidden");
 
+
 document.getElementById("testTitle").textContent =
 currentTest.title;
+
 
 renderQuestions();
 
@@ -796,7 +941,9 @@ startTimer(currentTest.duration_minutes);
 }
 
 
-/* RENDER QUESTIONS */
+/* =========================
+QUESTIONS
+========================= */
 
 function renderQuestions(){
 
@@ -812,6 +959,7 @@ const div =
 document.createElement("div");
 
 div.className = "question";
+
 
 div.innerHTML = `
 
@@ -856,7 +1004,9 @@ container.appendChild(div);
 }
 
 
-/* TIMER */
+/* =========================
+TIMER
+========================= */
 
 function startTimer(minutes){
 
@@ -878,7 +1028,9 @@ if(remainingSeconds <= 0){
 
 clearInterval(timerInterval);
 
-alert("Time is over. Your test will be submitted.");
+alert(
+"Time is over. Your test will be submitted."
+);
 
 submitTest();
 
@@ -905,7 +1057,9 @@ String(sec).padStart(2,"0");
 }
 
 
-/* SUBMIT TEST */
+/* =========================
+SUBMIT TEST
+========================= */
 
 async function submitTest(){
 
@@ -917,13 +1071,17 @@ return;
 
 clearInterval(timerInterval);
 
+
 let score = 0;
+
 let totalMarks = 0;
 
 
 currentQuestions.forEach(q => {
 
-totalMarks += Number(q.marks || 0);
+totalMarks +=
+Number(q.marks || 0);
+
 
 const selected =
 document.querySelector(
@@ -931,17 +1089,21 @@ document.querySelector(
 );
 
 
-if(selected &&
-selected.value === q.correct_option){
+if(
+selected &&
+selected.value === q.correct_option
+){
 
-score += Number(q.marks || 0);
+score +=
+Number(q.marks || 0);
 
 }
 
 });
 
 
-const {error} = await db
+const {error} =
+await db
 .from("results")
 .insert({
 
@@ -953,7 +1115,8 @@ score: score,
 
 total_marks: totalMarks,
 
-submitted_at: new Date().toISOString()
+submitted_at:
+new Date().toISOString()
 
 });
 
@@ -963,7 +1126,7 @@ if(error){
 console.error(error);
 
 alert(
-"Result could not be saved. Please contact school administration."
+"Result could not be saved."
 );
 
 return;
@@ -976,6 +1139,7 @@ score;
 document.getElementById("totalMarks").textContent =
 totalMarks;
 
+
 hideAll();
 
 document
@@ -985,7 +1149,9 @@ document
 }
 
 
-/* TEACHER LOGIN */
+/* =========================
+TEACHER LOGIN
+========================= */
 
 async function teacherLogin(){
 
@@ -1001,16 +1167,8 @@ document.getElementById("teacherLoginMessage");
 message.textContent = "";
 
 
-if(!username || !password){
-
-message.textContent =
-"Please enter username and password.";
-
-return;
-}
-
-
-const {data,error} = await db
+const {data,error} =
+await db
 .from("teachers")
 .select("*")
 .eq("Username",username)
@@ -1023,7 +1181,7 @@ if(error){
 console.error(error);
 
 message.textContent =
-"Database error. Please try again.";
+"Database error.";
 
 return;
 }
@@ -1040,15 +1198,20 @@ return;
 
 currentTeacher = data;
 
+
 document.getElementById("teacherWelcome").textContent =
-"Welcome, " + data.Name;
+"Welcome, " +
+(data.Name || username);
+
 
 showTeacherDashboard();
 
 }
 
 
-/* TEACHER DASHBOARD */
+/* =========================
+TEACHER DASHBOARD
+========================= */
 
 function showTeacherDashboard(){
 
@@ -1065,7 +1228,9 @@ addQuestion();
 }
 
 
-/* ADD QUESTION */
+/* =========================
+ADD QUESTION
+========================= */
 
 function addQuestion(){
 
@@ -1095,24 +1260,16 @@ Question ${number}
 placeholder="Enter question"></textarea>
 
 <label>Option A</label>
-
-<input class="q-a"
-placeholder="Option A">
+<input class="q-a">
 
 <label>Option B</label>
-
-<input class="q-b"
-placeholder="Option B">
+<input class="q-b">
 
 <label>Option C</label>
-
-<input class="q-c"
-placeholder="Option C">
+<input class="q-c">
 
 <label>Option D</label>
-
-<input class="q-d"
-placeholder="Option D">
+<input class="q-d">
 
 <label>Correct Option</label>
 
@@ -1135,7 +1292,9 @@ value="1">
 <button
 class="danger"
 onclick="this.parentElement.remove()">
+
 Remove Question
+
 </button>
 
 `;
@@ -1145,7 +1304,9 @@ container.appendChild(div);
 }
 
 
-/* CREATE TEST */
+/* =========================
+CREATE TEST
+========================= */
 
 async function createTest(){
 
@@ -1153,7 +1314,9 @@ const message =
 document.getElementById("teacherMessage");
 
 message.textContent = "";
-message.style.color = "#d92d20";
+
+message.style.color =
+"#d92d20";
 
 
 const title =
@@ -1169,14 +1332,18 @@ const chapter =
 document.getElementById("newChapter").value.trim();
 
 const duration =
-Number(document.getElementById("newDuration").value);
+Number(
+document.getElementById("newDuration").value
+);
 
 
-if(!title ||
+if(
+!title ||
 !className ||
 !subject ||
 !chapter ||
-!duration){
+!duration
+){
 
 message.textContent =
 "Please complete all test details.";
@@ -1224,7 +1391,9 @@ const correct =
 box.querySelector(".q-correct").value;
 
 const marks =
-Number(box.querySelector(".q-marks").value);
+Number(
+box.querySelector(".q-marks").value
+);
 
 
 totalMarks += marks;
@@ -1233,11 +1402,17 @@ totalMarks += marks;
 questions.push({
 
 question_text:questionText,
+
 option_a:optionA,
+
 option_b:optionB,
+
 option_c:optionC,
+
 option_d:optionD,
+
 correct_option:correct,
+
 marks:marks
 
 });
@@ -1247,22 +1422,23 @@ marks:marks
 
 for(const q of questions){
 
-if(!q.question_text ||
+if(
+!q.question_text ||
 !q.option_a ||
 !q.option_b ||
 !q.option_c ||
-!q.option_d){
+!q.option_d
+){
 
 message.textContent =
-"Please complete every question and all options.";
+"Please complete every question.";
 
 return;
-}
 
 }
 
+}
 
-/* CREATE TEST */
 
 const {data:test,error:testError} =
 await db
@@ -1270,11 +1446,17 @@ await db
 .insert({
 
 title:title,
+
 class_name:className,
+
 subject:subject,
+
 chapter:chapter,
+
 duration_minutes:duration,
+
 total_marks:totalMarks,
+
 is_active:true
 
 })
@@ -1287,24 +1469,30 @@ if(testError){
 console.error(testError);
 
 message.textContent =
-"Test could not be created: " + testError.message;
+"Test could not be created: " +
+testError.message;
 
 return;
 }
 
 
-/* CREATE QUESTIONS */
-
 const questionRows =
 questions.map(q => ({
 
 test_id:test.id,
+
 question_text:q.question_text,
+
 option_a:q.option_a,
+
 option_b:q.option_b,
+
 option_c:q.option_c,
+
 option_d:q.option_d,
+
 correct_option:q.correct_option,
+
 marks:q.marks
 
 }));
@@ -1321,8 +1509,7 @@ if(questionError){
 console.error(questionError);
 
 message.textContent =
-"Test created, but questions could not be saved: " +
-questionError.message;
+"Test created, but questions could not be saved.";
 
 return;
 }
@@ -1336,9 +1523,13 @@ message.textContent =
 
 
 document.getElementById("newTitle").value = "";
+
 document.getElementById("newClass").value = "";
+
 document.getElementById("newSubject").value = "";
+
 document.getElementById("newChapter").value = "";
+
 document.getElementById("newDuration").value = "";
 
 document.getElementById("teacherQuestions").innerHTML = "";
@@ -1348,7 +1539,9 @@ addQuestion();
 }
 
 
-/* LOAD RESULTS */
+/* =========================
+TEACHER RESULTS
+========================= */
 
 async function loadResults(){
 
@@ -1358,6 +1551,7 @@ document
 .getElementById("teacherResults")
 .classList.remove("hidden");
 
+
 const container =
 document.getElementById("resultsContainer");
 
@@ -1365,7 +1559,8 @@ container.innerHTML =
 "<p>Loading results...</p>";
 
 
-const {data,error} = await db
+const {data,error} =
+await db
 .from("results")
 .select(`
 id,
@@ -1382,18 +1577,18 @@ title,
 subject
 )
 `)
-.order("submitted_at",{ascending:false});
+.order(
+"submitted_at",
+{ascending:false}
+);
 
 
 if(error){
 
 console.error(error);
 
-container.innerHTML = `
-<p style="color:#d92d20;">
-Unable to load results.
-</p>
-`;
+container.innerHTML =
+"<p style='color:#d92d20;'>Unable to load results.</p>";
 
 return;
 }
@@ -1401,11 +1596,8 @@ return;
 
 if(!data || data.length === 0){
 
-container.innerHTML = `
-<div class="no-results">
-No student results available yet.
-</div>
-`;
+container.innerHTML =
+"<div class='no-results'>No results available.</div>";
 
 return;
 }
@@ -1420,19 +1612,20 @@ let html = `
 <thead>
 
 <tr>
-<th>Student Name</th>
+<th>Student</th>
 <th>Roll No.</th>
 <th>Class</th>
 <th>Test</th>
 <th>Subject</th>
 <th>Score</th>
 <th>Total</th>
-<th>Date & Time</th>
+<th>Date</th>
 </tr>
 
 </thead>
 
 <tbody>
+
 `;
 
 
@@ -1448,8 +1641,9 @@ result.tests || {};
 const date =
 result.submitted_at
 ?
-new Date(result.submitted_at)
-.toLocaleString()
+new Date(
+result.submitted_at
+).toLocaleString()
 :
 "";
 
@@ -1479,9 +1673,7 @@ ${escapeHtml(test.subject || "")}
 </td>
 
 <td>
-<strong>
-${result.score}
-</strong>
+<strong>${result.score}</strong>
 </td>
 
 <td>
@@ -1510,12 +1702,582 @@ html += `
 `;
 
 
-container.innerHTML = html;
+container.innerHTML =
+html;
 
 }
 
 
-/* TEACHER LOGOUT */
+/* =========================
+ADMIN LOGIN
+========================= */
+
+async function adminLogin(){
+
+const username =
+document.getElementById("adminUsername")
+.value.trim();
+
+const password =
+document.getElementById("adminPassword")
+.value;
+
+const message =
+document.getElementById("adminLoginMessage");
+
+message.textContent = "";
+
+
+if(!username || !password){
+
+message.textContent =
+"Please enter username and password.";
+
+return;
+}
+
+
+const {data,error} =
+await db
+.from("admins")
+.select("*")
+.eq("username",username)
+.eq("password",password)
+.maybeSingle();
+
+
+if(error){
+
+console.error(error);
+
+message.textContent =
+"Database error. Please try again.";
+
+return;
+}
+
+
+if(!data){
+
+message.textContent =
+"Invalid admin username or password.";
+
+return;
+}
+
+
+currentAdmin = data;
+
+
+document.getElementById("adminWelcome").textContent =
+"Welcome, " +
+(data.name || username);
+
+
+showAdminDashboard();
+
+}
+
+
+/* =========================
+ADMIN DASHBOARD
+========================= */
+
+function showAdminDashboard(){
+
+hideAll();
+
+document
+.getElementById("adminDashboard")
+.classList.remove("hidden");
+
+loadStudents();
+
+loadTeachers();
+
+}
+
+
+/* =========================
+CREATE STUDENT
+========================= */
+
+async function createStudent(){
+
+const message =
+document.getElementById("studentCreateMessage");
+
+message.textContent = "";
+
+message.style.color =
+"#d92d20";
+
+
+const name =
+document.getElementById("studentName")
+.value.trim();
+
+const roll =
+document.getElementById("studentRoll")
+.value.trim();
+
+const className =
+document.getElementById("studentClass")
+.value.trim();
+
+const username =
+document.getElementById("studentNewUsername")
+.value.trim();
+
+const password =
+document.getElementById("studentNewPassword")
+.value;
+
+
+if(
+!name ||
+!roll ||
+!className ||
+!username ||
+!password
+){
+
+message.textContent =
+"Please complete all fields.";
+
+return;
+}
+
+
+if(password.length < 6){
+
+message.textContent =
+"Password must be at least 6 characters.";
+
+return;
+}
+
+
+message.textContent =
+"Creating student...";
+
+
+try{
+
+const response =
+await fetch(
+CREATE_USER_FUNCTION,
+{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+username:username,
+
+password:password,
+
+name:name,
+
+role:"student",
+
+class_name:className,
+
+roll_number:roll
+
+})
+
+});
+
+
+const result =
+await response.json();
+
+
+if(!response.ok){
+
+message.textContent =
+result.error ||
+"Student could not be created.";
+
+return;
+}
+
+
+message.style.color =
+"#07883b";
+
+message.textContent =
+"Student account created successfully.";
+
+
+document.getElementById("studentName").value = "";
+
+document.getElementById("studentRoll").value = "";
+
+document.getElementById("studentClass").value = "";
+
+document.getElementById("studentNewUsername").value = "";
+
+document.getElementById("studentNewPassword").value = "";
+
+
+loadStudents();
+
+
+}catch(error){
+
+console.error(error);
+
+message.textContent =
+"Unable to connect to server.";
+
+}
+
+}
+
+
+/* =========================
+CREATE TEACHER
+========================= */
+
+async function createTeacher(){
+
+const message =
+document.getElementById("teacherCreateMessage");
+
+message.textContent = "";
+
+message.style.color =
+"#d92d20";
+
+
+const name =
+document.getElementById("teacherName")
+.value.trim();
+
+const username =
+document.getElementById("teacherNewUsername")
+.value.trim();
+
+const password =
+document.getElementById("teacherNewPassword")
+.value;
+
+const className =
+document.getElementById("teacherClass")
+.value.trim();
+
+
+if(
+!name ||
+!username ||
+!password ||
+!className
+){
+
+message.textContent =
+"Please complete all fields.";
+
+return;
+}
+
+
+if(password.length < 6){
+
+message.textContent =
+"Password must be at least 6 characters.";
+
+return;
+}
+
+
+message.textContent =
+"Creating teacher...";
+
+
+try{
+
+const response =
+await fetch(
+CREATE_USER_FUNCTION,
+{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+username:username,
+
+password:password,
+
+name:name,
+
+role:"teacher",
+
+class_name:className
+
+})
+
+});
+
+
+const result =
+await response.json();
+
+
+if(!response.ok){
+
+message.textContent =
+result.error ||
+"Teacher could not be created.";
+
+return;
+}
+
+
+message.style.color =
+"#07883b";
+
+message.textContent =
+"Teacher account created successfully.";
+
+
+document.getElementById("teacherName").value = "";
+
+document.getElementById("teacherNewUsername").value = "";
+
+document.getElementById("teacherNewPassword").value = "";
+
+document.getElementById("teacherClass").value = "";
+
+
+loadTeachers();
+
+
+}catch(error){
+
+console.error(error);
+
+message.textContent =
+"Unable to connect to server.";
+
+}
+
+}
+
+
+/* =========================
+ADMIN STUDENTS LIST
+========================= */
+
+async function loadStudents(){
+
+const container =
+document.getElementById("studentsAdminList");
+
+container.innerHTML =
+"Loading...";
+
+
+const {data,error} =
+await db
+.from("students")
+.select("name,roll_number,class_name,username")
+.order("roll_number");
+
+
+if(error){
+
+console.error(error);
+
+container.innerHTML =
+"<p>Unable to load students.</p>";
+
+return;
+}
+
+
+if(!data || data.length === 0){
+
+container.innerHTML =
+"<p>No students found.</p>";
+
+return;
+}
+
+
+let html = `
+
+<div class="results-table-wrapper">
+
+<table class="results-table">
+
+<thead>
+
+<tr>
+<th>Name</th>
+<th>Roll No.</th>
+<th>Class</th>
+<th>Username</th>
+</tr>
+
+</thead>
+
+<tbody>
+
+`;
+
+
+data.forEach(student => {
+
+html += `
+
+<tr>
+
+<td>${escapeHtml(student.name || "")}</td>
+
+<td>${escapeHtml(student.roll_number || "")}</td>
+
+<td>${escapeHtml(student.class_name || "")}</td>
+
+<td>${escapeHtml(student.username || "")}</td>
+
+</tr>
+
+`;
+
+});
+
+
+html += `
+</tbody>
+</table>
+</div>
+`;
+
+
+container.innerHTML =
+html;
+
+}
+
+
+/* =========================
+ADMIN TEACHERS LIST
+========================= */
+
+async function loadTeachers(){
+
+const container =
+document.getElementById("teachersAdminList");
+
+container.innerHTML =
+"Loading...";
+
+
+const {data,error} =
+await db
+.from("teachers")
+.select("*")
+.order("Name");
+
+
+if(error){
+
+console.error(error);
+
+container.innerHTML =
+"<p>Unable to load teachers.</p>";
+
+return;
+}
+
+
+if(!data || data.length === 0){
+
+container.innerHTML =
+"<p>No teachers found.</p>";
+
+return;
+}
+
+
+let html = `
+
+<div class="results-table-wrapper">
+
+<table class="results-table">
+
+<thead>
+
+<tr>
+<th>Name</th>
+<th>Username</th>
+<th>Class</th>
+</tr>
+
+</thead>
+
+<tbody>
+
+`;
+
+
+data.forEach(teacher => {
+
+html += `
+
+<tr>
+
+<td>${escapeHtml(teacher.Name || "")}</td>
+
+<td>${escapeHtml(teacher.Username || "")}</td>
+
+<td>${escapeHtml(teacher.class_name || "")}</td>
+
+</tr>
+
+`;
+
+});
+
+
+html += `
+</tbody>
+</table>
+</div>
+`;
+
+
+container.innerHTML =
+html;
+
+}
+
+
+/* =========================
+LOGOUT
+========================= */
+
+function studentLogout(){
+
+currentStudent = null;
+
+clearInterval(timerInterval);
+
+goHome();
+
+}
+
 
 function teacherLogout(){
 
@@ -1526,22 +2288,55 @@ goHome();
 }
 
 
-/* ESCAPE HTML */
+function adminLogout(){
+
+currentAdmin = null;
+
+goHome();
+
+}
+
+
+/* =========================
+BACK TO TEACHER DASHBOARD
+========================= */
+
+function showTeacherDashboard(){
+
+hideAll();
+
+document
+.getElementById("teacherDashboard")
+.classList.remove("hidden");
+
+}
+
+
+/* =========================
+ESCAPE HTML
+========================= */
 
 function escapeHtml(value){
 
-if(value === null ||
-value === undefined){
+if(
+value === null ||
+value === undefined
+){
 
 return "";
 
 }
 
 return String(value)
+
 .replace(/&/g,"&amp;")
+
 .replace(/</g,"&lt;")
+
 .replace(/>/g,"&gt;")
+
 .replace(/"/g,"&quot;")
+
 .replace(/'/g,"&#039;");
 
 }
