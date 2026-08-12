@@ -192,11 +192,6 @@ label{
     background:#07883b;
 }
 
-.small{
-    font-size:13px;
-    color:#667085;
-}
-
 .message{
     margin-top:12px;
     font-size:14px;
@@ -407,7 +402,6 @@ Save & Publish Test
 
 </div>
 
-
 <footer>
 © Tauheed Model School — Online Examination Portal
 </footer>
@@ -435,9 +429,7 @@ let timerInterval = null;
 let remainingSeconds = 0;
 
 
-/* =========================
-SHOW / HIDE
-========================= */
+/* SHOW / HIDE */
 
 function hideAll(){
 
@@ -490,9 +482,7 @@ document
 }
 
 
-/* =========================
-STUDENT LOGIN
-========================= */
+/* STUDENT LOGIN */
 
 async function studentLogin(){
 
@@ -547,7 +537,7 @@ return;
 currentStudent = data;
 
 document.getElementById("studentWelcome").textContent =
-"Welcome, " + data.name +
+"Welcome, " + data.Name +
 " — Roll No: " + data.roll_number;
 
 await loadTests();
@@ -555,9 +545,7 @@ await loadTests();
 }
 
 
-/* =========================
-LOAD TESTS
-========================= */
+/* LOAD TESTS */
 
 async function loadTests(){
 
@@ -636,9 +624,7 @@ container.appendChild(div);
 }
 
 
-/* =========================
-START TEST
-========================= */
+/* START TEST */
 
 async function startTest(testId){
 
@@ -705,9 +691,7 @@ startTimer(currentTest.duration_minutes);
 }
 
 
-/* =========================
-RENDER QUESTIONS
-========================= */
+/* RENDER QUESTIONS */
 
 function renderQuestions(){
 
@@ -767,9 +751,7 @@ container.appendChild(div);
 }
 
 
-/* =========================
-TIMER
-========================= */
+/* TIMER */
 
 function startTimer(minutes){
 
@@ -818,9 +800,7 @@ String(sec).padStart(2,"0");
 }
 
 
-/* =========================
-SUBMIT TEST
-========================= */
+/* SUBMIT TEST */
 
 async function submitTest(){
 
@@ -900,9 +880,7 @@ document
 }
 
 
-/* =========================
-TEACHER LOGIN
-========================= */
+/* TEACHER LOGIN */
 
 async function teacherLogin(){
 
@@ -930,8 +908,8 @@ return;
 const {data,error} = await db
 .from("teachers")
 .select("*")
-.eq("username",username)
-.eq("password",password)
+.eq("Username",username)
+.eq("Password",password)
 .maybeSingle();
 
 
@@ -958,16 +936,14 @@ return;
 currentTeacher = data;
 
 document.getElementById("teacherWelcome").textContent =
-"Welcome, " + data.name;
+"Welcome, " + data.Name;
 
 showTeacherDashboard();
 
 }
 
 
-/* =========================
-TEACHER DASHBOARD
-========================= */
+/* TEACHER DASHBOARD */
 
 function showTeacherDashboard(){
 
@@ -984,9 +960,7 @@ addQuestion();
 }
 
 
-/* =========================
-ADD QUESTION
-========================= */
+/* ADD QUESTION */
 
 function addQuestion(){
 
@@ -1066,9 +1040,7 @@ container.appendChild(div);
 }
 
 
-/* =========================
-CREATE TEST
-========================= */
+/* CREATE TEST */
 
 async function createTest(){
 
@@ -1076,6 +1048,7 @@ const message =
 document.getElementById("teacherMessage");
 
 message.textContent = "";
+message.style.color = "#d92d20";
 
 
 const title =
@@ -1154,19 +1127,19 @@ totalMarks += marks;
 
 questions.push({
 
-question_text: questionText,
+question_text:questionText,
 
-option_a: optionA,
+option_a:optionA,
 
-option_b: optionB,
+option_b:optionB,
 
-option_c: optionC,
+option_c:optionC,
 
-option_d: optionD,
+option_d:optionD,
 
-correct_option: correct,
+correct_option:correct,
 
-marks: marks
+marks:marks
 
 });
 
@@ -1221,7 +1194,7 @@ if(testError){
 console.error(testError);
 
 message.textContent =
-"Test could not be created.";
+"Test could not be created: " + testError.message;
 
 return;
 }
@@ -1262,7 +1235,8 @@ if(questionError){
 console.error(questionError);
 
 message.textContent =
-"Test was created but questions could not be saved.";
+"Test created, but questions could not be saved: " +
+questionError.message;
 
 return;
 }
@@ -1288,9 +1262,7 @@ addQuestion();
 }
 
 
-/* =========================
-TEACHER LOGOUT
-========================= */
+/* TEACHER LOGOUT */
 
 function teacherLogout(){
 
@@ -1301,9 +1273,7 @@ goHome();
 }
 
 
-/* =========================
-ESCAPE HTML
-========================= */
+/* ESCAPE HTML */
 
 function escapeHtml(value){
 
