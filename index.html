@@ -8,209 +8,204 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+    font-family:Arial,sans-serif;
+    background:#f4f7fb;
+    color:#172033;
 }
 
-body {
-    font-family: Arial, sans-serif;
-    background: #f4f7fb;
-    color: #172033;
+header{
+    background:#123b63;
+    color:white;
+    padding:28px 20px;
+    text-align:center;
 }
 
-header {
-    background: #123b63;
-    color: white;
-    padding: 28px 20px;
-    text-align: center;
+header h1{
+    font-size:30px;
+    margin-bottom:8px;
 }
 
-header h1 {
-    font-size: 30px;
-    margin-bottom: 8px;
+header p{opacity:.9}
+
+.container{
+    max-width:1000px;
+    margin:40px auto;
+    padding:0 20px;
 }
 
-header p {
-    font-size: 16px;
-    opacity: 0.9;
+.welcome{
+    text-align:center;
+    margin-bottom:30px;
 }
 
-.container {
-    max-width: 1000px;
-    margin: 40px auto;
-    padding: 0 20px;
+.welcome h2{
+    font-size:28px;
+    margin-bottom:10px;
 }
 
-.welcome {
-    text-align: center;
-    margin-bottom: 30px;
+.welcome p{color:#667085}
+
+.portals{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
 }
 
-.welcome h2 {
-    font-size: 28px;
-    margin-bottom: 10px;
+.card{
+    background:white;
+    padding:30px 20px;
+    border-radius:14px;
+    text-align:center;
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+    margin-bottom:20px;
 }
 
-.welcome p {
-    color: #667085;
+.icon{
+    font-size:42px;
+    margin-bottom:15px;
 }
 
-.portals {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 20px;
+.card h3{margin-bottom:10px}
+
+.card p{
+    color:#667085;
+    font-size:14px;
+    line-height:1.5;
+    margin-bottom:20px;
 }
 
-.card {
-    background: white;
-    padding: 30px 20px;
-    border-radius: 14px;
-    text-align: center;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+button{
+    border:none;
+    background:#123b63;
+    color:white;
+    padding:11px 22px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:15px;
 }
 
-.icon {
-    font-size: 42px;
-    margin-bottom: 15px;
+button:hover{background:#0d2c4a}
+
+input,select,textarea{
+    width:100%;
+    padding:12px;
+    border:1px solid #d0d5dd;
+    border-radius:8px;
+    margin:8px 0 15px;
+    font-size:15px;
 }
 
-.card h3 {
-    margin-bottom: 10px;
+textarea{
+    min-height:90px;
+    resize:vertical;
 }
 
-.card p {
-    color: #667085;
-    font-size: 14px;
-    line-height: 1.5;
-    margin-bottom: 20px;
+label{
+    font-weight:600;
+    font-size:14px;
 }
 
-button {
-    border: none;
-    background: #123b63;
-    color: white;
-    padding: 11px 22px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 15px;
+.hidden{display:none}
+
+.test-card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    margin-bottom:15px;
+    box-shadow:0 3px 12px rgba(0,0,0,.07);
 }
 
-button:hover {
-    background: #0d2c4a;
+.test-card h3{margin-bottom:8px}
+
+.test-card p{
+    color:#667085;
+    margin-bottom:15px;
+    line-height:1.6;
 }
 
-input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #d0d5dd;
-    border-radius: 8px;
-    margin: 8px 0 15px;
-    font-size: 15px;
+.question{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    margin-bottom:18px;
+    box-shadow:0 3px 12px rgba(0,0,0,.07);
 }
 
-.hidden {
-    display: none;
+.option{
+    display:block;
+    background:#f8fafc;
+    padding:12px;
+    margin-top:10px;
+    border-radius:8px;
+    cursor:pointer;
 }
 
-.test-card {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+.option:hover{background:#eef4fa}
+
+.result-box{
+    background:white;
+    padding:35px;
+    text-align:center;
+    border-radius:15px;
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
 }
 
-.test-card h3 {
-    margin-bottom: 8px;
+.big-score{
+    font-size:42px;
+    font-weight:bold;
+    color:#123b63;
+    margin:20px;
 }
 
-.test-card p {
-    color: #667085;
-    margin-bottom: 15px;
-    line-height: 1.7;
+.back{
+    background:#667085;
+    margin-bottom:20px;
 }
 
-.question {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 18px;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+.timer{
+    position:sticky;
+    top:10px;
+    background:#123b63;
+    color:white;
+    padding:12px;
+    border-radius:8px;
+    text-align:center;
+    margin-bottom:20px;
+    z-index:10;
 }
 
-.question h3 {
-    line-height: 1.5;
+.teacher-question{
+    border:1px solid #d0d5dd;
+    padding:20px;
+    border-radius:10px;
+    margin-bottom:15px;
 }
 
-.option {
-    display: block;
-    background: #f8fafc;
-    padding: 12px;
-    margin-top: 10px;
-    border-radius: 8px;
-    cursor: pointer;
+.danger{
+    background:#d92d20;
 }
 
-.option:hover {
-    background: #eef4fa;
+.success{
+    background:#07883b;
 }
 
-.option input {
-    width: auto;
-    margin: 0 8px 0 0;
+.small{
+    font-size:13px;
+    color:#667085;
 }
 
-.result-box {
-    background: white;
-    padding: 35px;
-    text-align: center;
-    border-radius: 15px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+.message{
+    margin-top:12px;
+    font-size:14px;
 }
 
-.result-box h2 {
-    margin-bottom: 15px;
-}
-
-.big-score {
-    font-size: 42px;
-    font-weight: bold;
-    color: #123b63;
-    margin: 20px;
-}
-
-.back {
-    background: #667085;
-    margin-bottom: 20px;
-}
-
-.timer {
-    position: sticky;
-    top: 10px;
-    background: #123b63;
-    color: white;
-    padding: 12px;
-    border-radius: 8px;
-    text-align: center;
-    margin-bottom: 20px;
-    z-index: 10;
-}
-
-.message {
-    margin-top: 15px;
-    color: #d92d20;
-}
-
-.success {
-    color: #087443;
-}
-
-footer {
-    text-align: center;
-    padding: 25px;
-    color: #667085;
+footer{
+    text-align:center;
+    padding:25px;
+    color:#667085;
 }
 </style>
 </head>
@@ -218,830 +213,1114 @@ footer {
 <body>
 
 <header>
-    <h1>TAUHEED MODEL SCHOOL</h1>
-    <p>Online Examination Portal</p>
+<h1>TAUHEED MODEL SCHOOL</h1>
+<p>Online Examination Portal</p>
 </header>
 
 <div class="container">
 
-    <!-- HOME -->
-    <div id="home">
+<!-- HOME -->
+<div id="home">
 
-        <div class="welcome">
-            <h2>Welcome</h2>
-            <p>Online testing and examination system</p>
-        </div>
+<div class="welcome">
+<h2>Welcome</h2>
+<p>Online testing and examination system</p>
+</div>
 
-        <div class="portals">
+<div class="portals">
 
-            <div class="card">
-                <div class="icon">🎓</div>
-                <h3>Student Portal</h3>
-                <p>Access your assigned online tests.</p>
-                <button onclick="showStudentLogin()">Enter</button>
-            </div>
+<div class="card">
+<div class="icon">🎓</div>
+<h3>Student Portal</h3>
+<p>Access your assigned online tests.</p>
+<button onclick="showStudentLogin()">Enter</button>
+</div>
 
-            <div class="card">
-                <div class="icon">👨‍🏫</div>
-                <h3>Teacher Portal</h3>
-                <p>Create tests, manage questions and view results.</p>
-                <button onclick="alert('Teacher Portal will be added next.')">
-                    Enter
-                </button>
-            </div>
+<div class="card">
+<div class="icon">👨‍🏫</div>
+<h3>Teacher Portal</h3>
+<p>Create tests, add questions and publish examinations.</p>
+<button onclick="showTeacherLogin()">Enter</button>
+</div>
 
-            <div class="card">
-                <div class="icon">🔐</div>
-                <h3>Admin Portal</h3>
-                <p>Manage the school examination system.</p>
-                <button onclick="alert('Admin Portal will be added next.')">
-                    Enter
-                </button>
-            </div>
+<div class="card">
+<div class="icon">🔐</div>
+<h3>Admin Portal</h3>
+<p>Manage the school examination system.</p>
+<button onclick="alert('Admin Portal will be added next.')">
+Enter
+</button>
+</div>
 
-        </div>
-    </div>
+</div>
+</div>
 
 
-    <!-- STUDENT LOGIN -->
-    <div id="studentLogin" class="hidden">
+<!-- STUDENT LOGIN -->
+<div id="studentLogin" class="hidden">
 
-        <button class="back" onclick="goHome()">← Back</button>
+<button class="back" onclick="goHome()">← Back</button>
 
-        <div class="card">
+<div class="card">
 
-            <h2>Student Login</h2>
+<h2>Student Login</h2>
 
-            <p style="color:#667085;margin:10px 0 20px;">
-                Enter your roll number and class.
-            </p>
+<p style="color:#667085;margin:10px 0 20px;">
+Enter your roll number and class.
+</p>
 
-            <label>Roll Number</label>
+<label>Roll Number</label>
+<input id="rollno" type="text" placeholder="Enter roll number">
 
-            <input
-                id="rollno"
-                type="text"
-                placeholder="Enter roll number"
-            >
+<label>Class</label>
+<input id="classname" type="text" placeholder="Example: 9th">
 
-            <label>Class</label>
+<button onclick="studentLogin()">Login</button>
 
-            <input
-                id="classname"
-                type="text"
-                placeholder="Example: 9th"
-            >
+<p id="loginMessage" class="message"></p>
 
-            <button onclick="studentLogin()">
-                Login
-            </button>
-
-            <p id="loginMessage" class="message"></p>
-
-        </div>
-    </div>
+</div>
+</div>
 
 
-    <!-- TEST LIST -->
-    <div id="testList" class="hidden">
+<!-- STUDENT TEST LIST -->
+<div id="testList" class="hidden">
 
-        <button class="back" onclick="goHome()">
-            ← Logout
-        </button>
+<button class="back" onclick="goHome()">← Logout</button>
 
-        <div class="welcome">
+<div class="welcome">
+<h2>Available Tests</h2>
+<p id="studentWelcome"></p>
+</div>
 
-            <h2>Available Tests</h2>
-
-            <p id="studentWelcome"></p>
-
-        </div>
-
-        <div id="testsContainer"></div>
-
-    </div>
-
-
-    <!-- TEST PAGE -->
-    <div id="testPage" class="hidden">
-
-        <div class="timer">
-            Time Remaining:
-            <strong id="timer">00:00</strong>
-        </div>
-
-        <h2 id="testTitle" style="margin-bottom:20px;"></h2>
-
-        <div id="questionsContainer"></div>
-
-        <button onclick="submitTest()">
-            Submit Test
-        </button>
-
-    </div>
-
-
-    <!-- RESULT -->
-    <div id="resultPage" class="hidden">
-
-        <div class="result-box">
-
-            <h2>Test Submitted Successfully 🎉</h2>
-
-            <p>Your score is:</p>
-
-            <div class="big-score">
-                <span id="score">0</span>
-                /
-                <span id="totalMarks">0</span>
-            </div>
-
-            <button onclick="goHome()">
-                Return Home
-            </button>
-
-        </div>
-
-    </div>
+<div id="testsContainer"></div>
 
 </div>
 
+
+<!-- TEST PAGE -->
+<div id="testPage" class="hidden">
+
+<div class="timer">
+Time Remaining: <span id="timer">00:00</span>
+</div>
+
+<h2 id="testTitle" style="margin-bottom:20px;"></h2>
+
+<div id="questionsContainer"></div>
+
+<button onclick="submitTest()">Submit Test</button>
+
+</div>
+
+
+<!-- RESULT -->
+<div id="resultPage" class="hidden">
+
+<div class="result-box">
+
+<h2>Test Submitted Successfully 🎉</h2>
+
+<p>Your score is:</p>
+
+<div class="big-score">
+<span id="score"></span> /
+<span id="totalMarks"></span>
+</div>
+
+<button onclick="goHome()">Return Home</button>
+
+</div>
+
+</div>
+
+
+<!-- TEACHER LOGIN -->
+<div id="teacherLogin" class="hidden">
+
+<button class="back" onclick="goHome()">← Back</button>
+
+<div class="card">
+
+<h2>Teacher Login</h2>
+
+<p style="color:#667085;margin:10px 0 20px;">
+Enter your teacher credentials.
+</p>
+
+<label>Username</label>
+<input id="teacherUsername" type="text" placeholder="Username">
+
+<label>Password</label>
+<input id="teacherPassword" type="password" placeholder="Password">
+
+<button onclick="teacherLogin()">Login</button>
+
+<p id="teacherLoginMessage" class="message"></p>
+
+</div>
+</div>
+
+
+<!-- TEACHER DASHBOARD -->
+<div id="teacherDashboard" class="hidden">
+
+<button class="back" onclick="teacherLogout()">← Logout</button>
+
+<div class="welcome">
+<h2>Teacher Dashboard</h2>
+<p id="teacherWelcome"></p>
+</div>
+
+<div class="card">
+
+<h3 style="margin-bottom:20px;">Create New Test</h3>
+
+<label>Test Title</label>
+<input id="newTitle" type="text" placeholder="Example: English Test 1">
+
+<label>Class</label>
+<input id="newClass" type="text" placeholder="Example: 9th">
+
+<label>Subject</label>
+<input id="newSubject" type="text" placeholder="Example: English">
+
+<label>Chapter</label>
+<input id="newChapter" type="text" placeholder="Example: Chapter 1">
+
+<label>Duration (Minutes)</label>
+<input id="newDuration" type="number" min="1" placeholder="10">
+
+<div id="teacherQuestions"></div>
+
+<button onclick="addQuestion()">+ Add Question</button>
+
+<button class="success" onclick="createTest()" style="margin-left:8px;">
+Save & Publish Test
+</button>
+
+<p id="teacherMessage" class="message"></p>
+
+</div>
+
+</div>
+
+</div>
+
+
 <footer>
-    © Tauheed Model School — Online Examination Portal
+© Tauheed Model School — Online Examination Portal
 </footer>
 
 
 <script>
 
-/* ================================
-   SUPABASE CONNECTION
-================================ */
-
 const SUPABASE_URL =
-    "https://ykvegtlzgzyfwmlvmpti.supabase.co";
+"https://ykvegtlzgzyfwmlvmpti.supabase.co";
 
 const SUPABASE_KEY =
-    "sb_publishable_elTo8AsqYV5HQs5RG26OFg_IPsqv1UW";
+"sb_publishable_elTo8AsqYV5HQs5RG26OFg_IPsqv1UW";
 
 const db = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
+SUPABASE_URL,
+SUPABASE_KEY
 );
 
 
-/* ================================
-   VARIABLES
-================================ */
-
 let currentStudent = null;
+let currentTeacher = null;
 let currentTest = null;
 let currentQuestions = [];
 let timerInterval = null;
 let remainingSeconds = 0;
 
 
-/* ================================
-   PAGE NAVIGATION
-================================ */
+/* =========================
+SHOW / HIDE
+========================= */
 
-function hideAll() {
+function hideAll(){
 
-    document.getElementById("home")
-        .classList.add("hidden");
-
-    document.getElementById("studentLogin")
-        .classList.add("hidden");
-
-    document.getElementById("testList")
-        .classList.add("hidden");
-
-    document.getElementById("testPage")
-        .classList.add("hidden");
-
-    document.getElementById("resultPage")
-        .classList.add("hidden");
-}
-
-
-function showStudentLogin() {
-
-    hideAll();
-
-    document.getElementById("studentLogin")
-        .classList.remove("hidden");
+document.getElementById("home").classList.add("hidden");
+document.getElementById("studentLogin").classList.add("hidden");
+document.getElementById("testList").classList.add("hidden");
+document.getElementById("testPage").classList.add("hidden");
+document.getElementById("resultPage").classList.add("hidden");
+document.getElementById("teacherLogin").classList.add("hidden");
+document.getElementById("teacherDashboard").classList.add("hidden");
 
 }
 
 
-function goHome() {
+function goHome(){
 
-    clearInterval(timerInterval);
+clearInterval(timerInterval);
 
-    currentStudent = null;
-    currentTest = null;
-    currentQuestions = [];
+currentStudent = null;
+currentTeacher = null;
+currentTest = null;
+currentQuestions = [];
 
-    hideAll();
+hideAll();
 
-    document.getElementById("home")
-        .classList.remove("hidden");
-}
-
-
-/* ================================
-   STUDENT LOGIN
-================================ */
-
-async function studentLogin() {
-
-    const rollno =
-        document.getElementById("rollno")
-        .value
-        .trim();
-
-    const classname =
-        document.getElementById("classname")
-        .value
-        .trim();
-
-    const message =
-        document.getElementById("loginMessage");
-
-    message.textContent = "";
-
-    if (!rollno || !classname) {
-
-        message.textContent =
-            "Please enter roll number and class.";
-
-        return;
-    }
-
-
-    const { data, error } = await db
-
-        .from("students")
-
-        .select("*")
-
-        .eq("roll_number", rollno)
-
-        .eq("class_name", classname)
-
-        .maybeSingle();
-
-
-    if (error) {
-
-        console.error("Student login error:", error);
-
-        message.textContent =
-            "Database error. Please try again.";
-
-        return;
-    }
-
-
-    if (!data) {
-
-        message.textContent =
-            "Student not found. Check roll number and class.";
-
-        return;
-    }
-
-
-    currentStudent = data;
-
-
-    document.getElementById("studentWelcome")
-        .textContent =
-        "Welcome, " +
-        data.name +
-        " — Roll No: " +
-        data.roll_number;
-
-
-    await loadTests();
-}
-
-
-/* ================================
-   LOAD ACTIVE TESTS
-================================ */
-
-async function loadTests() {
-
-    hideAll();
-
-    document.getElementById("testList")
-        .classList.remove("hidden");
-
-
-    const container =
-        document.getElementById("testsContainer");
-
-
-    container.innerHTML =
-        "<p>Loading tests...</p>";
-
-
-    const { data, error } = await db
-
-        .from("tests")
-
-        .select("*")
-
-        .eq("is_active", true)
-
-        .eq(
-            "class_name",
-            currentStudent.class_name
-        )
-
-        .order(
-            "created_at",
-            {
-                ascending: false
-            }
-        );
-
-
-    if (error) {
-
-        console.error("Test loading error:", error);
-
-        container.innerHTML =
-            "<p class='message'>Unable to load tests.</p>";
-
-        return;
-    }
-
-
-    if (!data || data.length === 0) {
-
-        container.innerHTML = `
-
-            <div class="card">
-
-                <h3>No active tests</h3>
-
-                <p>
-                    There are currently no tests
-                    available for your class.
-                </p>
-
-            </div>
-
-        `;
-
-        return;
-    }
-
-
-    container.innerHTML = "";
-
-
-    data.forEach(function(test) {
-
-        const div =
-            document.createElement("div");
-
-        div.className = "test-card";
-
-
-        div.innerHTML = `
-
-            <h3>
-                ${escapeHtml(test.title)}
-            </h3>
-
-            <p>
-
-                Subject:
-                ${escapeHtml(test.subject || "")}
-
-                <br>
-
-                Chapter:
-                ${escapeHtml(test.chapter || "")}
-
-                <br>
-
-                Duration:
-                ${test.duration_minutes}
-                minutes
-
-                <br>
-
-                Total Marks:
-                ${test.total_marks}
-
-            </p>
-
-            <button
-                onclick="startTest('${test.id}')"
-            >
-                Start Test
-            </button>
-
-        `;
-
-
-        container.appendChild(div);
-
-    });
+document.getElementById("home").classList.remove("hidden");
 
 }
 
 
-/* ================================
-   START TEST
-================================ */
+function showStudentLogin(){
 
-async function startTest(testId) {
+hideAll();
 
+document
+.getElementById("studentLogin")
+.classList.remove("hidden");
 
-    const { data, error } = await db
-
-        .from("tests")
-
-        .select("*")
-
-        .eq("id", testId)
-
-        .maybeSingle();
-
-
-    if (error || !data) {
-
-        console.error(error);
-
-        alert("Unable to open test.");
-
-        return;
-    }
-
-
-    currentTest = data;
-
-
-    const response = await db
-
-        .from("questions")
-
-        .select("*")
-
-        .eq("test_id", testId);
-
-
-    if (response.error) {
-
-        console.error(
-            "Question loading error:",
-            response.error
-        );
-
-        alert("Unable to load questions.");
-
-        return;
-    }
-
-
-    currentQuestions =
-        response.data || [];
-
-
-    if (currentQuestions.length === 0) {
-
-        alert(
-            "This test has no questions yet."
-        );
-
-        return;
-    }
-
-
-    hideAll();
-
-
-    document.getElementById("testPage")
-        .classList.remove("hidden");
-
-
-    document.getElementById("testTitle")
-        .textContent =
-        currentTest.title;
-
-
-    renderQuestions();
-
-
-    startTimer(
-        currentTest.duration_minutes
-    );
 }
 
 
-/* ================================
-   SHOW QUESTIONS
-================================ */
+function showTeacherLogin(){
 
-function renderQuestions() {
+hideAll();
 
-    const container =
-        document.getElementById(
-            "questionsContainer"
-        );
+document
+.getElementById("teacherLogin")
+.classList.remove("hidden");
 
-
-    container.innerHTML = "";
-
-
-    currentQuestions.forEach(
-        function(q, index) {
-
-            const div =
-                document.createElement("div");
-
-            div.className = "question";
-
-
-            div.innerHTML = `
-
-                <h3>
-                    ${index + 1}.
-                    ${escapeHtml(
-                        q.question_text
-                    )}
-                </h3>
-
-
-                <label class="option">
-
-                    <input
-                        type="radio"
-                        name="q${q.id}"
-                        value="A"
-                    >
-
-                    ${escapeHtml(q.option_a)}
-
-                </label>
-
-
-                <label class="option">
-
-                    <input
-                        type="radio"
-                        name="q${q.id}"
-                        value="B"
-                    >
-
-                    ${escapeHtml(q.option_b)}
-
-                </label>
-
-
-                <label class="option">
-
-                    <input
-                        type="radio"
-                        name="q${q.id}"
-                        value="C"
-                    >
-
-                    ${escapeHtml(q.option_c)}
-
-                </label>
-
-
-                <label class="option">
-
-                    <input
-                        type="radio"
-                        name="q${q.id}"
-                        value="D"
-                    >
-
-                    ${escapeHtml(q.option_d)}
-
-                </label>
-
-            `;
-
-
-            container.appendChild(div);
-
-        }
-    );
 }
 
 
-/* ================================
-   TIMER
-================================ */
+/* =========================
+STUDENT LOGIN
+========================= */
 
-function startTimer(minutes) {
+async function studentLogin(){
 
-    clearInterval(timerInterval);
+const rollno =
+document.getElementById("rollno").value.trim();
 
+const classname =
+document.getElementById("classname").value.trim();
 
-    remainingSeconds =
-        Number(minutes) * 60;
+const message =
+document.getElementById("loginMessage");
 
+message.textContent = "";
 
-    updateTimer();
+if(!rollno || !classname){
 
+message.textContent =
+"Please enter roll number and class.";
 
-    timerInterval =
-        setInterval(
-            function() {
-
-                remainingSeconds--;
-
-                updateTimer();
-
-
-                if (
-                    remainingSeconds <= 0
-                ) {
-
-                    clearInterval(
-                        timerInterval
-                    );
-
-
-                    alert(
-                        "Time is over. Your test will be submitted."
-                    );
-
-
-                    submitTest();
-                }
-
-            },
-            1000
-        );
+return;
 }
 
 
-function updateTimer() {
-
-    const min =
-        Math.floor(
-            remainingSeconds / 60
-        );
-
-
-    const sec =
-        remainingSeconds % 60;
+const {data,error} = await db
+.from("students")
+.select("*")
+.eq("roll_number",rollno)
+.eq("class_name",classname)
+.maybeSingle();
 
 
-    document.getElementById("timer")
-        .textContent =
+if(error){
 
-        String(min)
-            .padStart(2, "0")
+console.error(error);
 
-        + ":" +
+message.textContent =
+"Database error. Please try again.";
 
-        String(sec)
-            .padStart(2, "0");
+return;
 }
 
 
-/* ================================
-   SUBMIT TEST
-================================ */
+if(!data){
 
-async function submitTest() {
+message.textContent =
+"Student not found. Check roll number and class.";
 
-    if (
-        !currentTest ||
-        !currentStudent
-    ) {
-        return;
-    }
-
-
-    clearInterval(timerInterval);
-
-
-    let score = 0;
-
-    let totalMarks = 0;
-
-
-    currentQuestions.forEach(
-        function(q) {
-
-            totalMarks +=
-                Number(q.marks || 0);
-
-
-            const selected =
-                document.querySelector(
-                    `input[name="q${q.id}"]:checked`
-                );
-
-
-            if (
-                selected &&
-                selected.value ===
-                q.correct_option
-            ) {
-
-                score +=
-                    Number(q.marks || 0);
-
-            }
-
-        }
-    );
-
-
-    const { error } = await db
-
-        .from("result")
-
-        .insert({
-
-            test_id:
-                currentTest.id,
-
-            student_id:
-                currentStudent.id,
-
-            score:
-                score,
-
-            total_marks:
-                totalMarks,
-
-            submitted_at:
-                new Date().toISOString()
-
-        });
-
-
-    if (error) {
-
-        console.error(
-            "Result save error:",
-            error
-        );
-
-
-        alert(
-            "Result could not be saved. Please contact school administration."
-        );
-
-        return;
-    }
-
-
-    document.getElementById("score")
-        .textContent = score;
-
-
-    document.getElementById("totalMarks")
-        .textContent = totalMarks;
-
-
-    hideAll();
-
-
-    document.getElementById("resultPage")
-        .classList.remove("hidden");
+return;
 }
 
 
-/* ================================
-   HTML SECURITY
-================================ */
+currentStudent = data;
 
-function escapeHtml(value) {
+document.getElementById("studentWelcome").textContent =
+"Welcome, " + data.name +
+" — Roll No: " + data.roll_number;
 
-    if (
-        value === null ||
-        value === undefined
-    ) {
-        return "";
-    }
+await loadTests();
+
+}
 
 
-    return String(value)
+/* =========================
+LOAD TESTS
+========================= */
 
-        .replace(/&/g, "&amp;")
+async function loadTests(){
 
-        .replace(/</g, "&lt;")
+hideAll();
 
-        .replace(/>/g, "&gt;")
+document
+.getElementById("testList")
+.classList.remove("hidden");
 
-        .replace(/"/g, "&quot;")
+const container =
+document.getElementById("testsContainer");
 
-        .replace(/'/g, "&#039;");
+container.innerHTML =
+"<p>Loading tests...</p>";
+
+
+const {data,error} = await db
+.from("tests")
+.select("*")
+.eq("is_active",true)
+.eq("class_name",currentStudent.class_name)
+.order("created_at",{ascending:false});
+
+
+if(error){
+
+console.error(error);
+
+container.innerHTML =
+"<p style='color:red;'>Unable to load tests.</p>";
+
+return;
+}
+
+
+if(!data || data.length === 0){
+
+container.innerHTML =
+"<div class='card'><h3>No active tests</h3><p>There are currently no tests available for your class.</p></div>";
+
+return;
+}
+
+
+container.innerHTML = "";
+
+
+data.forEach(test => {
+
+const div =
+document.createElement("div");
+
+div.className = "test-card";
+
+div.innerHTML = `
+
+<h3>${escapeHtml(test.title)}</h3>
+
+<p>
+Subject: ${escapeHtml(test.subject || "")}<br>
+Chapter: ${escapeHtml(test.chapter || "")}<br>
+Duration: ${test.duration_minutes} minutes<br>
+Total Marks: ${test.total_marks}
+</p>
+
+<button onclick="startTest('${test.id}')">
+Start Test
+</button>
+
+`;
+
+container.appendChild(div);
+
+});
+
+}
+
+
+/* =========================
+START TEST
+========================= */
+
+async function startTest(testId){
+
+const {data,error} = await db
+.from("tests")
+.select("*")
+.eq("id",testId)
+.maybeSingle();
+
+
+if(error || !data){
+
+alert("Unable to open test.");
+
+return;
+}
+
+
+currentTest = data;
+
+
+const response =
+await db
+.from("questions")
+.select("*")
+.eq("test_id",testId);
+
+
+if(response.error){
+
+console.error(response.error);
+
+alert("Unable to load questions.");
+
+return;
+}
+
+
+currentQuestions =
+response.data || [];
+
+
+if(currentQuestions.length === 0){
+
+alert("This test has no questions yet.");
+
+return;
+}
+
+
+hideAll();
+
+document
+.getElementById("testPage")
+.classList.remove("hidden");
+
+document.getElementById("testTitle").textContent =
+currentTest.title;
+
+renderQuestions();
+
+startTimer(currentTest.duration_minutes);
+
+}
+
+
+/* =========================
+RENDER QUESTIONS
+========================= */
+
+function renderQuestions(){
+
+const container =
+document.getElementById("questionsContainer");
+
+container.innerHTML = "";
+
+
+currentQuestions.forEach((q,index) => {
+
+const div =
+document.createElement("div");
+
+div.className = "question";
+
+div.innerHTML = `
+
+<h3>
+${index + 1}. ${escapeHtml(q.question_text)}
+</h3>
+
+<label class="option">
+<input type="radio"
+name="q${q.id}"
+value="A">
+${escapeHtml(q.option_a)}
+</label>
+
+<label class="option">
+<input type="radio"
+name="q${q.id}"
+value="B">
+${escapeHtml(q.option_b)}
+</label>
+
+<label class="option">
+<input type="radio"
+name="q${q.id}"
+value="C">
+${escapeHtml(q.option_c)}
+</label>
+
+<label class="option">
+<input type="radio"
+name="q${q.id}"
+value="D">
+${escapeHtml(q.option_d)}
+</label>
+
+`;
+
+container.appendChild(div);
+
+});
+
+}
+
+
+/* =========================
+TIMER
+========================= */
+
+function startTimer(minutes){
+
+clearInterval(timerInterval);
+
+remainingSeconds =
+Number(minutes) * 60;
+
+updateTimer();
+
+timerInterval =
+setInterval(() => {
+
+remainingSeconds--;
+
+updateTimer();
+
+if(remainingSeconds <= 0){
+
+clearInterval(timerInterval);
+
+alert("Time is over. Your test will be submitted.");
+
+submitTest();
+
+}
+
+},1000);
+
+}
+
+
+function updateTimer(){
+
+const min =
+Math.floor(remainingSeconds / 60);
+
+const sec =
+remainingSeconds % 60;
+
+document.getElementById("timer").textContent =
+String(min).padStart(2,"0") +
+":" +
+String(sec).padStart(2,"0");
+
+}
+
+
+/* =========================
+SUBMIT TEST
+========================= */
+
+async function submitTest(){
+
+if(!currentTest || !currentStudent){
+
+return;
+}
+
+
+clearInterval(timerInterval);
+
+let score = 0;
+let totalMarks = 0;
+
+
+currentQuestions.forEach(q => {
+
+totalMarks += Number(q.marks || 0);
+
+const selected =
+document.querySelector(
+`input[name="q${q.id}"]:checked`
+);
+
+
+if(selected &&
+selected.value === q.correct_option){
+
+score += Number(q.marks || 0);
+
+}
+
+});
+
+
+const {error} = await db
+.from("results")
+.insert({
+
+test_id: currentTest.id,
+
+student_id: currentStudent.id,
+
+score: score,
+
+total_marks: totalMarks,
+
+submitted_at: new Date().toISOString()
+
+});
+
+
+if(error){
+
+console.error(error);
+
+alert(
+"Result could not be saved. Please contact school administration."
+);
+
+return;
+}
+
+
+document.getElementById("score").textContent =
+score;
+
+document.getElementById("totalMarks").textContent =
+totalMarks;
+
+hideAll();
+
+document
+.getElementById("resultPage")
+.classList.remove("hidden");
+
+}
+
+
+/* =========================
+TEACHER LOGIN
+========================= */
+
+async function teacherLogin(){
+
+const username =
+document.getElementById("teacherUsername").value.trim();
+
+const password =
+document.getElementById("teacherPassword").value;
+
+const message =
+document.getElementById("teacherLoginMessage");
+
+message.textContent = "";
+
+
+if(!username || !password){
+
+message.textContent =
+"Please enter username and password.";
+
+return;
+}
+
+
+const {data,error} = await db
+.from("teachers")
+.select("*")
+.eq("username",username)
+.eq("password",password)
+.maybeSingle();
+
+
+if(error){
+
+console.error(error);
+
+message.textContent =
+"Database error. Please try again.";
+
+return;
+}
+
+
+if(!data){
+
+message.textContent =
+"Invalid username or password.";
+
+return;
+}
+
+
+currentTeacher = data;
+
+document.getElementById("teacherWelcome").textContent =
+"Welcome, " + data.name;
+
+showTeacherDashboard();
+
+}
+
+
+/* =========================
+TEACHER DASHBOARD
+========================= */
+
+function showTeacherDashboard(){
+
+hideAll();
+
+document
+.getElementById("teacherDashboard")
+.classList.remove("hidden");
+
+document.getElementById("teacherQuestions").innerHTML = "";
+
+addQuestion();
+
+}
+
+
+/* =========================
+ADD QUESTION
+========================= */
+
+function addQuestion(){
+
+const container =
+document.getElementById("teacherQuestions");
+
+const number =
+container.children.length + 1;
+
+
+const div =
+document.createElement("div");
+
+div.className =
+"teacher-question";
+
+
+div.innerHTML = `
+
+<h4 style="margin-bottom:15px;">
+Question ${number}
+</h4>
+
+<label>Question</label>
+
+<textarea class="q-text"
+placeholder="Enter question"></textarea>
+
+<label>Option A</label>
+
+<input class="q-a"
+placeholder="Option A">
+
+<label>Option B</label>
+
+<input class="q-b"
+placeholder="Option B">
+
+<label>Option C</label>
+
+<input class="q-c"
+placeholder="Option C">
+
+<label>Option D</label>
+
+<input class="q-d"
+placeholder="Option D">
+
+<label>Correct Option</label>
+
+<select class="q-correct">
+
+<option value="A">A</option>
+<option value="B">B</option>
+<option value="C">C</option>
+<option value="D">D</option>
+
+</select>
+
+<label>Marks</label>
+
+<input class="q-marks"
+type="number"
+min="1"
+value="1">
+
+<button
+class="danger"
+onclick="this.parentElement.remove()">
+Remove Question
+</button>
+
+`;
+
+container.appendChild(div);
+
+}
+
+
+/* =========================
+CREATE TEST
+========================= */
+
+async function createTest(){
+
+const message =
+document.getElementById("teacherMessage");
+
+message.textContent = "";
+
+
+const title =
+document.getElementById("newTitle").value.trim();
+
+const className =
+document.getElementById("newClass").value.trim();
+
+const subject =
+document.getElementById("newSubject").value.trim();
+
+const chapter =
+document.getElementById("newChapter").value.trim();
+
+const duration =
+Number(document.getElementById("newDuration").value);
+
+
+if(!title ||
+!className ||
+!subject ||
+!chapter ||
+!duration){
+
+message.textContent =
+"Please complete all test details.";
+
+return;
+}
+
+
+const questionBoxes =
+document.querySelectorAll(".teacher-question");
+
+
+if(questionBoxes.length === 0){
+
+message.textContent =
+"Please add at least one question.";
+
+return;
+}
+
+
+let totalMarks = 0;
+
+const questions = [];
+
+
+questionBoxes.forEach(box => {
+
+const questionText =
+box.querySelector(".q-text").value.trim();
+
+const optionA =
+box.querySelector(".q-a").value.trim();
+
+const optionB =
+box.querySelector(".q-b").value.trim();
+
+const optionC =
+box.querySelector(".q-c").value.trim();
+
+const optionD =
+box.querySelector(".q-d").value.trim();
+
+const correct =
+box.querySelector(".q-correct").value;
+
+const marks =
+Number(box.querySelector(".q-marks").value);
+
+
+totalMarks += marks;
+
+
+questions.push({
+
+question_text: questionText,
+
+option_a: optionA,
+
+option_b: optionB,
+
+option_c: optionC,
+
+option_d: optionD,
+
+correct_option: correct,
+
+marks: marks
+
+});
+
+});
+
+
+for(const q of questions){
+
+if(!q.question_text ||
+!q.option_a ||
+!q.option_b ||
+!q.option_c ||
+!q.option_d){
+
+message.textContent =
+"Please complete every question and all options.";
+
+return;
+}
+
+}
+
+
+/* CREATE TEST */
+
+const {data:test,error:testError} =
+await db
+.from("tests")
+.insert({
+
+title:title,
+
+class_name:className,
+
+subject:subject,
+
+chapter:chapter,
+
+duration_minutes:duration,
+
+total_marks:totalMarks,
+
+is_active:true
+
+})
+.select()
+.single();
+
+
+if(testError){
+
+console.error(testError);
+
+message.textContent =
+"Test could not be created.";
+
+return;
+}
+
+
+/* CREATE QUESTIONS */
+
+const questionRows =
+questions.map(q => ({
+
+test_id:test.id,
+
+question_text:q.question_text,
+
+option_a:q.option_a,
+
+option_b:q.option_b,
+
+option_c:q.option_c,
+
+option_d:q.option_d,
+
+correct_option:q.correct_option,
+
+marks:q.marks
+
+}));
+
+
+const {error:questionError} =
+await db
+.from("questions")
+.insert(questionRows);
+
+
+if(questionError){
+
+console.error(questionError);
+
+message.textContent =
+"Test was created but questions could not be saved.";
+
+return;
+}
+
+
+message.style.color =
+"#07883b";
+
+message.textContent =
+"Test published successfully!";
+
+
+document.getElementById("newTitle").value = "";
+document.getElementById("newClass").value = "";
+document.getElementById("newSubject").value = "";
+document.getElementById("newChapter").value = "";
+document.getElementById("newDuration").value = "";
+
+document.getElementById("teacherQuestions").innerHTML = "";
+
+addQuestion();
+
+}
+
+
+/* =========================
+TEACHER LOGOUT
+========================= */
+
+function teacherLogout(){
+
+currentTeacher = null;
+
+goHome();
+
+}
+
+
+/* =========================
+ESCAPE HTML
+========================= */
+
+function escapeHtml(value){
+
+if(value === null ||
+value === undefined){
+
+return "";
+
+}
+
+return String(value)
+.replace(/&/g,"&amp;")
+.replace(/</g,"&lt;")
+.replace(/>/g,"&gt;")
+.replace(/"/g,"&quot;")
+.replace(/'/g,"&#039;");
+
 }
 
 </script>
