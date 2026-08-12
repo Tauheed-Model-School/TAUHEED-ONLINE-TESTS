@@ -619,6 +619,10 @@ Create Teacher
 
 <script>
 
+/* =========================
+SUPABASE
+========================= */
+
 const SUPABASE_URL =
 "https://ykvegtlzgzyfwmlvmpti.supabase.co";
 
@@ -632,18 +636,24 @@ SUPABASE_KEY
 );
 
 
-const CREATE_USER_FUNCTION =
-SUPABASE_URL + "/functions/v1/create-user";
-
+/* =========================
+GLOBAL VARIABLES
+========================= */
 
 let currentStudent = null;
 let currentTeacher = null;
 let currentAdmin = null;
+
 let currentTest = null;
 let currentQuestions = [];
+
 let timerInterval = null;
 let remainingSeconds = 0;
 
+
+/* =========================
+PAGE CONTROL
+========================= */
 
 function hideAll(){
 
@@ -661,7 +671,14 @@ const pages = [
 ];
 
 pages.forEach(id => {
-document.getElementById(id).classList.add("hidden");
+
+const element =
+document.getElementById(id);
+
+if(element){
+element.classList.add("hidden");
+}
+
 });
 
 }
@@ -679,7 +696,9 @@ currentQuestions = [];
 
 hideAll();
 
-document.getElementById("home").classList.remove("hidden");
+document
+.getElementById("home")
+.classList.remove("hidden");
 
 }
 
@@ -724,13 +743,19 @@ STUDENT LOGIN
 async function studentLogin(){
 
 const username =
-document.getElementById("studentUsername").value.trim();
+document
+.getElementById("studentUsername")
+.value
+.trim();
 
 const password =
-document.getElementById("studentPassword").value;
+document
+.getElementById("studentPassword")
+.value;
 
 const message =
-document.getElementById("studentLoginMessage");
+document
+.getElementById("studentLoginMessage");
 
 message.textContent = "";
 
@@ -743,7 +768,8 @@ return;
 }
 
 
-const {data,error} = await db
+const {data,error} =
+await db
 .from("students")
 .select("*")
 .eq("username",username)
@@ -756,7 +782,8 @@ if(error){
 console.error(error);
 
 message.textContent =
-"Database error. Please try again.";
+"Database error: " +
+error.message;
 
 return;
 }
@@ -773,11 +800,13 @@ return;
 
 currentStudent = data;
 
-document.getElementById("studentWelcome").textContent =
+document
+.getElementById("studentWelcome")
+.textContent =
 "Welcome, " +
 (data.name || username) +
 " — Roll No: " +
-data.roll_number;
+(data.roll_number || "");
 
 
 await loadTests();
@@ -805,7 +834,8 @@ container.innerHTML =
 "<p>Loading tests...</p>";
 
 
-const {data,error} = await db
+const {data,error} =
+await db
 .from("tests")
 .select("*")
 .eq("is_active",true)
@@ -818,7 +848,9 @@ if(error){
 console.error(error);
 
 container.innerHTML =
-"<p style='color:red;'>Unable to load tests.</p>";
+"<p style='color:red;'>Unable to load tests: " +
+escapeHtml(error.message) +
+"</p>";
 
 return;
 }
@@ -844,7 +876,8 @@ data.forEach(test => {
 const div =
 document.createElement("div");
 
-div.className = "test-card";
+div.className =
+"test-card";
 
 div.innerHTML = `
 
@@ -876,7 +909,8 @@ START TEST
 
 async function startTest(testId){
 
-const {data,error} = await db
+const {data,error} =
+await db
 .from("tests")
 .select("*")
 .eq("id",testId)
@@ -885,7 +919,9 @@ const {data,error} = await db
 
 if(error || !data){
 
-alert("Unable to open test.");
+alert(
+"Unable to open test."
+);
 
 return;
 }
@@ -905,7 +941,9 @@ if(response.error){
 
 console.error(response.error);
 
-alert("Unable to load questions.");
+alert(
+"Unable to load questions."
+);
 
 return;
 }
@@ -917,7 +955,9 @@ response.data || [];
 
 if(currentQuestions.length === 0){
 
-alert("This test has no questions yet.");
+alert(
+"This test has no questions yet."
+);
 
 return;
 }
@@ -930,13 +970,17 @@ document
 .classList.remove("hidden");
 
 
-document.getElementById("testTitle").textContent =
+document
+.getElementById("testTitle")
+.textContent =
 currentTest.title;
 
 
 renderQuestions();
 
-startTimer(currentTest.duration_minutes);
+startTimer(
+currentTest.duration_minutes
+);
 
 }
 
@@ -948,7 +992,9 @@ QUESTIONS
 function renderQuestions(){
 
 const container =
-document.getElementById("questionsContainer");
+document.getElementById(
+"questionsContainer"
+);
 
 container.innerHTML = "";
 
@@ -958,38 +1004,44 @@ currentQuestions.forEach((q,index) => {
 const div =
 document.createElement("div");
 
-div.className = "question";
+div.className =
+"question";
 
 
 div.innerHTML = `
 
 <h3>
-${index + 1}. ${escapeHtml(q.question_text)}
+${index + 1}.
+${escapeHtml(q.question_text)}
 </h3>
 
 <label class="option">
-<input type="radio"
+<input
+type="radio"
 name="q${q.id}"
 value="A">
 ${escapeHtml(q.option_a)}
 </label>
 
 <label class="option">
-<input type="radio"
+<input
+type="radio"
 name="q${q.id}"
 value="B">
 ${escapeHtml(q.option_b)}
 </label>
 
 <label class="option">
-<input type="radio"
+<input
+type="radio"
 name="q${q.id}"
 value="C">
 ${escapeHtml(q.option_c)}
 </label>
 
 <label class="option">
-<input type="radio"
+<input
+type="radio"
 name="q${q.id}"
 value="D">
 ${escapeHtml(q.option_d)}
@@ -1044,12 +1096,16 @@ submitTest();
 function updateTimer(){
 
 const min =
-Math.floor(remainingSeconds / 60);
+Math.floor(
+remainingSeconds / 60
+);
 
 const sec =
 remainingSeconds % 60;
 
-document.getElementById("timer").textContent =
+document
+.getElementById("timer")
+.textContent =
 String(min).padStart(2,"0") +
 ":" +
 String(sec).padStart(2,"0");
@@ -1073,7 +1129,6 @@ clearInterval(timerInterval);
 
 
 let score = 0;
-
 let totalMarks = 0;
 
 
@@ -1091,7 +1146,8 @@ document.querySelector(
 
 if(
 selected &&
-selected.value === q.correct_option
+selected.value ===
+q.correct_option
 ){
 
 score +=
@@ -1107,13 +1163,17 @@ await db
 .from("results")
 .insert({
 
-test_id: currentTest.id,
+test_id:
+currentTest.id,
 
-student_id: currentStudent.id,
+student_id:
+currentStudent.id,
 
-score: score,
+score:
+score,
 
-total_marks: totalMarks,
+total_marks:
+totalMarks,
 
 submitted_at:
 new Date().toISOString()
@@ -1126,17 +1186,23 @@ if(error){
 console.error(error);
 
 alert(
-"Result could not be saved."
+"Result could not be saved: " +
+error.message
 );
 
 return;
 }
 
 
-document.getElementById("score").textContent =
+document
+.getElementById("score")
+.textContent =
 score;
 
-document.getElementById("totalMarks").textContent =
+
+document
+.getElementById("totalMarks")
+.textContent =
 totalMarks;
 
 
@@ -1156,15 +1222,30 @@ TEACHER LOGIN
 async function teacherLogin(){
 
 const username =
-document.getElementById("teacherUsername").value.trim();
+document
+.getElementById("teacherUsername")
+.value
+.trim();
 
 const password =
-document.getElementById("teacherPassword").value;
+document
+.getElementById("teacherPassword")
+.value;
 
 const message =
-document.getElementById("teacherLoginMessage");
+document
+.getElementById("teacherLoginMessage");
 
 message.textContent = "";
+
+
+if(!username || !password){
+
+message.textContent =
+"Please enter username and password.";
+
+return;
+}
 
 
 const {data,error} =
@@ -1181,7 +1262,8 @@ if(error){
 console.error(error);
 
 message.textContent =
-"Database error.";
+"Database error: " +
+error.message;
 
 return;
 }
@@ -1199,7 +1281,9 @@ return;
 currentTeacher = data;
 
 
-document.getElementById("teacherWelcome").textContent =
+document
+.getElementById("teacherWelcome")
+.textContent =
 "Welcome, " +
 (data.Name || username);
 
@@ -1221,10 +1305,6 @@ document
 .getElementById("teacherDashboard")
 .classList.remove("hidden");
 
-document.getElementById("teacherQuestions").innerHTML = "";
-
-addQuestion();
-
 }
 
 
@@ -1235,7 +1315,9 @@ ADD QUESTION
 function addQuestion(){
 
 const container =
-document.getElementById("teacherQuestions");
+document.getElementById(
+"teacherQuestions"
+);
 
 const number =
 container.children.length + 1;
@@ -1256,7 +1338,8 @@ Question ${number}
 
 <label>Question</label>
 
-<textarea class="q-text"
+<textarea
+class="q-text"
 placeholder="Enter question"></textarea>
 
 <label>Option A</label>
@@ -1284,7 +1367,8 @@ placeholder="Enter question"></textarea>
 
 <label>Marks</label>
 
-<input class="q-marks"
+<input
+class="q-marks"
 type="number"
 min="1"
 value="1">
@@ -1311,7 +1395,8 @@ CREATE TEST
 async function createTest(){
 
 const message =
-document.getElementById("teacherMessage");
+document
+.getElementById("teacherMessage");
 
 message.textContent = "";
 
@@ -1320,20 +1405,34 @@ message.style.color =
 
 
 const title =
-document.getElementById("newTitle").value.trim();
+document
+.getElementById("newTitle")
+.value
+.trim();
 
 const className =
-document.getElementById("newClass").value.trim();
+document
+.getElementById("newClass")
+.value
+.trim();
 
 const subject =
-document.getElementById("newSubject").value.trim();
+document
+.getElementById("newSubject")
+.value
+.trim();
 
 const chapter =
-document.getElementById("newChapter").value.trim();
+document
+.getElementById("newChapter")
+.value
+.trim();
 
 const duration =
 Number(
-document.getElementById("newDuration").value
+document
+.getElementById("newDuration")
+.value
 );
 
 
@@ -1353,7 +1452,9 @@ return;
 
 
 const questionBoxes =
-document.querySelectorAll(".teacher-question");
+document.querySelectorAll(
+".teacher-question"
+);
 
 
 if(questionBoxes.length === 0){
@@ -1366,33 +1467,46 @@ return;
 
 
 let totalMarks = 0;
-
 const questions = [];
 
 
 questionBoxes.forEach(box => {
 
 const questionText =
-box.querySelector(".q-text").value.trim();
+box.querySelector(
+".q-text"
+).value.trim();
 
 const optionA =
-box.querySelector(".q-a").value.trim();
+box.querySelector(
+".q-a"
+).value.trim();
 
 const optionB =
-box.querySelector(".q-b").value.trim();
+box.querySelector(
+".q-b"
+).value.trim();
 
 const optionC =
-box.querySelector(".q-c").value.trim();
+box.querySelector(
+".q-c"
+).value.trim();
 
 const optionD =
-box.querySelector(".q-d").value.trim();
+box.querySelector(
+".q-d"
+).value.trim();
 
 const correct =
-box.querySelector(".q-correct").value;
+box.querySelector(
+".q-correct"
+).value;
 
 const marks =
 Number(
-box.querySelector(".q-marks").value
+box.querySelector(
+".q-marks"
+).value
 );
 
 
@@ -1401,19 +1515,26 @@ totalMarks += marks;
 
 questions.push({
 
-question_text:questionText,
+question_text:
+questionText,
 
-option_a:optionA,
+option_a:
+optionA,
 
-option_b:optionB,
+option_b:
+optionB,
 
-option_c:optionC,
+option_c:
+optionC,
 
-option_d:optionD,
+option_d:
+optionD,
 
-correct_option:correct,
+correct_option:
+correct,
 
-marks:marks
+marks:
+marks
 
 });
 
@@ -1440,24 +1561,34 @@ return;
 }
 
 
-const {data:test,error:testError} =
+const {
+data:test,
+error:testError
+} =
 await db
 .from("tests")
 .insert({
 
-title:title,
+title:
+title,
 
-class_name:className,
+class_name:
+className,
 
-subject:subject,
+subject:
+subject,
 
-chapter:chapter,
+chapter:
+chapter,
 
-duration_minutes:duration,
+duration_minutes:
+duration,
 
-total_marks:totalMarks,
+total_marks:
+totalMarks,
 
-is_active:true
+is_active:
+true
 
 })
 .select()
@@ -1479,26 +1610,36 @@ return;
 const questionRows =
 questions.map(q => ({
 
-test_id:test.id,
+test_id:
+test.id,
 
-question_text:q.question_text,
+question_text:
+q.question_text,
 
-option_a:q.option_a,
+option_a:
+q.option_a,
 
-option_b:q.option_b,
+option_b:
+q.option_b,
 
-option_c:q.option_c,
+option_c:
+q.option_c,
 
-option_d:q.option_d,
+option_d:
+q.option_d,
 
-correct_option:q.correct_option,
+correct_option:
+q.correct_option,
 
-marks:q.marks
+marks:
+q.marks
 
 }));
 
 
-const {error:questionError} =
+const {
+error:questionError
+} =
 await db
 .from("questions")
 .insert(questionRows);
@@ -1509,7 +1650,8 @@ if(questionError){
 console.error(questionError);
 
 message.textContent =
-"Test created, but questions could not be saved.";
+"Test created, but questions could not be saved: " +
+questionError.message;
 
 return;
 }
@@ -1522,17 +1664,29 @@ message.textContent =
 "Test published successfully!";
 
 
-document.getElementById("newTitle").value = "";
+document
+.getElementById("newTitle")
+.value = "";
 
-document.getElementById("newClass").value = "";
+document
+.getElementById("newClass")
+.value = "";
 
-document.getElementById("newSubject").value = "";
+document
+.getElementById("newSubject")
+.value = "";
 
-document.getElementById("newChapter").value = "";
+document
+.getElementById("newChapter")
+.value = "";
 
-document.getElementById("newDuration").value = "";
+document
+.getElementById("newDuration")
+.value = "";
 
-document.getElementById("teacherQuestions").innerHTML = "";
+document
+.getElementById("teacherQuestions")
+.innerHTML = "";
 
 addQuestion();
 
@@ -1553,7 +1707,9 @@ document
 
 
 const container =
-document.getElementById("resultsContainer");
+document.getElementById(
+"resultsContainer"
+);
 
 container.innerHTML =
 "<p>Loading results...</p>";
@@ -1579,7 +1735,9 @@ subject
 `)
 .order(
 "submitted_at",
-{ascending:false}
+{
+ascending:false
+}
 );
 
 
@@ -1588,7 +1746,10 @@ if(error){
 console.error(error);
 
 container.innerHTML =
-"<p style='color:#d92d20;'>Unable to load results.</p>";
+"<p style='color:#d92d20;'>" +
+"Unable to load results: " +
+escapeHtml(error.message) +
+"</p>";
 
 return;
 }
@@ -1597,7 +1758,9 @@ return;
 if(!data || data.length === 0){
 
 container.innerHTML =
-"<div class='no-results'>No results available.</div>";
+"<div class='no-results'>" +
+"No results available." +
+"</div>";
 
 return;
 }
@@ -1653,27 +1816,39 @@ html += `
 <tr>
 
 <td>
-${escapeHtml(student.name || "")}
+${escapeHtml(
+student.name || ""
+)}
 </td>
 
 <td>
-${escapeHtml(student.roll_number || "")}
+${escapeHtml(
+student.roll_number || ""
+)}
 </td>
 
 <td>
-${escapeHtml(student.class_name || "")}
+${escapeHtml(
+student.class_name || ""
+)}
 </td>
 
 <td>
-${escapeHtml(test.title || "")}
+${escapeHtml(
+test.title || ""
+)}
 </td>
 
 <td>
-${escapeHtml(test.subject || "")}
+${escapeHtml(
+test.subject || ""
+)}
 </td>
 
 <td>
-<strong>${result.score}</strong>
+<strong>
+${result.score}
+</strong>
 </td>
 
 <td>
@@ -1715,15 +1890,19 @@ ADMIN LOGIN
 async function adminLogin(){
 
 const username =
-document.getElementById("adminUsername")
-.value.trim();
+document
+.getElementById("adminUsername")
+.value
+.trim();
 
 const password =
-document.getElementById("adminPassword")
+document
+.getElementById("adminPassword")
 .value;
 
 const message =
-document.getElementById("adminLoginMessage");
+document
+.getElementById("adminLoginMessage");
 
 message.textContent = "";
 
@@ -1751,7 +1930,8 @@ if(error){
 console.error(error);
 
 message.textContent =
-"Database error. Please try again.";
+"Database error: " +
+error.message;
 
 return;
 }
@@ -1769,7 +1949,9 @@ return;
 currentAdmin = data;
 
 
-document.getElementById("adminWelcome").textContent =
+document
+.getElementById("adminWelcome")
+.textContent =
 "Welcome, " +
 (data.name || username);
 
@@ -1792,7 +1974,6 @@ document
 .classList.remove("hidden");
 
 loadStudents();
-
 loadTeachers();
 
 }
@@ -1805,7 +1986,10 @@ CREATE STUDENT
 async function createStudent(){
 
 const message =
-document.getElementById("studentCreateMessage");
+document
+.getElementById(
+"studentCreateMessage"
+);
 
 message.textContent = "";
 
@@ -1814,23 +1998,36 @@ message.style.color =
 
 
 const name =
-document.getElementById("studentName")
-.value.trim();
+document
+.getElementById("studentName")
+.value
+.trim();
 
 const roll =
-document.getElementById("studentRoll")
-.value.trim();
+document
+.getElementById("studentRoll")
+.value
+.trim();
 
 const className =
-document.getElementById("studentClass")
-.value.trim();
+document
+.getElementById("studentClass")
+.value
+.trim();
 
 const username =
-document.getElementById("studentNewUsername")
-.value.trim();
+document
+.getElementById(
+"studentNewUsername"
+)
+.value
+.trim();
 
 const password =
-document.getElementById("studentNewPassword")
+document
+.getElementById(
+"studentNewPassword"
+)
 .value;
 
 
@@ -1864,44 +2061,46 @@ message.textContent =
 
 try{
 
-const response =
-await fetch(
-CREATE_USER_FUNCTION,
-{
+const {data,error} =
+await db
+.from("students")
+.insert({
 
-method:"POST",
+name:
+name,
 
-headers:{
-"Content-Type":"application/json"
-},
+roll_number:
+roll,
 
-body:JSON.stringify({
+class_name:
+className,
 
-username:username,
+username:
+username,
 
-password:password,
-
-name:name,
-
-role:"student",
-
-class_name:className,
-
-roll_number:roll
+password:
+password
 
 })
-
-});
-
-
-const result =
-await response.json();
+.select()
+.single();
 
 
-if(!response.ok){
+if(error){
+
+console.error(error);
 
 message.textContent =
-result.error ||
+"Student could not be created: " +
+error.message;
+
+return;
+}
+
+
+if(!data){
+
+message.textContent =
 "Student could not be created.";
 
 return;
@@ -1915,15 +2114,29 @@ message.textContent =
 "Student account created successfully.";
 
 
-document.getElementById("studentName").value = "";
+document
+.getElementById("studentName")
+.value = "";
 
-document.getElementById("studentRoll").value = "";
+document
+.getElementById("studentRoll")
+.value = "";
 
-document.getElementById("studentClass").value = "";
+document
+.getElementById("studentClass")
+.value = "";
 
-document.getElementById("studentNewUsername").value = "";
+document
+.getElementById(
+"studentNewUsername"
+)
+.value = "";
 
-document.getElementById("studentNewPassword").value = "";
+document
+.getElementById(
+"studentNewPassword"
+)
+.value = "";
 
 
 loadStudents();
@@ -1934,7 +2147,8 @@ loadStudents();
 console.error(error);
 
 message.textContent =
-"Unable to connect to server.";
+"Error: " +
+error.message;
 
 }
 
@@ -1948,7 +2162,10 @@ CREATE TEACHER
 async function createTeacher(){
 
 const message =
-document.getElementById("teacherCreateMessage");
+document
+.getElementById(
+"teacherCreateMessage"
+);
 
 message.textContent = "";
 
@@ -1957,20 +2174,31 @@ message.style.color =
 
 
 const name =
-document.getElementById("teacherName")
-.value.trim();
+document
+.getElementById("teacherName")
+.value
+.trim();
 
 const username =
-document.getElementById("teacherNewUsername")
-.value.trim();
+document
+.getElementById(
+"teacherNewUsername"
+)
+.value
+.trim();
 
 const password =
-document.getElementById("teacherNewPassword")
+document
+.getElementById(
+"teacherNewPassword"
+)
 .value;
 
 const className =
-document.getElementById("teacherClass")
-.value.trim();
+document
+.getElementById("teacherClass")
+.value
+.trim();
 
 
 if(
@@ -2002,42 +2230,43 @@ message.textContent =
 
 try{
 
-const response =
-await fetch(
-CREATE_USER_FUNCTION,
-{
+const {data,error} =
+await db
+.from("teachers")
+.insert({
 
-method:"POST",
+Name:
+name,
 
-headers:{
-"Content-Type":"application/json"
-},
+Username:
+username,
 
-body:JSON.stringify({
+Password:
+password,
 
-username:username,
-
-password:password,
-
-name:name,
-
-role:"teacher",
-
-class_name:className
+class_name:
+className
 
 })
-
-});
-
-
-const result =
-await response.json();
+.select()
+.single();
 
 
-if(!response.ok){
+if(error){
+
+console.error(error);
 
 message.textContent =
-result.error ||
+"Teacher could not be created: " +
+error.message;
+
+return;
+}
+
+
+if(!data){
+
+message.textContent =
 "Teacher could not be created.";
 
 return;
@@ -2051,13 +2280,25 @@ message.textContent =
 "Teacher account created successfully.";
 
 
-document.getElementById("teacherName").value = "";
+document
+.getElementById("teacherName")
+.value = "";
 
-document.getElementById("teacherNewUsername").value = "";
+document
+.getElementById(
+"teacherNewUsername"
+)
+.value = "";
 
-document.getElementById("teacherNewPassword").value = "";
+document
+.getElementById(
+"teacherNewPassword"
+)
+.value = "";
 
-document.getElementById("teacherClass").value = "";
+document
+.getElementById("teacherClass")
+.value = "";
 
 
 loadTeachers();
@@ -2068,7 +2309,8 @@ loadTeachers();
 console.error(error);
 
 message.textContent =
-"Unable to connect to server.";
+"Error: " +
+error.message;
 
 }
 
@@ -2082,7 +2324,9 @@ ADMIN STUDENTS LIST
 async function loadStudents(){
 
 const container =
-document.getElementById("studentsAdminList");
+document.getElementById(
+"studentsAdminList"
+);
 
 container.innerHTML =
 "Loading...";
@@ -2091,8 +2335,12 @@ container.innerHTML =
 const {data,error} =
 await db
 .from("students")
-.select("name,roll_number,class_name,username")
-.order("roll_number");
+.select(
+"name,roll_number,class_name,username"
+)
+.order(
+"roll_number"
+);
 
 
 if(error){
@@ -2100,7 +2348,9 @@ if(error){
 console.error(error);
 
 container.innerHTML =
-"<p>Unable to load students.</p>";
+"<p>Unable to load students: " +
+escapeHtml(error.message) +
+"</p>";
 
 return;
 }
@@ -2143,13 +2393,29 @@ html += `
 
 <tr>
 
-<td>${escapeHtml(student.name || "")}</td>
+<td>
+${escapeHtml(
+student.name || ""
+)}
+</td>
 
-<td>${escapeHtml(student.roll_number || "")}</td>
+<td>
+${escapeHtml(
+student.roll_number || ""
+)}
+</td>
 
-<td>${escapeHtml(student.class_name || "")}</td>
+<td>
+${escapeHtml(
+student.class_name || ""
+)}
+</td>
 
-<td>${escapeHtml(student.username || "")}</td>
+<td>
+${escapeHtml(
+student.username || ""
+)}
+</td>
 
 </tr>
 
@@ -2159,9 +2425,13 @@ html += `
 
 
 html += `
+
 </tbody>
+
 </table>
+
 </div>
+
 `;
 
 
@@ -2178,7 +2448,9 @@ ADMIN TEACHERS LIST
 async function loadTeachers(){
 
 const container =
-document.getElementById("teachersAdminList");
+document.getElementById(
+"teachersAdminList"
+);
 
 container.innerHTML =
 "Loading...";
@@ -2196,7 +2468,9 @@ if(error){
 console.error(error);
 
 container.innerHTML =
-"<p>Unable to load teachers.</p>";
+"<p>Unable to load teachers: " +
+escapeHtml(error.message) +
+"</p>";
 
 return;
 }
@@ -2238,11 +2512,23 @@ html += `
 
 <tr>
 
-<td>${escapeHtml(teacher.Name || "")}</td>
+<td>
+${escapeHtml(
+teacher.Name || ""
+)}
+</td>
 
-<td>${escapeHtml(teacher.Username || "")}</td>
+<td>
+${escapeHtml(
+teacher.Username || ""
+)}
+</td>
 
-<td>${escapeHtml(teacher.class_name || "")}</td>
+<td>
+${escapeHtml(
+teacher.class_name || ""
+)}
+</td>
 
 </tr>
 
@@ -2252,9 +2538,13 @@ html += `
 
 
 html += `
+
 </tbody>
+
 </table>
+
 </div>
+
 `;
 
 
@@ -2298,21 +2588,6 @@ goHome();
 
 
 /* =========================
-BACK TO TEACHER DASHBOARD
-========================= */
-
-function showTeacherDashboard(){
-
-hideAll();
-
-document
-.getElementById("teacherDashboard")
-.classList.remove("hidden");
-
-}
-
-
-/* =========================
 ESCAPE HTML
 ========================= */
 
@@ -2340,6 +2615,17 @@ return String(value)
 .replace(/'/g,"&#039;");
 
 }
+
+
+/* =========================
+INITIAL PAGE
+========================= */
+
+hideAll();
+
+document
+.getElementById("home")
+.classList.remove("hidden");
 
 </script>
 
