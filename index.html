@@ -8,7 +8,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
 
 body{
     font-family:Arial,sans-serif;
@@ -28,10 +32,12 @@ header h1{
     margin-bottom:8px;
 }
 
-header p{opacity:.9}
+header p{
+    opacity:.9;
+}
 
 .container{
-    max-width:1000px;
+    max-width:1100px;
     margin:40px auto;
     padding:0 20px;
 }
@@ -46,7 +52,9 @@ header p{opacity:.9}
     margin-bottom:10px;
 }
 
-.welcome p{color:#667085}
+.welcome p{
+    color:#667085;
+}
 
 .portals{
     display:grid;
@@ -68,7 +76,9 @@ header p{opacity:.9}
     margin-bottom:15px;
 }
 
-.card h3{margin-bottom:10px}
+.card h3{
+    margin-bottom:10px;
+}
 
 .card p{
     color:#667085;
@@ -85,9 +95,12 @@ button{
     border-radius:8px;
     cursor:pointer;
     font-size:15px;
+    margin:4px;
 }
 
-button:hover{background:#0d2c4a}
+button:hover{
+    background:#0d2c4a;
+}
 
 input,select,textarea{
     width:100%;
@@ -108,7 +121,9 @@ label{
     font-size:14px;
 }
 
-.hidden{display:none}
+.hidden{
+    display:none;
+}
 
 .test-card{
     background:white;
@@ -118,7 +133,9 @@ label{
     box-shadow:0 3px 12px rgba(0,0,0,.07);
 }
 
-.test-card h3{margin-bottom:8px}
+.test-card h3{
+    margin-bottom:8px;
+}
 
 .test-card p{
     color:#667085;
@@ -143,7 +160,9 @@ label{
     cursor:pointer;
 }
 
-.option:hover{background:#eef4fa}
+.option:hover{
+    background:#eef4fa;
+}
 
 .result-box{
     background:white;
@@ -197,6 +216,40 @@ label{
     font-size:14px;
 }
 
+.results-table-wrapper{
+    overflow-x:auto;
+}
+
+.results-table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+    background:white;
+}
+
+.results-table th,
+.results-table td{
+    padding:13px 10px;
+    border-bottom:1px solid #eaecf0;
+    text-align:left;
+    white-space:nowrap;
+}
+
+.results-table th{
+    background:#123b63;
+    color:white;
+}
+
+.results-table tr:hover{
+    background:#f8fafc;
+}
+
+.no-results{
+    text-align:center;
+    padding:30px;
+    color:#667085;
+}
+
 footer{
     text-align:center;
     padding:25px;
@@ -234,7 +287,7 @@ footer{
 <div class="card">
 <div class="icon">👨‍🏫</div>
 <h3>Teacher Portal</h3>
-<p>Create tests, add questions and publish examinations.</p>
+<p>Create tests, add questions and view results.</p>
 <button onclick="showTeacherLogin()">Enter</button>
 </div>
 
@@ -367,6 +420,9 @@ Enter your teacher credentials.
 <p id="teacherWelcome"></p>
 </div>
 
+
+<!-- CREATE TEST -->
+
 <div class="card">
 
 <h3 style="margin-bottom:20px;">Create New Test</h3>
@@ -390,7 +446,7 @@ Enter your teacher credentials.
 
 <button onclick="addQuestion()">+ Add Question</button>
 
-<button class="success" onclick="createTest()" style="margin-left:8px;">
+<button class="success" onclick="createTest()">
 Save & Publish Test
 </button>
 
@@ -398,9 +454,54 @@ Save & Publish Test
 
 </div>
 
+
+<!-- RESULTS BUTTON -->
+
+<div class="card">
+
+<h3>Student Results</h3>
+
+<p>
+View submitted test results of students.
+</p>
+
+<button onclick="loadResults()">
+View Results
+</button>
+
 </div>
 
 </div>
+
+
+<!-- RESULTS PAGE -->
+
+<div id="teacherResults" class="hidden">
+
+<button class="back" onclick="showTeacherDashboard()">
+← Back to Dashboard
+</button>
+
+<div class="welcome">
+
+<h2>Student Results</h2>
+
+<p>Submitted examination results</p>
+
+</div>
+
+<div class="card">
+
+<div id="resultsContainer">
+<p>Loading results...</p>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
 
 <footer>
 © Tauheed Model School — Online Examination Portal
@@ -440,6 +541,7 @@ document.getElementById("testPage").classList.add("hidden");
 document.getElementById("resultPage").classList.add("hidden");
 document.getElementById("teacherLogin").classList.add("hidden");
 document.getElementById("teacherDashboard").classList.add("hidden");
+document.getElementById("teacherResults").classList.add("hidden");
 
 }
 
@@ -497,6 +599,7 @@ document.getElementById("loginMessage");
 
 message.textContent = "";
 
+
 if(!rollno || !classname){
 
 message.textContent =
@@ -536,9 +639,11 @@ return;
 
 currentStudent = data;
 
+
 document.getElementById("studentWelcome").textContent =
-"Welcome, " + data.Name +
+"Welcome, " + data.name +
 " — Roll No: " + data.roll_number;
+
 
 await loadTests();
 
@@ -1128,17 +1233,11 @@ totalMarks += marks;
 questions.push({
 
 question_text:questionText,
-
 option_a:optionA,
-
 option_b:optionB,
-
 option_c:optionC,
-
 option_d:optionD,
-
 correct_option:correct,
-
 marks:marks
 
 });
@@ -1171,17 +1270,11 @@ await db
 .insert({
 
 title:title,
-
 class_name:className,
-
 subject:subject,
-
 chapter:chapter,
-
 duration_minutes:duration,
-
 total_marks:totalMarks,
-
 is_active:true
 
 })
@@ -1206,19 +1299,12 @@ const questionRows =
 questions.map(q => ({
 
 test_id:test.id,
-
 question_text:q.question_text,
-
 option_a:q.option_a,
-
 option_b:q.option_b,
-
 option_c:q.option_c,
-
 option_d:q.option_d,
-
 correct_option:q.correct_option,
-
 marks:q.marks
 
 }));
@@ -1258,6 +1344,173 @@ document.getElementById("newDuration").value = "";
 document.getElementById("teacherQuestions").innerHTML = "";
 
 addQuestion();
+
+}
+
+
+/* LOAD RESULTS */
+
+async function loadResults(){
+
+hideAll();
+
+document
+.getElementById("teacherResults")
+.classList.remove("hidden");
+
+const container =
+document.getElementById("resultsContainer");
+
+container.innerHTML =
+"<p>Loading results...</p>";
+
+
+const {data,error} = await db
+.from("results")
+.select(`
+id,
+score,
+total_marks,
+submitted_at,
+students (
+name,
+roll_number,
+class_name
+),
+tests (
+title,
+subject
+)
+`)
+.order("submitted_at",{ascending:false});
+
+
+if(error){
+
+console.error(error);
+
+container.innerHTML = `
+<p style="color:#d92d20;">
+Unable to load results.
+</p>
+`;
+
+return;
+}
+
+
+if(!data || data.length === 0){
+
+container.innerHTML = `
+<div class="no-results">
+No student results available yet.
+</div>
+`;
+
+return;
+}
+
+
+let html = `
+
+<div class="results-table-wrapper">
+
+<table class="results-table">
+
+<thead>
+
+<tr>
+<th>Student Name</th>
+<th>Roll No.</th>
+<th>Class</th>
+<th>Test</th>
+<th>Subject</th>
+<th>Score</th>
+<th>Total</th>
+<th>Date & Time</th>
+</tr>
+
+</thead>
+
+<tbody>
+`;
+
+
+data.forEach(result => {
+
+const student =
+result.students || {};
+
+const test =
+result.tests || {};
+
+
+const date =
+result.submitted_at
+?
+new Date(result.submitted_at)
+.toLocaleString()
+:
+"";
+
+
+html += `
+
+<tr>
+
+<td>
+${escapeHtml(student.name || "")}
+</td>
+
+<td>
+${escapeHtml(student.roll_number || "")}
+</td>
+
+<td>
+${escapeHtml(student.class_name || "")}
+</td>
+
+<td>
+${escapeHtml(test.title || "")}
+</td>
+
+<td>
+${escapeHtml(test.subject || "")}
+</td>
+
+<td>
+<strong>
+${result.score}
+</strong>
+</td>
+
+<td>
+${result.total_marks}
+</td>
+
+<td>
+${escapeHtml(date)}
+</td>
+
+</tr>
+
+`;
+
+});
+
+
+html += `
+
+</tbody>
+
+</table>
+
+</div>
+
+`;
+
+
+container.innerHTML = html;
 
 }
 
