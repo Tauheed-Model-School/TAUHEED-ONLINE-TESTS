@@ -1,2631 +1,5259 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tauheed Model School — Online Portal</title>
 
-<title>Tauheed Model School - Online Examination Portal</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-<style>
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-}
+    :root {
+      --green: #0b6b4f;
+      --green-dark: #064936;
+      --green-light: #eaf7f2;
+      --gold: #c9a227;
+      --bg: #f5f7f6;
+      --card: #ffffff;
+      --text: #17221e;
+      --muted: #718078;
+      --border: #e4e9e6;
+      --danger: #c0392b;
+      --danger-bg: #fff0ee;
+      --success: #16865b;
+      --shadow: 0 12px 35px rgba(16, 37, 29, .08);
+      --radius: 18px;
+    }
 
-body{
-    font-family:Arial,sans-serif;
-    background:#f4f7fb;
-    color:#172033;
-}
+    body {
+      font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
-header{
-    background:#123b63;
-    color:white;
-    padding:28px 20px;
-    text-align:center;
-}
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
 
-header h1{
-    font-size:30px;
-    margin-bottom:8px;
-}
+    button {
+      cursor: pointer;
+    }
 
-header p{
-    opacity:.9;
-}
+    .hidden {
+      display: none !important;
+    }
 
-.container{
-    max-width:1100px;
-    margin:40px auto;
-    padding:0 20px;
-}
+    /* =========================
+       LOGIN
+    ========================= */
 
-.welcome{
-    text-align:center;
-    margin-bottom:30px;
-}
+    #loginScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 25px;
+      background:
+        radial-gradient(circle at top left, #dff4eb 0, transparent 35%),
+        radial-gradient(circle at bottom right, #eef5df 0, transparent 35%),
+        var(--bg);
+    }
 
-.welcome h2{
-    font-size:28px;
-    margin-bottom:10px;
-}
+    .login-card {
+      width: 100%;
+      max-width: 440px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 38px;
+      box-shadow: var(--shadow);
+    }
 
-.welcome p{
-    color:#667085;
-}
+    .school-logo {
+      width: 72px;
+      height: 72px;
+      border-radius: 22px;
+      background: var(--green);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 27px;
+      font-weight: 800;
+      box-shadow: 0 10px 25px rgba(11,107,79,.22);
+    }
 
-.portals{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:20px;
-}
+    .login-card h1 {
+      text-align: center;
+      font-size: 25px;
+      margin-bottom: 7px;
+    }
 
-.card{
-    background:white;
-    padding:30px 20px;
-    border-radius:14px;
-    text-align:center;
-    box-shadow:0 5px 20px rgba(0,0,0,.08);
-    margin-bottom:20px;
-}
+    .login-card .subtitle {
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 28px;
+      font-size: 14px;
+    }
 
-.icon{
-    font-size:42px;
-    margin-bottom:15px;
-}
+    .role-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      background: #f1f4f2;
+      border-radius: 13px;
+      padding: 4px;
+      margin-bottom: 22px;
+    }
 
-.card h3{
-    margin-bottom:10px;
-}
+    .role-tab {
+      border: 0;
+      background: transparent;
+      padding: 11px 5px;
+      border-radius: 10px;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 13px;
+    }
 
-.card p{
-    color:#667085;
-    font-size:14px;
-    line-height:1.5;
-    margin-bottom:20px;
-}
+    .role-tab.active {
+      background: white;
+      color: var(--green);
+      box-shadow: 0 3px 10px rgba(0,0,0,.06);
+    }
 
-button{
-    border:none;
-    background:#123b63;
-    color:white;
-    padding:11px 22px;
-    border-radius:8px;
-    cursor:pointer;
-    font-size:15px;
-    margin:4px;
-}
+    .form-group {
+      margin-bottom: 16px;
+    }
 
-button:hover{
-    background:#0d2c4a;
-}
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
 
-input,select,textarea{
-    width:100%;
-    padding:12px;
-    border:1px solid #d0d5dd;
-    border-radius:8px;
-    margin:8px 0 15px;
-    font-size:15px;
-}
+    .input,
+    .select,
+    .textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: white;
+      padding: 13px 14px;
+      border-radius: 12px;
+      outline: none;
+      color: var(--text);
+      transition: .2s;
+    }
 
-textarea{
-    min-height:90px;
-    resize:vertical;
-}
+    .input:focus,
+    .select:focus,
+    .textarea:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(11,107,79,.08);
+    }
 
-label{
-    font-weight:600;
-    font-size:14px;
-}
+    .textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
 
-.hidden{
-    display:none;
-}
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 17px;
+      font-weight: 750;
+      transition: .2s;
+    }
 
-.test-card{
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    margin-bottom:15px;
-    box-shadow:0 3px 12px rgba(0,0,0,.07);
-}
+    .btn:hover {
+      transform: translateY(-1px);
+    }
 
-.test-card h3{
-    margin-bottom:8px;
-}
+    .btn-primary {
+      background: var(--green);
+      color: white;
+    }
 
-.test-card p{
-    color:#667085;
-    margin-bottom:15px;
-    line-height:1.6;
-}
+    .btn-primary:hover {
+      background: var(--green-dark);
+    }
 
-.question{
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    margin-bottom:18px;
-    box-shadow:0 3px 12px rgba(0,0,0,.07);
-}
+    .btn-secondary {
+      background: #eef3f0;
+      color: var(--green-dark);
+    }
 
-.option{
-    display:block;
-    background:#f8fafc;
-    padding:12px;
-    margin-top:10px;
-    border-radius:8px;
-    cursor:pointer;
-}
+    .btn-danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
 
-.option:hover{
-    background:#eef4fa;
-}
+    .btn-small {
+      padding: 8px 11px;
+      font-size: 12px;
+      border-radius: 9px;
+    }
 
-.result-box{
-    background:white;
-    padding:35px;
-    text-align:center;
-    border-radius:15px;
-    box-shadow:0 5px 20px rgba(0,0,0,.08);
-}
+    .full {
+      width: 100%;
+    }
 
-.big-score{
-    font-size:42px;
-    font-weight:bold;
-    color:#123b63;
-    margin:20px;
-}
+    .error-box,
+    .success-box {
+      padding: 12px 14px;
+      border-radius: 11px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
 
-.back{
-    background:#667085;
-    margin-bottom:20px;
-}
+    .error-box {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
 
-.timer{
-    position:sticky;
-    top:10px;
-    background:#123b63;
-    color:white;
-    padding:12px;
-    border-radius:8px;
-    text-align:center;
-    margin-bottom:20px;
-    z-index:10;
-}
+    .success-box {
+      background: #eaf8f1;
+      color: var(--success);
+    }
 
-.teacher-question{
-    border:1px solid #d0d5dd;
-    padding:20px;
-    border-radius:10px;
-    margin-bottom:15px;
-}
+    /* =========================
+       APP
+    ========================= */
 
-.danger{
-    background:#d92d20;
-}
+    #app {
+      min-height: 100vh;
+    }
 
-.success{
-    background:#07883b;
-}
+    .topbar {
+      height: 72px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
 
-.message{
-    margin-top:12px;
-    font-size:14px;
-}
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+    }
 
-.results-table-wrapper{
-    overflow-x:auto;
-}
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--green);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
 
-.results-table{
-    width:100%;
-    border-collapse:collapse;
-    margin-top:20px;
-    background:white;
-}
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 11px;
+      margin-top: 2px;
+    }
 
-.results-table th,
-.results-table td{
-    padding:13px 10px;
-    border-bottom:1px solid #eaecf0;
-    text-align:left;
-    white-space:nowrap;
-}
+    .top-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-.results-table th{
-    background:#123b63;
-    color:white;
-}
+    .user-pill {
+      background: var(--green-light);
+      color: var(--green-dark);
+      padding: 8px 13px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+    }
 
-.no-results{
-    text-align:center;
-    padding:30px;
-    color:#667085;
-}
+    .app-layout {
+      display: flex;
+      min-height: calc(100vh - 72px);
+    }
 
-.admin-menu{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:20px;
-}
+    .sidebar {
+      width: 245px;
+      background: #fff;
+      border-right: 1px solid var(--border);
+      padding: 22px 15px;
+      flex-shrink: 0;
+    }
 
-.small-card{
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    box-shadow:0 3px 12px rgba(0,0,0,.07);
-}
+    .nav-title {
+      color: #9aa59f;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      margin: 8px 12px 9px;
+    }
 
-footer{
-    text-align:center;
-    padding:25px;
-    color:#667085;
-}
-</style>
+    .nav-btn {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: #5e6d65;
+      text-align: left;
+      padding: 11px 13px;
+      border-radius: 11px;
+      margin-bottom: 3px;
+      font-weight: 650;
+      font-size: 13px;
+    }
+
+    .nav-btn:hover,
+    .nav-btn.active {
+      background: var(--green-light);
+      color: var(--green-dark);
+    }
+
+    .main {
+      flex: 1;
+      padding: 28px;
+      min-width: 0;
+    }
+
+    .page-title {
+      font-size: 27px;
+      margin-bottom: 5px;
+    }
+
+    .page-subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 25px;
+    }
+
+    /* =========================
+       CARDS / STATS
+    ========================= */
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 5px 18px rgba(0,0,0,.025);
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 29px;
+      font-weight: 850;
+      color: var(--green-dark);
+    }
+
+    .card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 5px 18px rgba(0,0,0,.025);
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 17px;
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
+
+    /* =========================
+       TABLES
+    ========================= */
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 650px;
+    }
+
+    th {
+      text-align: left;
+      color: #849089;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      padding: 11px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 13px 10px;
+      border-bottom: 1px solid #edf0ee;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .badge-green {
+      background: #e9f8f0;
+      color: #16704f;
+    }
+
+    .badge-gray {
+      background: #f0f2f1;
+      color: #68756e;
+    }
+
+    .badge-red {
+      background: #fff0ee;
+      color: #bd3c30;
+    }
+
+    /* =========================
+       TEST BUILDER
+    ========================= */
+
+    .question-builder {
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      padding: 18px;
+      margin-bottom: 14px;
+      background: #fbfcfb;
+    }
+
+    .question-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 13px;
+    }
+
+    .question-number {
+      font-weight: 800;
+      color: var(--green-dark);
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .option-row {
+      position: relative;
+    }
+
+    .option-label {
+      position: absolute;
+      left: 10px;
+      top: 12px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--green);
+    }
+
+    .option-row .input {
+      padding-left: 32px;
+    }
+
+    .marks-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .marks-input {
+      width: 90px;
+    }
+
+    /* =========================
+       TEST CARDS
+    ========================= */
+
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .test-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      padding: 18px;
+      transition: .2s;
+    }
+
+    .test-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .test-subject {
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+
+    .test-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .test-meta {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .test-actions {
+      margin-top: 15px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* =========================
+       EXAM
+    ========================= */
+
+    .exam-header {
+      position: sticky;
+      top: 72px;
+      z-index: 20;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      box-shadow: 0 7px 20px rgba(0,0,0,.05);
+    }
+
+    .timer {
+      background: #fff3dc;
+      color: #9b6500;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 18px;
+      font-weight: 850;
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .timer.danger {
+      background: #fff0ee;
+      color: var(--danger);
+    }
+
+    .exam-question {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      padding: 22px;
+      margin-bottom: 14px;
+    }
+
+    .exam-q-number {
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+      margin-bottom: 9px;
+    }
+
+    .exam-q-text {
+      font-size: 16px;
+      font-weight: 750;
+      line-height: 1.55;
+      margin-bottom: 15px;
+    }
+
+    .answer-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: .15s;
+    }
+
+    .answer-option:hover {
+      border-color: var(--green);
+      background: var(--green-light);
+    }
+
+    .answer-option.selected {
+      border-color: var(--green);
+      background: var(--green-light);
+    }
+
+    .answer-option input {
+      accent-color: var(--green);
+    }
+
+    .result-hero {
+      background: linear-gradient(135deg, var(--green-dark), var(--green));
+      color: white;
+      border-radius: 22px;
+      padding: 30px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .result-score {
+      font-size: 48px;
+      font-weight: 900;
+      margin: 8px 0;
+    }
+
+    /* =========================
+       MODAL / LOADER
+    ========================= */
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 22, 16, .55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1000;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 520px;
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 25px 70px rgba(0,0,0,.2);
+    }
+
+    .modal h3 {
+      margin-bottom: 8px;
+      font-size: 19px;
+    }
+
+    .modal p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 9px;
+    }
+
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,.75);
+      backdrop-filter: blur(3px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loader-box {
+      background: white;
+      padding: 20px 25px;
+      border-radius: 15px;
+      box-shadow: var(--shadow);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      max-width: 360px;
+      padding: 13px 16px;
+      border-radius: 12px;
+      background: #1d2a24;
+      color: white;
+      z-index: 3000;
+      box-shadow: var(--shadow);
+      font-size: 13px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 45px 20px;
+      color: var(--muted);
+    }
+
+    .empty strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
+
+    .search-input {
+      max-width: 300px;
+    }
+
+    @media (max-width: 1100px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .test-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 800px) {
+      .sidebar {
+        width: 205px;
+      }
+
+      .main {
+        padding: 18px;
+      }
+
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .test-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 650px) {
+      .topbar {
+        padding: 0 15px;
+      }
+
+      .brand-text {
+        display: none;
+      }
+
+      .sidebar {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        top: 72px;
+        width: 68px;
+        z-index: 90;
+        padding: 12px 8px;
+      }
+
+      .nav-title {
+        display: none;
+      }
+
+      .nav-btn {
+        text-align: center;
+        padding: 12px 5px;
+        font-size: 10px;
+      }
+
+      .main {
+        margin-left: 68px;
+        padding: 15px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .stat-card {
+        padding: 15px;
+      }
+
+      .stat-value {
+        font-size: 24px;
+      }
+
+      .login-card {
+        padding: 25px 20px;
+      }
+
+      .options-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .exam-header {
+        top: 72px;
+        padding: 12px;
+      }
+
+      .timer {
+        font-size: 15px;
+        min-width: 80px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<header>
-<h1>TAUHEED MODEL SCHOOL</h1>
-<p>Online Examination Portal</p>
-</header>
+  <!-- =====================================================
+       LOADER
+  ====================================================== -->
 
-<div class="container">
+  <div id="loader" class="hidden">
+    <div class="loader-box" id="loaderText">Loading...</div>
+  </div>
 
-<!-- HOME -->
+  <!-- =====================================================
+       LOGIN
+  ====================================================== -->
 
-<div id="home">
+  <section id="loginScreen">
 
-<div class="welcome">
-<h2>Welcome</h2>
-<p>Online testing and examination system</p>
-</div>
+    <div class="login-card">
 
-<div class="portals">
+      <div class="school-logo">TMS</div>
 
-<div class="card">
-<div class="icon">🎓</div>
-<h3>Student Portal</h3>
-<p>Access your assigned online tests.</p>
-<button onclick="showStudentLogin()">Enter</button>
-</div>
+      <h1>Tauheed Model School</h1>
 
-<div class="card">
-<div class="icon">👨‍🏫</div>
-<h3>Teacher Portal</h3>
-<p>Create tests, add questions and view results.</p>
-<button onclick="showTeacherLogin()">Enter</button>
-</div>
+      <div class="subtitle">
+        Secure Online Examination Portal
+      </div>
 
-<div class="card">
-<div class="icon">🔐</div>
-<h3>Admin Portal</h3>
-<p>Manage students, teachers and examination system.</p>
-<button onclick="showAdminLogin()">Enter</button>
-</div>
+      <div class="role-tabs">
+        <button class="role-tab active" data-role="student">
+          Student
+        </button>
 
-</div>
-</div>
+        <button class="role-tab" data-role="teacher">
+          Teacher
+        </button>
 
+        <button class="role-tab" data-role="admin">
+          Admin
+        </button>
+      </div>
 
-<!-- STUDENT LOGIN -->
+      <div id="loginError" class="error-box hidden"></div>
 
-<div id="studentLogin" class="hidden">
+      <form id="loginForm">
 
-<button class="back" onclick="goHome()">← Back</button>
+        <div class="form-group">
+          <label>Username</label>
+          <input
+            id="loginUsername"
+            class="input"
+            autocomplete="username"
+            placeholder="Enter username"
+            required
+          >
+        </div>
 
-<div class="card">
+        <div class="form-group">
+          <label>Password</label>
+          <input
+            id="loginPassword"
+            class="input"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Enter password"
+            required
+          >
+        </div>
 
-<h2>Student Login</h2>
+        <button class="btn btn-primary full" type="submit">
+          Sign In
+        </button>
 
-<label>Username</label>
-<input id="studentUsername" type="text" placeholder="Enter username">
+      </form>
 
-<label>Password</label>
-<input id="studentPassword" type="password" placeholder="Enter password">
+    </div>
 
-<button onclick="studentLogin()">Login</button>
+  </section>
 
-<p id="studentLoginMessage" class="message"></p>
 
-</div>
-</div>
+  <!-- =====================================================
+       APPLICATION
+  ====================================================== -->
 
+  <section id="app" class="hidden">
 
-<!-- STUDENT TEST LIST -->
+    <header class="topbar">
 
-<div id="testList" class="hidden">
+      <div class="brand">
+        <div class="brand-icon">T</div>
 
-<button class="back" onclick="studentLogout()">← Logout</button>
+        <div class="brand-text">
+          Tauheed Model School
+          <small>Online Examination Portal</small>
+        </div>
+      </div>
 
-<div class="welcome">
-<h2>Available Tests</h2>
-<p id="studentWelcome"></p>
-</div>
+      <div class="top-user">
 
-<div id="testsContainer"></div>
+        <span id="topUser" class="user-pill">
+          User
+        </span>
 
-</div>
+        <button
+          id="logoutBtn"
+          class="btn btn-secondary btn-small"
+        >
+          Logout
+        </button>
 
+      </div>
 
-<!-- TEST PAGE -->
+    </header>
 
-<div id="testPage" class="hidden">
 
-<div class="timer">
-Time Remaining:
-<span id="timer">00:00</span>
-</div>
+    <div class="app-layout">
 
-<h2 id="testTitle" style="margin-bottom:20px;"></h2>
+      <aside class="sidebar">
+        <div id="navigation"></div>
+      </aside>
 
-<div id="questionsContainer"></div>
+      <main class="main" id="mainContent"></main>
 
-<button onclick="submitTest()">Submit Test</button>
+    </div>
 
-</div>
+  </section>
 
 
-<!-- RESULT -->
+  <!-- =====================================================
+       MODAL
+  ====================================================== -->
 
-<div id="resultPage" class="hidden">
+  <div id="modalBackdrop" class="modal-backdrop hidden">
 
-<div class="result-box">
+    <div class="modal">
 
-<h2>Test Submitted Successfully 🎉</h2>
+      <h3 id="modalTitle"></h3>
 
-<p>Your score is:</p>
+      <p id="modalMessage"></p>
 
-<div class="big-score">
-<span id="score"></span> /
-<span id="totalMarks"></span>
-</div>
+      <div class="modal-actions">
 
-<button onclick="studentLogout()">Return Home</button>
+        <button
+          id="modalCancel"
+          class="btn btn-secondary"
+        >
+          Cancel
+        </button>
 
-</div>
-</div>
+        <button
+          id="modalConfirm"
+          class="btn btn-danger"
+        >
+          Confirm
+        </button>
 
+      </div>
 
-<!-- TEACHER LOGIN -->
+    </div>
 
-<div id="teacherLogin" class="hidden">
+  </div>
 
-<button class="back" onclick="goHome()">← Back</button>
 
-<div class="card">
-
-<h2>Teacher Login</h2>
-
-<label>Username</label>
-<input id="teacherUsername" type="text">
-
-<label>Password</label>
-<input id="teacherPassword" type="password">
-
-<button onclick="teacherLogin()">Login</button>
-
-<p id="teacherLoginMessage" class="message"></p>
-
-</div>
-</div>
-
-
-<!-- TEACHER DASHBOARD -->
-
-<div id="teacherDashboard" class="hidden">
-
-<button class="back" onclick="teacherLogout()">← Logout</button>
-
-<div class="welcome">
-<h2>Teacher Dashboard</h2>
-<p id="teacherWelcome"></p>
-</div>
-
-<div class="card">
-
-<h3>Create New Test</h3>
-
-<label>Test Title</label>
-<input id="newTitle" type="text">
-
-<label>Class</label>
-<input id="newClass" type="text">
-
-<label>Subject</label>
-<input id="newSubject" type="text">
-
-<label>Chapter</label>
-<input id="newChapter" type="text">
-
-<label>Duration (Minutes)</label>
-<input id="newDuration" type="number" min="1">
-
-<div id="teacherQuestions"></div>
-
-<button onclick="addQuestion()">+ Add Question</button>
-
-<button class="success" onclick="createTest()">
-Save & Publish Test
-</button>
-
-<p id="teacherMessage" class="message"></p>
-
-</div>
-
-<div class="card">
-
-<h3>Student Results</h3>
-
-<p>View submitted test results.</p>
-
-<button onclick="loadResults()">View Results</button>
-
-</div>
-
-</div>
-
-
-<!-- TEACHER RESULTS -->
-
-<div id="teacherResults" class="hidden">
-
-<button class="back" onclick="showTeacherDashboard()">
-← Back to Dashboard
-</button>
-
-<div class="welcome">
-<h2>Student Results</h2>
-<p>Submitted examination results</p>
-</div>
-
-<div class="card">
-<div id="resultsContainer">
-Loading results...
-</div>
-</div>
-
-</div>
-
-
-<!-- ADMIN LOGIN -->
-
-<div id="adminLogin" class="hidden">
-
-<button class="back" onclick="goHome()">← Back</button>
-
-<div class="card">
-
-<h2>Admin Login</h2>
-
-<label>Username</label>
-<input id="adminUsername" type="text" placeholder="Username">
-
-<label>Password</label>
-<input id="adminPassword" type="password" placeholder="Password">
-
-<button onclick="adminLogin()">Login</button>
-
-<p id="adminLoginMessage" class="message"></p>
-
-</div>
-</div>
-
-
-<!-- ADMIN DASHBOARD -->
-
-<div id="adminDashboard" class="hidden">
-
-<button class="back" onclick="adminLogout()">← Logout</button>
-
-<div class="welcome">
-<h2>Admin Dashboard</h2>
-<p id="adminWelcome"></p>
-</div>
-
-
-<div class="admin-menu">
-
-<div class="small-card">
-
-<h3>Add Student</h3>
-
-<label>Name</label>
-<input id="studentName" type="text">
-
-<label>Roll Number</label>
-<input id="studentRoll" type="text">
-
-<label>Class</label>
-<input id="studentClass" type="text">
-
-<label>Username</label>
-<input id="studentNewUsername" type="text">
-
-<label>Password</label>
-<input id="studentNewPassword" type="password">
-
-<button class="success" onclick="createStudent()">
-Create Student
-</button>
-
-<p id="studentCreateMessage" class="message"></p>
-
-</div>
-
-
-<div class="small-card">
-
-<h3>Add Teacher</h3>
-
-<label>Name</label>
-<input id="teacherName" type="text">
-
-<label>Username</label>
-<input id="teacherNewUsername" type="text">
-
-<label>Password</label>
-<input id="teacherNewPassword" type="password">
-
-<label>Class</label>
-<input id="teacherClass" type="text">
-
-<button class="success" onclick="createTeacher()">
-Create Teacher
-</button>
-
-<p id="teacherCreateMessage" class="message"></p>
-
-</div>
-
-</div>
-
-
-<div class="card">
-
-<h3>Students</h3>
-
-<button onclick="loadStudents()">Refresh Students</button>
-
-<div id="studentsAdminList"></div>
-
-</div>
-
-
-<div class="card">
-
-<h3>Teachers</h3>
-
-<button onclick="loadTeachers()">Refresh Teachers</button>
-
-<div id="teachersAdminList"></div>
-
-</div>
-
-</div>
-
-</div>
-
-
-<footer>
-© Tauheed Model School — Online Examination Portal
-</footer>
+  <div id="toast" class="toast hidden"></div>
 
 
 <script>
-
-/* =========================
-SUPABASE
-========================= */
+/* =========================================================
+   SUPABASE
+========================================================= */
 
 const SUPABASE_URL =
-"https://ykvegtlzgzyfwmlvmpti.supabase.co";
+  "https://ykvegtlzgzyfwmlvmpti.supabase.co";
 
-const SUPABASE_KEY =
-"sb_publishable_elTo8AsqYV5HQs5RG26OFg_IPsqv1UW";
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_elTo8AsqYV5HQs5RG26OFg_IPsqv1UW";
 
-const db =
-supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let currentRole = "student";
+let currentUser = null;
+let currentProfile = null;
+
+let adminData = null;
+let teacherData = null;
+let studentData = null;
+
+let currentExam = null;
+let examAnswers = {};
+let examTimer = null;
+let examSecondsRemaining = 0;
+
+let modalResolve = null;
+
+
+/* =========================================================
+   DOM
+========================================================= */
+
+const loginScreen =
+  document.getElementById("loginScreen");
+
+const app =
+  document.getElementById("app");
+
+const mainContent =
+  document.getElementById("mainContent");
+
+const navigation =
+  document.getElementById("navigation");
+
+const topUser =
+  document.getElementById("topUser");
+
+const loader =
+  document.getElementById("loader");
+
+const loaderText =
+  document.getElementById("loaderText");
+
+const toast =
+  document.getElementById("toast");
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function showLoader(text = "Loading...") {
+  loaderText.textContent = text;
+  loader.classList.remove("hidden");
+}
+
+function hideLoader() {
+  loader.classList.add("hidden");
+}
+
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function showToast(message, type = "normal") {
+
+  toast.textContent = message;
+
+  toast.style.background =
+    type === "error"
+      ? "#b93228"
+      : type === "success"
+        ? "#16724f"
+        : "#1d2a24";
+
+  toast.classList.remove("hidden");
+
+  setTimeout(() => {
+    toast.classList.add("hidden");
+  }, 3500);
+}
+
+function showLoginError(message) {
+  const box =
+    document.getElementById("loginError");
+
+  box.textContent = message;
+  box.classList.remove("hidden");
+}
+
+function clearLoginError() {
+  document
+    .getElementById("loginError")
+    .classList.add("hidden");
+}
+
+function formatDate(date) {
+
+  if (!date) return "—";
+
+  return new Date(date).toLocaleString(
+    undefined,
+    {
+      dateStyle: "medium",
+      timeStyle: "short"
+    }
+  );
+}
+
+function percent(score, total) {
+
+  if (!total) return 0;
+
+  return Math.round(
+    (Number(score) / Number(total)) * 100
+  );
+}
+
+function authEmail(username) {
+  return `${String(username).trim().toLowerCase()}@tauheed.local`;
+}
+
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+function confirmAction(title, message, confirmText = "Confirm") {
+
+  return new Promise(resolve => {
+
+    modalResolve = resolve;
+
+    document.getElementById("modalTitle").textContent =
+      title;
+
+    document.getElementById("modalMessage").textContent =
+      message;
+
+    document.getElementById("modalConfirm").textContent =
+      confirmText;
+
+    document
+      .getElementById("modalBackdrop")
+      .classList.remove("hidden");
+  });
+}
+
+function closeModal(result) {
+
+  document
+    .getElementById("modalBackdrop")
+    .classList.add("hidden");
+
+  if (modalResolve) {
+    modalResolve(result);
+    modalResolve = null;
+  }
+}
+
+document
+  .getElementById("modalCancel")
+  .addEventListener(
+    "click",
+    () => closeModal(false)
+  );
+
+document
+  .getElementById("modalConfirm")
+  .addEventListener(
+    "click",
+    () => closeModal(true)
+  );
+
+
+/* =========================================================
+   EDGE FUNCTION CALL
+========================================================= */
+
+async function callFunction(
+  functionName,
+  payload
+) {
+
+  const {
+    data: {
+      session
+    }
+  } = await supabaseClient.auth.getSession();
+
+  if (!session) {
+    throw new Error(
+      "Your session has expired. Please sign in again."
+    );
+  }
+
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/functions/v1/${functionName}`,
+      {
+        method: "POST",
+
+        headers: {
+          "Authorization":
+            `Bearer ${session.access_token}`,
+
+          "apikey":
+            SUPABASE_PUBLISHABLE_KEY,
+
+          "Content-Type":
+            "application/json"
+        },
+
+        body:
+          JSON.stringify(payload)
+      }
+    );
+
+  let data = {};
+
+  try {
+    data = await response.json();
+  } catch {
+    data = {};
+  }
+
+  if (!response.ok) {
+
+    throw new Error(
+      data.error ||
+      data.message ||
+      `Request failed (${response.status})`
+    );
+  }
+
+  return data;
+}
+
+
+/* =========================================================
+   LOGIN ROLE
+========================================================= */
+
+document
+  .querySelectorAll(".role-tab")
+  .forEach(button => {
+
+    button.addEventListener(
+      "click",
+      () => {
+
+        document
+          .querySelectorAll(".role-tab")
+          .forEach(btn =>
+            btn.classList.remove("active")
+          );
+
+        button.classList.add("active");
+
+        currentRole =
+          button.dataset.role;
+
+        clearLoginError();
+      }
+    );
+  });
+
+
+/* =========================================================
+   LOGIN
+========================================================= */
+
+document
+  .getElementById("loginForm")
+  .addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+      clearLoginError();
+
+      const username =
+        document
+          .getElementById("loginUsername")
+          .value
+          .trim();
+
+      const password =
+        document
+          .getElementById("loginPassword")
+          .value;
+
+      if (!username || !password) {
+        showLoginError(
+          "Username and password are required."
+        );
+        return;
+      }
+
+      showLoader("Signing in...");
+
+      try {
+
+        const {
+          data,
+          error
+        } =
+          await supabaseClient.auth.signInWithPassword({
+            email:
+              authEmail(username),
+
+            password
+          });
+
+        if (error) {
+          throw error;
+        }
+
+        currentUser =
+          data.user;
+
+        await determineRole();
+
+        loginScreen.classList.add("hidden");
+        app.classList.remove("hidden");
+
+        topUser.textContent =
+          currentProfile?.name ||
+          currentProfile?.Name ||
+          currentProfile?.username ||
+          currentProfile?.Username ||
+          username;
+
+        buildNavigation();
+
+        if (currentRole === "admin") {
+          await showAdminDashboard();
+        }
+        else if (currentRole === "teacher") {
+          await showTeacherDashboard();
+        }
+        else {
+          await showStudentDashboard();
+        }
+
+        showToast(
+          "Signed in successfully.",
+          "success"
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        showLoginError(
+          error.message ||
+          "Unable to sign in."
+        );
+
+        await supabaseClient.auth.signOut();
+
+      } finally {
+
+        hideLoader();
+      }
+    }
+  );
+
+
+/* =========================================================
+   DETERMINE ROLE
+========================================================= */
+
+async function determineRole() {
+
+  const roles = [
+    "admin",
+    "teacher",
+    "student"
+  ];
+
+  for (const role of roles) {
+
+    try {
+
+      if (role === "admin") {
+
+        const data =
+          await callFunction(
+            "portal-data",
+            {
+              action:
+                "admin_dashboard"
+            }
+          );
+
+        if (data.success) {
+
+          currentRole = "admin";
+          adminData = data;
+          currentProfile = data.admin;
+
+          return;
+        }
+      }
+
+      if (role === "teacher") {
+
+        const data =
+          await callFunction(
+            "portal-data",
+            {
+              action:
+                "teacher_dashboard"
+            }
+          );
+
+        if (data.success) {
+
+          currentRole = "teacher";
+          teacherData = data;
+          currentProfile = data.teacher;
+
+          return;
+        }
+      }
+
+      if (role === "student") {
+
+        const data =
+          await callFunction(
+            "portal-data",
+            {
+              action:
+                "student_dashboard"
+            }
+          );
+
+        if (data.success) {
+
+          currentRole = "student";
+          studentData = data;
+          currentProfile = data.student;
+
+          return;
+        }
+      }
+
+    } catch {
+      // Try next role.
+    }
+  }
+
+  throw new Error(
+    "Your account exists, but no Student, Teacher or Admin profile is linked to it."
+  );
+}
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+function buildNavigation() {
+
+  if (currentRole === "admin") {
+
+    navigation.innerHTML = `
+      <div class="nav-title">Administration</div>
+
+      <button class="nav-btn active"
+        data-page="admin-dashboard">
+        Dashboard
+      </button>
+
+      <button class="nav-btn"
+        data-page="admin-students">
+        Students
+      </button>
+
+      <button class="nav-btn"
+        data-page="admin-teachers">
+        Teachers
+      </button>
+
+      <button class="nav-btn"
+        data-page="admin-tests">
+        Tests
+      </button>
+
+      <button class="nav-btn"
+        data-page="admin-results">
+        Results
+      </button>
+    `;
+  }
+
+  else if (currentRole === "teacher") {
+
+    navigation.innerHTML = `
+      <div class="nav-title">Teacher</div>
+
+      <button class="nav-btn active"
+        data-page="teacher-dashboard">
+        Dashboard
+      </button>
+
+      <button class="nav-btn"
+        data-page="teacher-create">
+        Create Test
+      </button>
+
+      <button class="nav-btn"
+        data-page="teacher-tests">
+        My Tests
+      </button>
+    `;
+  }
+
+  else {
+
+    navigation.innerHTML = `
+      <div class="nav-title">Student</div>
+
+      <button class="nav-btn active"
+        data-page="student-dashboard">
+        Dashboard
+      </button>
+
+      <button class="nav-btn"
+        data-page="student-tests">
+        Available Tests
+      </button>
+
+      <button class="nav-btn"
+        data-page="student-results">
+        My Results
+      </button>
+    `;
+  }
+
+
+  navigation
+    .querySelectorAll(".nav-btn")
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        async () => {
+
+          navigation
+            .querySelectorAll(".nav-btn")
+            .forEach(btn =>
+              btn.classList.remove("active")
+            );
+
+          button.classList.add("active");
+
+          await navigate(
+            button.dataset.page
+          );
+        }
+      );
+    });
+}
+
+
+async function navigate(page) {
+
+  try {
+
+    if (page === "admin-dashboard")
+      return showAdminDashboard();
+
+    if (page === "admin-students")
+      return showAdminStudents();
+
+    if (page === "admin-teachers")
+      return showAdminTeachers();
+
+    if (page === "admin-tests")
+      return showAdminTests();
+
+    if (page === "admin-results")
+      return showAdminResults();
+
+    if (page === "teacher-dashboard")
+      return showTeacherDashboard();
+
+    if (page === "teacher-create")
+      return showTeacherCreate();
+
+    if (page === "teacher-tests")
+      return showTeacherTests();
+
+    if (page === "student-dashboard")
+      return showStudentDashboard();
+
+    if (page === "student-tests")
+      return showStudentTests();
+
+    if (page === "student-results")
+      return showStudentResults();
+
+  } catch (error) {
+
+    console.error(error);
+
+    showToast(
+      error.message ||
+      "Unable to load page.",
+      "error"
+    );
+  }
+}
+
+
+/* =========================================================
+   ADMIN DATA REFRESH
+========================================================= */
+
+async function refreshAdminData() {
+
+  adminData =
+    await callFunction(
+      "portal-data",
+      {
+        action:
+          "admin_dashboard"
+      }
+    );
+
+  currentProfile =
+    adminData.admin;
+}
+
+
+/* =========================================================
+   ADMIN DASHBOARD
+========================================================= */
+
+async function showAdminDashboard() {
+
+  showLoader("Loading dashboard...");
+
+  try {
+
+    await refreshAdminData();
+
+    const students =
+      adminData.students || [];
+
+    const teachers =
+      adminData.teachers || [];
+
+    const tests =
+      adminData.tests || [];
+
+    const results =
+      adminData.results || [];
+
+    mainContent.innerHTML = `
+
+      <h1 class="page-title">
+        Admin Dashboard
+      </h1>
+
+      <p class="page-subtitle">
+        Manage the school's online examination system.
+      </p>
+
+      <div class="stats-grid">
+
+        <div class="stat-card">
+          <div class="stat-label">Students</div>
+          <div class="stat-value">
+            ${students.length}
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Teachers</div>
+          <div class="stat-value">
+            ${teachers.length}
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Tests</div>
+          <div class="stat-value">
+            ${tests.length}
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Submissions</div>
+          <div class="stat-value">
+            ${results.length}
+          </div>
+        </div>
+
+      </div>
+
+
+      <div class="grid-2">
+
+        <div class="card">
+
+          <div class="card-header">
+            <div class="card-title">
+              Recent Students
+            </div>
+
+            <button
+              class="btn btn-secondary btn-small"
+              onclick="showAdminStudents()"
+            >
+              View All
+            </button>
+          </div>
+
+          ${
+            students.length
+              ? `
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Class</th>
+                        <th>Account</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      ${students
+                        .slice(0, 5)
+                        .map(student => `
+                          <tr>
+                            <td>
+                              ${escapeHTML(student.name)}
+                            </td>
+
+                            <td>
+                              ${escapeHTML(student.class_name || "—")}
+                            </td>
+
+                            <td>
+                              ${
+                                student.auth_user_id
+                                  ? `<span class="badge badge-green">Active</span>`
+                                  : `<span class="badge badge-gray">Not Activated</span>`
+                              }
+                            </td>
+                          </tr>
+                        `)
+                        .join("")}
+                    </tbody>
+                  </table>
+                </div>
+              `
+              : emptyState("No students found.")
+          }
+
+        </div>
+
+
+        <div class="card">
+
+          <div class="card-header">
+            <div class="card-title">
+              Recent Results
+            </div>
+
+            <button
+              class="btn btn-secondary btn-small"
+              onclick="showAdminResults()"
+            >
+              View All
+            </button>
+          </div>
+
+          ${
+            results.length
+              ? `
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Student</th>
+                        <th>Test</th>
+                        <th>Score</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      ${results
+                        .slice(0, 5)
+                        .map(result => `
+                          <tr>
+                            <td>
+                              ${escapeHTML(
+                                result.students?.name || "—"
+                              )}
+                            </td>
+
+                            <td>
+                              ${escapeHTML(
+                                result.tests?.title || "—"
+                              )}
+                            </td>
+
+                            <td>
+                              <strong>
+                                ${result.score}/${result.total_marks}
+                              </strong>
+                            </td>
+                          </tr>
+                        `)
+                        .join("")}
+                    </tbody>
+                  </table>
+                </div>
+              `
+              : emptyState("No results yet.")
+          }
+
+        </div>
+
+      </div>
+    `;
+
+  } finally {
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
+   ADMIN STUDENTS
+========================================================= */
+
+async function showAdminStudents() {
+
+  showLoader("Loading students...");
+
+  try {
+
+    await refreshAdminData();
+
+    const students =
+      adminData.students || [];
+
+    mainContent.innerHTML = `
+
+      <h1 class="page-title">
+        Student Management
+      </h1>
+
+      <p class="page-subtitle">
+        Create, activate and remove student accounts.
+      </p>
+
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div class="card-title">
+            Students
+          </div>
+
+          <button
+            id="newStudentBtn"
+            class="btn btn-primary"
+          >
+            + New Student
+          </button>
+
+        </div>
+
+
+        <div id="studentFormContainer"></div>
+
+
+        <div class="table-wrap">
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Class</th>
+                <th>Roll No.</th>
+                <th>Account</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              ${
+                students.length
+                  ? students.map(student => `
+
+                    <tr>
+
+                      <td>
+                        <strong>
+                          ${escapeHTML(student.name)}
+                        </strong>
+                      </td>
+
+                      <td>
+                        ${escapeHTML(student.username || "—")}
+                      </td>
+
+                      <td>
+                        ${escapeHTML(student.class_name || "—")}
+                      </td>
+
+                      <td>
+                        ${escapeHTML(student.roll_number || "—")}
+                      </td>
+
+                      <td>
+                        ${
+                          student.auth_user_id
+                            ? `<span class="badge badge-green">Active</span>`
+                            : `<span class="badge badge-gray">Not Activated</span>`
+                        }
+                      </td>
+
+                      <td>
+
+                        <div style="display:flex;gap:6px;flex-wrap:wrap">
+
+                          ${
+                            !student.auth_user_id
+                              ? `
+                                <button
+                                  class="btn btn-primary btn-small"
+                                  onclick="activateStudent(${student.id}, '${escapeAttr(student.name)}')"
+                                >
+                                  Activate
+                                </button>
+                              `
+                              : ""
+                          }
+
+                          <button
+                            class="btn btn-danger btn-small"
+                            onclick="deleteStudent(${student.id}, '${escapeAttr(student.name)}')"
+                          >
+                            Delete
+                          </button>
+
+                        </div>
+
+                      </td>
+
+                    </tr>
+
+                  `).join("")
+                  : `
+                    <tr>
+                      <td colspan="6">
+                        ${emptyState("No students found.")}
+                      </td>
+                    </tr>
+                  `
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+    `;
+
+
+    document
+      .getElementById("newStudentBtn")
+      .addEventListener(
+        "click",
+        renderNewStudentForm
+      );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+function renderNewStudentForm() {
+
+  const container =
+    document.getElementById(
+      "studentFormContainer"
+    );
+
+  container.innerHTML = `
+
+    <div class="card" style="background:#fbfcfb">
+
+      <div class="card-header">
+        <div class="card-title">
+          Create Student
+        </div>
+
+        <button
+          class="btn btn-secondary btn-small"
+          onclick="document.getElementById('studentFormContainer').innerHTML=''"
+        >
+          Close
+        </button>
+      </div>
+
+      <form id="newStudentForm">
+
+        <div class="grid-2">
+
+          <div class="form-group">
+            <label>Full Name</label>
+            <input
+              id="studentName"
+              class="input"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Username</label>
+            <input
+              id="studentUsername"
+              class="input"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Password</label>
+            <input
+              id="studentPassword"
+              class="input"
+              type="password"
+              minlength="6"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Class</label>
+            <input
+              id="studentClass"
+              class="input"
+              placeholder="e.g. 9th"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Roll Number</label>
+            <input
+              id="studentRoll"
+              class="input"
+            >
+          </div>
+
+        </div>
+
+        <button
+          class="btn btn-primary"
+          type="submit"
+        >
+          Create Student Account
+        </button>
+
+      </form>
+
+    </div>
+  `;
+
+
+  document
+    .getElementById("newStudentForm")
+    .addEventListener(
+      "submit",
+      createStudent
+    );
+}
+
+
+async function createStudent(event) {
+
+  event.preventDefault();
+
+  showLoader("Creating student account...");
+
+  try {
+
+    await callFunction(
+      "admin-manage-user",
+      {
+        action: "create_student",
+
+        name:
+          document.getElementById("studentName").value,
+
+        username:
+          document.getElementById("studentUsername").value,
+
+        password:
+          document.getElementById("studentPassword").value,
+
+        class_name:
+          document.getElementById("studentClass").value,
+
+        roll_number:
+          document.getElementById("studentRoll").value
+      }
+    );
+
+    showToast(
+      "Student account created successfully.",
+      "success"
+    );
+
+    await showAdminStudents();
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+async function activateStudent(
+  id,
+  name
+) {
+
+  const password =
+    prompt(
+      `Create a password for ${name}.\nMinimum 6 characters:`
+    );
+
+  if (!password) return;
+
+  if (password.length < 6) {
+
+    showToast(
+      "Password must be at least 6 characters.",
+      "error"
+    );
+
+    return;
+  }
+
+  showLoader("Activating student account...");
+
+  try {
+
+    await callFunction(
+      "admin-manage-user",
+      {
+        action:
+          "activate_student",
+
+        id,
+
+        password
+      }
+    );
+
+    showToast(
+      "Student account activated.",
+      "success"
+    );
+
+    await showAdminStudents();
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+async function deleteStudent(
+  id,
+  name
+) {
+
+  const confirmed =
+    await confirmAction(
+      "Delete Student?",
+      `Deleting ${name} will also delete this student's associated results because the database is configured with ON DELETE CASCADE.`,
+      "Delete Student"
+    );
+
+  if (!confirmed) return;
+
+  showLoader("Deleting student...");
+
+  try {
+
+    await callFunction(
+      "admin-manage-user",
+      {
+        action:
+          "delete_student",
+
+        id
+      }
+    );
+
+    showToast(
+      "Student and associated results deleted.",
+      "success"
+    );
+
+    await showAdminStudents();
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
+   ADMIN TEACHERS
+========================================================= */
+
+async function showAdminTeachers() {
+
+  showLoader("Loading teachers...");
+
+  try {
+
+    await refreshAdminData();
+
+    const teachers =
+      adminData.teachers || [];
+
+    mainContent.innerHTML = `
+
+      <h1 class="page-title">
+        Teacher Management
+      </h1>
+
+      <p class="page-subtitle">
+        Manage teacher accounts and access.
+      </p>
+
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div class="card-title">
+            Teachers
+          </div>
+
+          <button
+            id="newTeacherBtn"
+            class="btn btn-primary"
+          >
+            + New Teacher
+          </button>
+
+        </div>
+
+
+        <div id="teacherFormContainer"></div>
+
+
+        <div class="table-wrap">
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Class</th>
+                <th>Account</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              ${
+                teachers.length
+                  ? teachers.map(teacher => `
+
+                    <tr>
+
+                      <td>
+                        <strong>
+                          ${escapeHTML(teacher.Name)}
+                        </strong>
+                      </td>
+
+                      <td>
+                        ${escapeHTML(teacher.Username || "—")}
+                      </td>
+
+                      <td>
+                        ${escapeHTML(teacher.class_name || "—")}
+                      </td>
+
+                      <td>
+                        ${
+                          teacher.auth_user_id
+                            ? `<span class="badge badge-green">Active</span>`
+                            : `<span class="badge badge-gray">Not Activated</span>`
+                        }
+                      </td>
+
+                      <td>
+
+                        <div style="display:flex;gap:6px">
+
+                          ${
+                            !teacher.auth_user_id
+                              ? `
+                                <button
+                                  class="btn btn-primary btn-small"
+                                  onclick="activateTeacher(${teacher.id}, '${escapeAttr(teacher.Name)}')"
+                                >
+                                  Activate
+                                </button>
+                              `
+                              : ""
+                          }
+
+                          <button
+                            class="btn btn-danger btn-small"
+                            onclick="deleteTeacher(${teacher.id}, '${escapeAttr(teacher.Name)}')"
+                          >
+                            Delete
+                          </button>
+
+                        </div>
+
+                      </td>
+
+                    </tr>
+
+                  `).join("")
+                  : `
+                    <tr>
+                      <td colspan="5">
+                        ${emptyState("No teachers found.")}
+                      </td>
+                    </tr>
+                  `
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+    `;
+
+
+    document
+      .getElementById("newTeacherBtn")
+      .addEventListener(
+        "click",
+        renderNewTeacherForm
+      );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+function renderNewTeacherForm() {
+
+  document
+    .getElementById("teacherFormContainer")
+    .innerHTML = `
+
+      <div class="card" style="background:#fbfcfb">
+
+        <div class="card-header">
+
+          <div class="card-title">
+            Create Teacher
+          </div>
+
+          <button
+            class="btn btn-secondary btn-small"
+            onclick="document.getElementById('teacherFormContainer').innerHTML=''"
+          >
+            Close
+          </button>
+
+        </div>
+
+        <form id="newTeacherForm">
+
+          <div class="grid-2">
+
+            <div class="form-group">
+              <label>Full Name</label>
+              <input
+                id="teacherName"
+                class="input"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label>Username</label>
+              <input
+                id="teacherUsername"
+                class="input"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label>Password</label>
+              <input
+                id="teacherPassword"
+                class="input"
+                type="password"
+                minlength="6"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label>Class</label>
+              <input
+                id="teacherClass"
+                class="input"
+                placeholder="e.g. 9th"
+              >
+            </div>
+
+          </div>
+
+          <button
+            class="btn btn-primary"
+            type="submit"
+          >
+            Create Teacher Account
+          </button>
+
+        </form>
+
+      </div>
+    `;
+
+
+  document
+    .getElementById("newTeacherForm")
+    .addEventListener(
+      "submit",
+      createTeacher
+    );
+}
+
+
+async function createTeacher(event) {
+
+  event.preventDefault();
+
+  showLoader("Creating teacher account...");
+
+  try {
+
+    await callFunction(
+      "admin-manage-user",
+      {
+        action:
+          "create_teacher",
+
+        name:
+          document.getElementById("teacherName").value,
+
+        username:
+          document.getElementById("teacherUsername").value,
+
+        password:
+          document.getElementById("teacherPassword").value,
+
+        class_name:
+          document.getElementById("teacherClass").value
+      }
+    );
+
+    showToast(
+      "Teacher account created successfully.",
+      "success"
+    );
+
+    await showAdminTeachers();
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+async function activateTeacher(
+  id,
+  name
+) {
+
+  const password =
+    prompt(
+      `Create a password for ${name}.\nMinimum 6 characters:`
+    );
+
+  if (!password) return;
+
+  if (password.length < 6) {
+
+    showToast(
+      "Password must be at least 6 characters.",
+      "error"
+    );
+
+    return;
+  }
+
+  showLoader("Activating teacher account...");
+
+  try {
+
+    await callFunction(
+      "admin-manage-user",
+      {
+        action:
+          "activate_teacher",
+
+        id,
+
+        password
+      }
+    );
+
+    showToast(
+      "Teacher account activated.",
+      "success"
+    );
+
+    await showAdminTeachers();
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+async function deleteTeacher(
+  id,
+  name
+) {
+
+  const confirmed =
+    await confirmAction(
+      "Delete Teacher?",
+      `Are you sure you want to permanently delete ${name}'s teacher account?`,
+      "Delete Teacher"
+    );
+
+  if (!confirmed) return;
+
+  showLoader("Deleting teacher...");
+
+  try {
+
+    await callFunction(
+      "admin-manage-user",
+      {
+        action:
+          "delete_teacher",
+
+        id
+      }
+    );
+
+    showToast(
+      "Teacher deleted successfully.",
+      "success"
+    );
+
+    await showAdminTeachers();
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
+   ADMIN TESTS
+========================================================= */
+
+async function showAdminTests() {
+
+  showLoader("Loading tests...");
+
+  try {
+
+    await refreshAdminData();
+
+    const tests =
+      adminData.tests || [];
+
+    mainContent.innerHTML = `
+
+      <h1 class="page-title">
+        Tests
+      </h1>
+
+      <p class="page-subtitle">
+        Overview of all tests in the examination system.
+      </p>
+
+
+      <div class="card">
+
+        <div class="table-wrap">
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Test</th>
+                <th>Class</th>
+                <th>Subject</th>
+                <th>Duration</th>
+                <th>Marks</th>
+                <th>Status</th>
+                <th>Ownership</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              ${
+                tests.length
+                  ? tests.map(test => `
+
+                    <tr>
+
+                      <td>
+                        <strong>
+                          ${escapeHTML(test.title)}
+                        </strong>
+                      </td>
+
+                      <td>
+                        ${escapeHTML(test.class_name)}
+                      </td>
+
+                      <td>
+                        ${escapeHTML(test.subject)}
+                      </td>
+
+                      <td>
+                        ${test.duration_minutes || 0} min
+                      </td>
+
+                      <td>
+                        ${test.total_marks || 0}
+                      </td>
+
+                      <td>
+                        ${
+                          test.is_active
+                            ? `<span class="badge badge-green">Active</span>`
+                            : `<span class="badge badge-gray">Inactive</span>`
+                        }
+                      </td>
+
+                      <td>
+                        ${
+                          test.teacher_id
+                            ? `<span class="badge badge-green">Teacher-owned</span>`
+                            : `<span class="badge badge-gray">Legacy</span>`
+                        }
+                      </td>
+
+                    </tr>
+
+                  `).join("")
+                  : `
+                    <tr>
+                      <td colspan="7">
+                        ${emptyState("No tests found.")}
+                      </td>
+                    </tr>
+                  `
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+    `;
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
+   ADMIN RESULTS
+========================================================= */
+
+async function showAdminResults() {
+
+  showLoader("Loading results...");
+
+  try {
+
+    await refreshAdminData();
+
+    const results =
+      adminData.results || [];
+
+    mainContent.innerHTML = `
+
+      <h1 class="page-title">
+        Results
+      </h1>
+
+      <p class="page-subtitle">
+        All submitted examination results.
+      </p>
+
+
+      <div class="card">
+
+        <div class="table-wrap">
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Class</th>
+                <th>Test</th>
+                <th>Subject</th>
+                <th>Score</th>
+                <th>Percentage</th>
+                <th>Submitted</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              ${
+                results.length
+                  ? results.map(result => {
+
+                      const pct =
+                        percent(
+                          result.score,
+                          result.total_marks
+                        );
+
+                      return `
+
+                        <tr>
+
+                          <td>
+                            <strong>
+                              ${escapeHTML(
+                                result.students?.name || "—"
+                              )}
+                            </strong>
+                          </td>
+
+                          <td>
+                            ${escapeHTML(
+                              result.students?.class_name || "—"
+                            )}
+                          </td>
+
+                          <td>
+                            ${escapeHTML(
+                              result.tests?.title || "—"
+                            )}
+                          </td>
+
+                          <td>
+                            ${escapeHTML(
+                              result.tests?.subject || "—"
+                            )}
+                          </td>
+
+                          <td>
+                            ${result.score}/${result.total_marks}
+                          </td>
+
+                          <td>
+                            <span class="badge ${
+                              pct >= 50
+                                ? "badge-green"
+                                : "badge-red"
+                            }">
+                              ${pct}%
+                            </span>
+                          </td>
+
+                          <td>
+                            ${formatDate(
+                              result.submitted_at
+                            )}
+                          </td>
+
+                        </tr>
+
+                      `;
+                    }).join("")
+                  : `
+                    <tr>
+                      <td colspan="7">
+                        ${emptyState("No results found.")}
+                      </td>
+                    </tr>
+                  `
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+    `;
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
+   TEACHER DASHBOARD
+========================================================= */
+
+async function refreshTeacherData() {
+
+  teacherData =
+    await callFunction(
+      "portal-data",
+      {
+        action:
+          "teacher_dashboard"
+      }
+    );
+
+  currentProfile =
+    teacherData.teacher;
+}
+
+
+async function showTeacherDashboard() {
+
+  showLoader("Loading teacher dashboard...");
+
+  try {
+
+    await refreshTeacherData();
+
+    const tests =
+      teacherData.tests || [];
+
+    mainContent.innerHTML = `
+
+      <h1 class="page-title">
+        Welcome, ${escapeHTML(
+          teacherData.teacher?.Name || "Teacher"
+        )}
+      </h1>
+
+      <p class="page-subtitle">
+        Manage your tests and monitor student performance.
+      </p>
+
+
+      <div class="stats-grid">
+
+        <div class="stat-card">
+          <div class="stat-label">My Tests</div>
+          <div class="stat-value">
+            ${tests.length}
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Active Tests</div>
+          <div class="stat-value">
+            ${tests.filter(t => t.is_active).length}
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Classes</div>
+          <div class="stat-value">
+            ${
+              new Set(
+                tests.map(t => t.class_name)
+              ).size
+            }
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Subjects</div>
+          <div class="stat-value">
+            ${
+              new Set(
+                tests.map(t => t.subject)
+              ).size
+            }
+          </div>
+        </div>
+
+      </div>
+
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div class="card-title">
+            My Recent Tests
+          </div>
+
+          <button
+            class="btn btn-primary btn-small"
+            onclick="showTeacherCreate()"
+          >
+            + Create Test
+          </button>
+
+        </div>
+
+        ${
+          tests.length
+            ? `
+              <div class="table-wrap">
+
+                <table>
+
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Class</th>
+                      <th>Subject</th>
+                      <th>Marks</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    ${tests.slice(0, 8).map(test => `
+
+                      <tr>
+
+                        <td>
+                          <strong>
+                            ${escapeHTML(test.title)}
+                          </strong>
+                        </td>
+
+                        <td>
+                          ${escapeHTML(test.class_name)}
+                        </td>
+
+                        <td>
+                          ${escapeHTML(test.subject)}
+                        </td>
+
+                        <td>
+                          ${test.total_marks || 0}
+                        </td>
+
+                        <td>
+                          ${
+                            test.is_active
+                              ? `<span class="badge badge-green">Active</span>`
+                              : `<span class="badge badge-gray">Inactive</span>`
+                          }
+                        </td>
+
+                      </tr>
+
+                    `).join("")}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+            `
+            : emptyState(
+                "No tests yet.",
+                "Create your first examination."
+              )
+        }
+
+      </div>
+    `;
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
+   TEACHER CREATE TEST
+========================================================= */
+
+let questionCount = 0;
+
+
+function showTeacherCreate() {
+
+  questionCount = 0;
+
+  mainContent.innerHTML = `
+
+    <h1 class="page-title">
+      Create Test
+    </h1>
+
+    <p class="page-subtitle">
+      Build a complete multiple-choice examination.
+    </p>
+
+
+    <form id="testBuilderForm">
+
+      <div class="card">
+
+        <div class="card-title"
+          style="margin-bottom:18px">
+          Test Information
+        </div>
+
+        <div class="grid-2">
+
+          <div class="form-group">
+            <label>Test Title</label>
+            <input
+              id="testTitle"
+              class="input"
+              placeholder="e.g. Biology Chapter 1 Test"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Class</label>
+            <input
+              id="testClass"
+              class="input"
+              value="${escapeHTML(
+                teacherData?.teacher?.class_name || ""
+              )}"
+              placeholder="e.g. 9th"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Subject</label>
+            <input
+              id="testSubject"
+              class="input"
+              placeholder="e.g. Biology"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Chapter</label>
+            <input
+              id="testChapter"
+              class="input"
+              placeholder="Optional"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Duration (minutes)</label>
+            <input
+              id="testDuration"
+              class="input"
+              type="number"
+              min="1"
+              value="20"
+              required
+            >
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div class="card-title">
+            Questions
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-primary btn-small"
+            id="addQuestionBtn"
+          >
+            + Add Question
+          </button>
+
+        </div>
+
+        <div id="questionsContainer"></div>
+
+      </div>
+
+
+      <div style="
+        display:flex;
+        justify-content:flex-end;
+        margin-bottom:30px;
+      ">
+
+        <button
+          class="btn btn-primary"
+          type="submit"
+        >
+          Create & Publish Test
+        </button>
+
+      </div>
+
+    </form>
+  `;
+
+
+  document
+    .getElementById("addQuestionBtn")
+    .addEventListener(
+      "click",
+      () => addQuestion()
+    );
+
+  document
+    .getElementById("testBuilderForm")
+    .addEventListener(
+      "submit",
+      createTest
+    );
+
+  addQuestion();
+}
+
+
+function addQuestion() {
+
+  questionCount++;
+
+  const container =
+    document.getElementById(
+      "questionsContainer"
+    );
+
+  const div =
+    document.createElement("div");
+
+  div.className =
+    "question-builder";
+
+  div.dataset.question =
+    questionCount;
+
+  div.innerHTML = `
+
+    <div class="question-top">
+
+      <div class="question-number">
+        Question ${questionCount}
+      </div>
+
+      ${
+        questionCount > 1
+          ? `
+            <button
+              type="button"
+              class="btn btn-danger btn-small remove-question"
+            >
+              Remove
+            </button>
+          `
+          : ""
+      }
+
+    </div>
+
+
+    <div class="form-group">
+
+      <label>Question</label>
+
+      <textarea
+        class="textarea question-text"
+        placeholder="Enter question"
+        required
+      ></textarea>
+
+    </div>
+
+
+    <div class="options-grid">
+
+      <div class="option-row">
+        <span class="option-label">A</span>
+        <input
+          class="input option-a"
+          placeholder="Option A"
+          required
+        >
+      </div>
+
+      <div class="option-row">
+        <span class="option-label">B</span>
+        <input
+          class="input option-b"
+          placeholder="Option B"
+          required
+        >
+      </div>
+
+      <div class="option-row">
+        <span class="option-label">C</span>
+        <input
+          class="input option-c"
+          placeholder="Option C"
+          required
+        >
+      </div>
+
+      <div class="option-row">
+        <span class="option-label">D</span>
+        <input
+          class="input option-d"
+          placeholder="Option D"
+          required
+        >
+      </div>
+
+    </div>
+
+
+    <div class="marks-row">
+
+      <label>
+        Correct Answer
+      </label>
+
+      <select
+        class="select correct-option"
+        style="width:90px"
+      >
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+      </select>
+
+
+      <label>
+        Marks
+      </label>
+
+      <input
+        class="input marks-input question-marks"
+        type="number"
+        min="1"
+        value="1"
+        required
+      >
+
+    </div>
+  `;
+
+
+  container.appendChild(div);
+
+
+  const removeButton =
+    div.querySelector(
+      ".remove-question"
+    );
+
+  if (removeButton) {
+
+    removeButton.addEventListener(
+      "click",
+      () => {
+
+        div.remove();
+
+        renumberQuestions();
+      }
+    );
+  }
+}
+
+
+function renumberQuestions() {
+
+  document
+    .querySelectorAll(
+      ".question-builder"
+    )
+    .forEach(
+      (element, index) => {
+
+        element
+          .querySelector(
+            ".question-number"
+          )
+          .textContent =
+            `Question ${index + 1}`;
+      }
+    );
+}
+
+
+async function createTest(event) {
+
+  event.preventDefault();
+
+  const questionElements =
+    Array.from(
+      document.querySelectorAll(
+        ".question-builder"
+      )
+    );
+
+  if (!questionElements.length) {
+
+    showToast(
+      "Add at least one question.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const questions =
+    questionElements.map(element => ({
+
+      question_text:
+        element
+          .querySelector(".question-text")
+          .value
+          .trim(),
+
+      option_a:
+        element
+          .querySelector(".option-a")
+          .value
+          .trim(),
+
+      option_b:
+        element
+          .querySelector(".option-b")
+          .value
+          .trim(),
+
+      option_c:
+        element
+          .querySelector(".option-c")
+          .value
+          .trim(),
+
+      option_d:
+        element
+          .querySelector(".option-d")
+          .value
+          .trim(),
+
+      correct_option:
+        element
+          .querySelector(".correct-option")
+          .value,
+
+      marks:
+        Number(
+          element
+            .querySelector(".question-marks")
+            .value
+        )
+    }));
+
+
+  showLoader("Creating test...");
+
+  try {
+
+    const result =
+      await callFunction(
+        "teacher-manage-tests",
+        {
+          action:
+            "create_test",
+
+          title:
+            document
+              .getElementById("testTitle")
+              .value
+              .trim(),
+
+          class_name:
+            document
+              .getElementById("testClass")
+              .value
+              .trim(),
+
+          subject:
+            document
+              .getElementById("testSubject")
+              .value
+              .trim(),
+
+          chapter:
+            document
+              .getElementById("testChapter")
+              .value
+              .trim(),
+
+          duration_minutes:
+            Number(
+              document
+                .getElementById("testDuration")
+                .value
+            ),
+
+          questions
+        }
+      );
+
+
+    showToast(
+      `Test created successfully. Total marks: ${result.total_marks}`,
+      "success"
+    );
+
+    await showTeacherTests();
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
+   TEACHER TESTS
+========================================================= */
+
+async function showTeacherTests() {
+
+  showLoader("Loading tests...");
+
+  try {
+
+    await refreshTeacherData();
+
+    const tests =
+      teacherData.tests || [];
+
+    mainContent.innerHTML = `
+
+      <h1 class="page-title">
+        My Tests
+      </h1>
+
+      <p class="page-subtitle">
+        Tests created and managed by your teacher account.
+      </p>
+
+
+      ${
+        tests.length
+          ? `
+            <div class="test-grid">
+
+              ${tests.map(test => `
+
+                <div class="test-card">
+
+                  <div class="test-subject">
+                    ${escapeHTML(test.subject)}
+                  </div>
+
+                  <div class="test-title">
+                    ${escapeHTML(test.title)}
+                  </div>
+
+                  <div class="test-meta">
+
+                    Class:
+                    <strong>
+                      ${escapeHTML(test.class_name)}
+                    </strong>
+                    <br>
+
+                    Duration:
+                    ${test.duration_minutes || 0} minutes
+                    <br>
+
+                    Total Marks:
+                    ${test.total_marks || 0}
+
+                  </div>
+
+
+                  <div style="margin-top:12px">
+
+                    ${
+                      test.is_active
+                        ? `<span class="badge badge-green">Active</span>`
+                        : `<span class="badge badge-gray">Inactive</span>`
+                    }
+
+                  </div>
+
+
+                  <div class="test-actions">
+
+                    <button
+                      class="btn btn-secondary btn-small"
+                      onclick="viewTeacherResults(${test.id}, '${escapeAttr(test.title)}')"
+                    >
+                      Results
+                    </button>
+
+                    <button
+                      class="btn btn-secondary btn-small"
+                      onclick="toggleTeacherTest(${test.id}, ${!test.is_active})"
+                    >
+                      ${test.is_active ? "Deactivate" : "Activate"}
+                    </button>
+
+                    <button
+                      class="btn btn-danger btn-small"
+                      onclick="deleteTeacherTest(${test.id}, '${escapeAttr(test.title)}')"
+                    >
+                      Delete
+                    </button>
+
+                  </div>
+
+                </div>
+
+              `).join("")}
+
+            </div>
+          `
+          : `
+            <div class="card">
+              ${emptyState(
+                "No tests created yet.",
+                "Create your first test from the Create Test section."
+              )}
+            </div>
+          `
+      }
+    `;
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+async function toggleTeacherTest(
+  id,
+  newStatus
+) {
+
+  showLoader(
+    newStatus
+      ? "Activating test..."
+      : "Deactivating test..."
+  );
+
+  try {
+
+    await callFunction(
+      "teacher-manage-tests",
+      {
+        action:
+          "toggle_test",
+
+        test_id:
+          id,
+
+        is_active:
+          newStatus
+      }
+    );
+
+    showToast(
+      newStatus
+        ? "Test activated."
+        : "Test deactivated.",
+      "success"
+    );
+
+    await showTeacherTests();
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+async function deleteTeacherTest(
+  id,
+  title
+) {
+
+  const confirmed =
+    await confirmAction(
+      "Delete Test?",
+      `This will permanently delete "${title}" and, because of your current database CASCADE rules, its questions and associated results.`,
+      "Delete Test"
+    );
+
+  if (!confirmed) return;
+
+  showLoader("Deleting test...");
+
+  try {
+
+    await callFunction(
+      "teacher-manage-tests",
+      {
+        action:
+          "delete_test",
+
+        test_id:
+          id
+      }
+    );
+
+    showToast(
+      "Test and associated data deleted.",
+      "success"
+    );
+
+    await showTeacherTests();
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+async function viewTeacherResults(
+  testId,
+  title
+) {
+
+  showLoader("Loading results...");
+
+  try {
+
+    const data =
+      await callFunction(
+        "portal-data",
+        {
+          action:
+            "test_results",
+
+          test_id:
+            testId
+        }
+      );
+
+
+    const results =
+      data.results || [];
+
+
+    mainContent.innerHTML = `
+
+      <div style="
+        display:flex;
+        align-items:center;
+        gap:10px;
+        margin-bottom:20px;
+      ">
+
+        <button
+          class="btn btn-secondary btn-small"
+          onclick="showTeacherTests()"
+        >
+          ← Back
+        </button>
+
+        <div>
+
+          <h1 class="page-title">
+            Test Results
+          </h1>
+
+          <p class="page-subtitle">
+            ${escapeHTML(title)}
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="card">
+
+        ${
+          results.length
+            ? `
+              <div class="table-wrap">
+
+                <table>
+
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Roll No.</th>
+                      <th>Class</th>
+                      <th>Score</th>
+                      <th>Percentage</th>
+                      <th>Submitted</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    ${results.map(result => {
+
+                      const pct =
+                        percent(
+                          result.score,
+                          result.total_marks
+                        );
+
+                      return `
+
+                        <tr>
+
+                          <td>
+                            <strong>
+                              ${escapeHTML(
+                                result.students?.name || "—"
+                              )}
+                            </strong>
+                          </td>
+
+                          <td>
+                            ${escapeHTML(
+                              result.students?.roll_number || "—"
+                            )}
+                          </td>
+
+                          <td>
+                            ${escapeHTML(
+                              result.students?.class_name || "—"
+                            )}
+                          </td>
+
+                          <td>
+                            ${result.score}/${result.total_marks}
+                          </td>
+
+                          <td>
+                            <span class="badge ${
+                              pct >= 50
+                                ? "badge-green"
+                                : "badge-red"
+                            }">
+                              ${pct}%
+                            </span>
+                          </td>
+
+                          <td>
+                            ${formatDate(
+                              result.submitted_at
+                            )}
+                          </td>
+
+                        </tr>
+
+                      `;
+                    }).join("")}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+            `
+            : emptyState(
+                "No submissions yet.",
+                "Students who complete this test will appear here."
+              )
+        }
+
+      </div>
+    `;
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
+   STUDENT DATA
+========================================================= */
+
+async function refreshStudentData() {
+
+  studentData =
+    await callFunction(
+      "portal-data",
+      {
+        action:
+          "student_dashboard"
+      }
+    );
+
+  currentProfile =
+    studentData.student;
+}
+
+
+/* =========================================================
+   STUDENT DASHBOARD
+========================================================= */
+
+async function showStudentDashboard() {
+
+  showLoader("Loading student dashboard...");
+
+  try {
+
+    await refreshStudentData();
+
+    const tests =
+      studentData.tests || [];
+
+    const results =
+      studentData.results || [];
+
+    const attempted =
+      new Set(
+        results.map(
+          result => Number(result.test_id)
+        )
+      );
+
+
+    mainContent.innerHTML = `
+
+      <h1 class="page-title">
+        Welcome, ${escapeHTML(
+          studentData.student?.name || "Student"
+        )}
+      </h1>
+
+      <p class="page-subtitle">
+        Class ${escapeHTML(
+          studentData.student?.class_name || "—"
+        )} · Online Examination Portal
+      </p>
+
+
+      <div class="stats-grid">
+
+        <div class="stat-card">
+          <div class="stat-label">
+            Available Tests
+          </div>
+
+          <div class="stat-value">
+            ${tests.length}
+          </div>
+        </div>
+
+
+        <div class="stat-card">
+          <div class="stat-label">
+            Completed
+          </div>
+
+          <div class="stat-value">
+            ${results.length}
+          </div>
+        </div>
+
+
+        <div class="stat-card">
+          <div class="stat-label">
+            Pending
+          </div>
+
+          <div class="stat-value">
+            ${
+              tests.filter(
+                test =>
+                  !attempted.has(
+                    Number(test.id)
+                  )
+              ).length
+            }
+          </div>
+        </div>
+
+
+        <div class="stat-card">
+          <div class="stat-label">
+            Latest Score
+          </div>
+
+          <div class="stat-value">
+
+            ${
+              results.length
+                ? `${percent(
+                    results[0].score,
+                    results[0].total_marks
+                  )}%`
+                : "—"
+            }
+
+          </div>
+        </div>
+
+      </div>
+
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div class="card-title">
+            Available Tests
+          </div>
+
+          <button
+            class="btn btn-primary btn-small"
+            onclick="showStudentTests()"
+          >
+            View Tests
+          </button>
+
+        </div>
+
+
+        ${
+          tests.length
+            ? `
+              <div class="test-grid">
+
+                ${tests.slice(0, 3).map(test => {
+
+                  const done =
+                    attempted.has(
+                      Number(test.id)
+                    );
+
+                  return `
+
+                    <div class="test-card">
+
+                      <div class="test-subject">
+                        ${escapeHTML(test.subject)}
+                      </div>
+
+                      <div class="test-title">
+                        ${escapeHTML(test.title)}
+                      </div>
+
+                      <div class="test-meta">
+
+                        ${escapeHTML(test.class_name)}
+                        <br>
+
+                        ${test.duration_minutes || 0}
+                        minutes
+                        ·
+                        ${test.total_marks || 0}
+                        marks
+
+                      </div>
+
+                      <div class="test-actions">
+
+                        ${
+                          done
+                            ? `<span class="badge badge-green">
+                                Completed
+                              </span>`
+                            : `
+                              <button
+                                class="btn btn-primary btn-small"
+                                onclick="startTest(${test.id})"
+                              >
+                                Start Test
+                              </button>
+                            `
+                        }
+
+                      </div>
+
+                    </div>
+
+                  `;
+                }).join("")}
+
+              </div>
+            `
+            : emptyState(
+                "No active tests available.",
+                "Your teacher has not published a test for your class yet."
+              )
+        }
+
+      </div>
+    `;
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
+   STUDENT TESTS
+========================================================= */
+
+async function showStudentTests() {
+
+  showLoader("Loading available tests...");
+
+  try {
+
+    const data =
+      await callFunction(
+        "student-test-system",
+        {
+          action:
+            "get_tests"
+        }
+      );
+
+    const tests =
+      data.tests || [];
+
+
+    const resultData =
+      await callFunction(
+        "student-test-system",
+        {
+          action:
+            "get_results"
+        }
+      );
+
+    const results =
+      resultData.results || [];
+
+    const attempted =
+      new Set(
+        results.map(
+          result =>
+            Number(result.test_id)
+        )
+      );
+
+
+    mainContent.innerHTML = `
+
+      <h1 class="page-title">
+        Available Tests
+      </h1>
+
+      <p class="page-subtitle">
+        Select a test to begin your examination.
+      </p>
+
+
+      ${
+        tests.length
+          ? `
+            <div class="test-grid">
+
+              ${tests.map(test => {
+
+                const done =
+                  attempted.has(
+                    Number(test.id)
+                  );
+
+                return `
+
+                  <div class="test-card">
+
+                    <div class="test-subject">
+                      ${escapeHTML(test.subject)}
+                    </div>
+
+                    <div class="test-title">
+                      ${escapeHTML(test.title)}
+                    </div>
+
+                    <div class="test-meta">
+
+                      Class:
+                      ${escapeHTML(test.class_name)}
+                      <br>
+
+                      Duration:
+                      ${test.duration_minutes || 0}
+                      minutes
+                      <br>
+
+                      Total Marks:
+                      ${test.total_marks || 0}
+
+                      ${
+                        test.chapter
+                          ? `<br>Chapter: ${escapeHTML(test.chapter)}`
+                          : ""
+                      }
+
+                    </div>
+
+
+                    <div class="test-actions">
+
+                      ${
+                        done
+                          ? `
+                            <span class="badge badge-green">
+                              Attempted
+                            </span>
+                          `
+                          : `
+                            <button
+                              class="btn btn-primary btn-small"
+                              onclick="startTest(${test.id})"
+                            >
+                              Start Test
+                            </button>
+                          `
+                      }
+
+                    </div>
+
+                  </div>
+
+                `;
+              }).join("")}
+
+            </div>
+          `
+          : `
+            <div class="card">
+              ${emptyState(
+                "No tests available.",
+                "There are currently no active tests for your class."
+              )}
+            </div>
+          `
+      }
+    `;
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
+   START TEST
+========================================================= */
+
+async function startTest(testId) {
+
+  const confirmed =
+    await confirmAction(
+      "Start Examination?",
+      "Once you start this examination, your attempt will be recorded when you submit it. You can only attempt each test once.",
+      "Start Test"
+    );
+
+  if (!confirmed) return;
+
+  showLoader("Loading examination...");
+
+  try {
+
+    const data =
+      await callFunction(
+        "student-test-system",
+        {
+          action:
+            "get_test",
+
+          test_id:
+            testId
+        }
+      );
+
+    currentExam = data;
+
+    examAnswers = {};
+
+    startExamTimer(
+      Number(
+        data.test.duration_minutes
+      ) * 60
+    );
+
+    renderExam();
+
+  } catch (error) {
+
+    if (
+      error.message
+        .toLowerCase()
+        .includes("already attempted")
+    ) {
+
+      showToast(
+        "You have already attempted this test.",
+        "error"
+      );
+
+      await showStudentTests();
+
+    } else {
+
+      showToast(
+        error.message,
+        "error"
+      );
+    }
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
+   EXAM TIMER
+========================================================= */
+
+function startExamTimer(seconds) {
+
+  clearInterval(examTimer);
+
+  examSecondsRemaining =
+    seconds;
+
+  updateTimerDisplay();
+
+  examTimer =
+    setInterval(
+      () => {
+
+        examSecondsRemaining--;
+
+        updateTimerDisplay();
+
+        if (
+          examSecondsRemaining <= 0
+        ) {
+
+          clearInterval(examTimer);
+
+          showToast(
+            "Time is up. Your test is being submitted.",
+            "error"
+          );
+
+          submitExam(true);
+        }
+
+      },
+      1000
+    );
+}
+
+
+function updateTimerDisplay() {
+
+  const timer =
+    document.getElementById(
+      "examTimer"
+    );
+
+  if (!timer) return;
+
+  const minutes =
+    Math.floor(
+      examSecondsRemaining / 60
+    );
+
+  const seconds =
+    examSecondsRemaining % 60;
+
+  timer.textContent =
+    `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
+
+  if (
+    examSecondsRemaining <= 60
+  ) {
+    timer.classList.add("danger");
+  } else {
+    timer.classList.remove("danger");
+  }
+}
+
+
+/* =========================================================
+   RENDER EXAM
+========================================================= */
+
+function renderExam() {
+
+  const test =
+    currentExam.test;
+
+  const questions =
+    currentExam.questions || [];
+
+
+  mainContent.innerHTML = `
+
+    <div class="exam-header">
+
+      <div>
+
+        <strong>
+          ${escapeHTML(test.title)}
+        </strong>
+
+        <div style="
+          color:var(--muted);
+          font-size:12px;
+          margin-top:3px;
+        ">
+          ${escapeHTML(test.subject)}
+          ·
+          ${test.total_marks || 0}
+          marks
+        </div>
+
+      </div>
+
+
+      <div
+        id="examTimer"
+        class="timer"
+      >
+        00:00
+      </div>
+
+    </div>
+
+
+    <form id="examForm">
+
+      ${
+        questions.map(
+          (question, index) => `
+
+            <div
+              class="exam-question"
+              data-question-id="${question.id}"
+            >
+
+              <div class="exam-q-number">
+                Question ${index + 1}
+                ·
+                ${question.marks || 0}
+                mark${Number(question.marks) === 1 ? "" : "s"}
+              </div>
+
+              <div class="exam-q-text">
+                ${escapeHTML(
+                  question.question_text
+                )}
+              </div>
+
+
+              ${renderAnswerOption(
+                question,
+                "A",
+                question.option_a
+              )}
+
+              ${renderAnswerOption(
+                question,
+                "B",
+                question.option_b
+              )}
+
+              ${renderAnswerOption(
+                question,
+                "C",
+                question.option_c
+              )}
+
+              ${renderAnswerOption(
+                question,
+                "D",
+                question.option_d
+              )}
+
+            </div>
+
+          `
+        ).join("")
+      }
+
+
+      <div class="card">
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          gap:15px;
+          flex-wrap:wrap;
+        ">
+
+          <div>
+
+            <strong>
+              Ready to submit?
+            </strong>
+
+            <div style="
+              color:var(--muted);
+              font-size:12px;
+              margin-top:4px;
+            ">
+              Unanswered questions will receive zero marks.
+            </div>
+
+          </div>
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+          >
+            Submit Test
+          </button>
+
+        </div>
+
+      </div>
+
+    </form>
+  `;
+
+
+  document
+    .getElementById("examForm")
+    .addEventListener(
+      "submit",
+      event => {
+
+        event.preventDefault();
+
+        submitExam(false);
+      }
+    );
+
+
+  document
+    .querySelectorAll(
+      ".answer-option input"
+    )
+    .forEach(input => {
+
+      input.addEventListener(
+        "change",
+        () => {
+
+          const questionId =
+            Number(
+              input.dataset.questionId
+            );
+
+          examAnswers[
+            questionId
+          ] =
+            input.value;
+
+          document
+            .querySelectorAll(
+              `.answer-option[data-question-id="${questionId}"]`
+            )
+            .forEach(
+              element =>
+                element.classList.remove(
+                  "selected"
+                )
+            );
+
+          input
+            .closest(".answer-option")
+            .classList.add("selected");
+        }
+      );
+    });
+
+}
+
+
+function renderAnswerOption(
+  question,
+  letter,
+  text
+) {
+
+  return `
+
+    <label
+      class="answer-option"
+      data-question-id="${question.id}"
+    >
+
+      <input
+        type="radio"
+        name="question_${question.id}"
+        value="${letter}"
+        data-question-id="${question.id}"
+      >
+
+      <strong>
+        ${letter}.
+      </strong>
+
+      <span>
+        ${escapeHTML(text)}
+      </span>
+
+    </label>
+
+  `;
+}
+
+
+/* =========================================================
+   SUBMIT EXAM
+========================================================= */
+
+async function submitExam(
+  automatic = false
+) {
+
+  if (!automatic) {
+
+    const confirmed =
+      await confirmAction(
+        "Submit Test?",
+        "Your answers will be marked automatically and this test cannot be attempted again after submission.",
+        "Submit Test"
+      );
+
+    if (!confirmed) return;
+  }
+
+
+  clearInterval(examTimer);
+
+  showLoader(
+    automatic
+      ? "Submitting automatically..."
+      : "Submitting test..."
+  );
+
+
+  try {
+
+    const answers =
+      Object.entries(
+        examAnswers
+      ).map(
+        ([question_id, selected_option]) => ({
+          question_id:
+            Number(question_id),
+
+          selected_option
+        })
+      );
+
+
+    const result =
+      await callFunction(
+        "student-test-system",
+        {
+          action:
+            "submit_test",
+
+          test_id:
+            Number(
+              currentExam.test.id
+            ),
+
+          answers
+        }
+      );
+
+
+    showResultScreen(
+      result
+    );
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
+   RESULT SCREEN
+========================================================= */
+
+function showResultScreen(result) {
+
+  currentExam = null;
+
+  const pct =
+    percent(
+      result.score,
+      result.total_marks
+    );
+
+
+  mainContent.innerHTML = `
+
+    <div class="result-hero">
+
+      <div>
+        Test Submitted Successfully
+      </div>
+
+      <div class="result-score">
+        ${result.score}/${result.total_marks}
+      </div>
+
+      <div style="font-size:18px;font-weight:750">
+        ${pct}%
+      </div>
+
+    </div>
+
+
+    <div class="card">
+
+      <div class="card-header">
+
+        <div class="card-title">
+          Your Result
+        </div>
+
+      </div>
+
+      <div class="grid-3">
+
+        <div>
+          <div class="stat-label">
+            Score
+          </div>
+
+          <strong style="font-size:24px">
+            ${result.score}
+          </strong>
+        </div>
+
+        <div>
+          <div class="stat-label">
+            Total Marks
+          </div>
+
+          <strong style="font-size:24px">
+            ${result.total_marks}
+          </strong>
+        </div>
+
+        <div>
+          <div class="stat-label">
+            Percentage
+          </div>
+
+          <strong style="font-size:24px">
+            ${pct}%
+          </strong>
+        </div>
+
+      </div>
+
+      <div style="
+        display:flex;
+        gap:10px;
+        margin-top:25px;
+        flex-wrap:wrap;
+      ">
+
+        <button
+          class="btn btn-primary"
+          onclick="showStudentDashboard()"
+        >
+          Dashboard
+        </button>
+
+        <button
+          class="btn btn-secondary"
+          onclick="showStudentResults()"
+        >
+          Result History
+        </button>
+
+      </div>
+
+    </div>
+  `;
+}
+
+
+/* =========================================================
+   STUDENT RESULTS
+========================================================= */
+
+async function showStudentResults() {
+
+  showLoader("Loading result history...");
+
+  try {
+
+    const data =
+      await callFunction(
+        "student-test-system",
+        {
+          action:
+            "get_results"
+        }
+      );
+
+    const results =
+      data.results || [];
+
+
+    mainContent.innerHTML = `
+
+      <h1 class="page-title">
+        My Results
+      </h1>
+
+      <p class="page-subtitle">
+        Your complete examination history.
+      </p>
+
+
+      <div class="card">
+
+        ${
+          results.length
+            ? `
+              <div class="table-wrap">
+
+                <table>
+
+                  <thead>
+                    <tr>
+                      <th>Test</th>
+                      <th>Subject</th>
+                      <th>Score</th>
+                      <th>Percentage</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    ${results.map(result => {
+
+                      const pct =
+                        percent(
+                          result.score,
+                          result.total_marks
+                        );
+
+                      return `
+
+                        <tr>
+
+                          <td>
+                            <strong>
+                              ${escapeHTML(
+                                result.tests?.title || "—"
+                              )}
+                            </strong>
+                          </td>
+
+                          <td>
+                            ${escapeHTML(
+                              result.tests?.subject || "—"
+                            )}
+                          </td>
+
+                          <td>
+                            ${result.score}/${result.total_marks}
+                          </td>
+
+                          <td>
+
+                            <span class="badge ${
+                              pct >= 50
+                                ? "badge-green"
+                                : "badge-red"
+                            }">
+                              ${pct}%
+                            </span>
+
+                          </td>
+
+                          <td>
+                            ${formatDate(
+                              result.submitted_at
+                            )}
+                          </td>
+
+                        </tr>
+
+                      `;
+                    }).join("")}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+            `
+            : emptyState(
+                "No results yet.",
+                "Your completed tests will appear here."
+              )
+        }
+
+      </div>
+    `;
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+document
+  .getElementById("logoutBtn")
+  .addEventListener(
+    "click",
+    async () => {
+
+      const confirmed =
+        await confirmAction(
+          "Logout?",
+          "Are you sure you want to sign out?",
+          "Logout"
+        );
+
+      if (!confirmed) return;
+
+      clearInterval(examTimer);
+
+      await supabaseClient.auth.signOut();
+
+      currentUser = null;
+      currentProfile = null;
+      adminData = null;
+      teacherData = null;
+      studentData = null;
+      currentExam = null;
+      examAnswers = {};
+
+      app.classList.add("hidden");
+      loginScreen.classList.remove("hidden");
+
+      document
+        .getElementById("loginUsername")
+        .value = "";
+
+      document
+        .getElementById("loginPassword")
+        .value = "";
+
+      clearLoginError();
+    }
+  );
+
+
+/* =========================================================
+   SESSION CHECK
+========================================================= */
+
+async function checkExistingSession() {
+
+  try {
+
+    const {
+      data: {
+        session
+      }
+    } =
+      await supabaseClient.auth.getSession();
+
+    if (!session) return;
+
+    showLoader("Restoring session...");
+
+    currentUser =
+      session.user;
+
+    await determineRole();
+
+    loginScreen.classList.add("hidden");
+    app.classList.remove("hidden");
+
+    topUser.textContent =
+      currentProfile?.name ||
+      currentProfile?.Name ||
+      currentProfile?.username ||
+      currentProfile?.Username ||
+      "User";
+
+    buildNavigation();
+
+    if (currentRole === "admin")
+      await showAdminDashboard();
+
+    else if (currentRole === "teacher")
+      await showTeacherDashboard();
+
+    else
+      await showStudentDashboard();
+
+  } catch (error) {
+
+    console.error(
+      "Session restore:",
+      error
+    );
+
+    await supabaseClient.auth.signOut();
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
+   UTILITY
+========================================================= */
+
+function emptyState(
+  title,
+  message = ""
+) {
+
+  return `
+
+    <div class="empty">
+
+      <strong>
+        ${escapeHTML(title)}
+      </strong>
+
+      ${
+        message
+          ? `<span>${escapeHTML(message)}</span>`
+          : ""
+      }
+
+    </div>
+
+  `;
+}
+
+
+/*
+  Used only for values inserted into onclick attributes.
+*/
+function escapeAttr(value) {
+
+  return String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, "\\r")
+    .replace(/\n/g, "\\n");
+}
+
+
+/* =========================================================
+   AUTH STATE
+========================================================= */
+
+supabaseClient.auth.onAuthStateChange(
+  (event, session) => {
+
+    if (event === "SIGNED_OUT") {
+
+      clearInterval(examTimer);
+
+      app.classList.add("hidden");
+      loginScreen.classList.remove("hidden");
+
+      currentUser = null;
+      currentProfile = null;
+    }
+  }
 );
 
 
-/* =========================
-GLOBAL VARIABLES
-========================= */
-
-let currentStudent = null;
-let currentTeacher = null;
-let currentAdmin = null;
-
-let currentTest = null;
-let currentQuestions = [];
-
-let timerInterval = null;
-let remainingSeconds = 0;
-
-
-/* =========================
-PAGE CONTROL
-========================= */
-
-function hideAll(){
-
-const pages = [
-"home",
-"studentLogin",
-"testList",
-"testPage",
-"resultPage",
-"teacherLogin",
-"teacherDashboard",
-"teacherResults",
-"adminLogin",
-"adminDashboard"
-];
-
-pages.forEach(id => {
-
-const element =
-document.getElementById(id);
-
-if(element){
-element.classList.add("hidden");
-}
-
-});
-
-}
-
-
-function goHome(){
-
-clearInterval(timerInterval);
-
-currentStudent = null;
-currentTeacher = null;
-currentAdmin = null;
-currentTest = null;
-currentQuestions = [];
-
-hideAll();
-
-document
-.getElementById("home")
-.classList.remove("hidden");
-
-}
-
-
-function showStudentLogin(){
-
-hideAll();
-
-document
-.getElementById("studentLogin")
-.classList.remove("hidden");
-
-}
-
-
-function showTeacherLogin(){
-
-hideAll();
-
-document
-.getElementById("teacherLogin")
-.classList.remove("hidden");
-
-}
-
-
-function showAdminLogin(){
-
-hideAll();
-
-document
-.getElementById("adminLogin")
-.classList.remove("hidden");
-
-}
-
-
-/* =========================
-STUDENT LOGIN
-========================= */
-
-async function studentLogin(){
-
-const username =
-document
-.getElementById("studentUsername")
-.value
-.trim();
-
-const password =
-document
-.getElementById("studentPassword")
-.value;
-
-const message =
-document
-.getElementById("studentLoginMessage");
-
-message.textContent = "";
-
-if(!username || !password){
-
-message.textContent =
-"Please enter username and password.";
-
-return;
-}
-
-
-const {data,error} =
-await db
-.from("students")
-.select("*")
-.eq("username",username)
-.eq("password",password)
-.maybeSingle();
-
-
-if(error){
-
-console.error(error);
-
-message.textContent =
-"Database error: " +
-error.message;
-
-return;
-}
-
-
-if(!data){
-
-message.textContent =
-"Invalid username or password.";
-
-return;
-}
-
-
-currentStudent = data;
-
-document
-.getElementById("studentWelcome")
-.textContent =
-"Welcome, " +
-(data.name || username) +
-" — Roll No: " +
-(data.roll_number || "");
-
-
-await loadTests();
-
-}
-
-
-/* =========================
-LOAD TESTS
-========================= */
-
-async function loadTests(){
-
-hideAll();
-
-document
-.getElementById("testList")
-.classList.remove("hidden");
-
-
-const container =
-document.getElementById("testsContainer");
-
-container.innerHTML =
-"<p>Loading tests...</p>";
-
-
-const {data,error} =
-await db
-.from("tests")
-.select("*")
-.eq("is_active",true)
-.eq("class_name",currentStudent.class_name)
-.order("created_at",{ascending:false});
-
-
-if(error){
-
-console.error(error);
-
-container.innerHTML =
-"<p style='color:red;'>Unable to load tests: " +
-escapeHtml(error.message) +
-"</p>";
-
-return;
-}
-
-
-if(!data || data.length === 0){
-
-container.innerHTML =
-"<div class='card'>" +
-"<h3>No active tests</h3>" +
-"<p>There are currently no tests available for your class.</p>" +
-"</div>";
-
-return;
-}
-
-
-container.innerHTML = "";
-
-
-data.forEach(test => {
-
-const div =
-document.createElement("div");
-
-div.className =
-"test-card";
-
-div.innerHTML = `
-
-<h3>${escapeHtml(test.title)}</h3>
-
-<p>
-Subject: ${escapeHtml(test.subject || "")}<br>
-Chapter: ${escapeHtml(test.chapter || "")}<br>
-Duration: ${test.duration_minutes} minutes<br>
-Total Marks: ${test.total_marks}
-</p>
-
-<button onclick="startTest('${test.id}')">
-Start Test
-</button>
-
-`;
-
-container.appendChild(div);
-
-});
-
-}
-
-
-/* =========================
-START TEST
-========================= */
-
-async function startTest(testId){
-
-const {data,error} =
-await db
-.from("tests")
-.select("*")
-.eq("id",testId)
-.maybeSingle();
-
-
-if(error || !data){
-
-alert(
-"Unable to open test."
-);
-
-return;
-}
-
-
-currentTest = data;
-
-
-const response =
-await db
-.from("questions")
-.select("*")
-.eq("test_id",testId);
-
-
-if(response.error){
-
-console.error(response.error);
-
-alert(
-"Unable to load questions."
-);
-
-return;
-}
-
-
-currentQuestions =
-response.data || [];
-
-
-if(currentQuestions.length === 0){
-
-alert(
-"This test has no questions yet."
-);
-
-return;
-}
-
-
-hideAll();
-
-document
-.getElementById("testPage")
-.classList.remove("hidden");
-
-
-document
-.getElementById("testTitle")
-.textContent =
-currentTest.title;
-
-
-renderQuestions();
-
-startTimer(
-currentTest.duration_minutes
-);
-
-}
-
-
-/* =========================
-QUESTIONS
-========================= */
-
-function renderQuestions(){
-
-const container =
-document.getElementById(
-"questionsContainer"
-);
-
-container.innerHTML = "";
-
-
-currentQuestions.forEach((q,index) => {
-
-const div =
-document.createElement("div");
-
-div.className =
-"question";
-
-
-div.innerHTML = `
-
-<h3>
-${index + 1}.
-${escapeHtml(q.question_text)}
-</h3>
-
-<label class="option">
-<input
-type="radio"
-name="q${q.id}"
-value="A">
-${escapeHtml(q.option_a)}
-</label>
-
-<label class="option">
-<input
-type="radio"
-name="q${q.id}"
-value="B">
-${escapeHtml(q.option_b)}
-</label>
-
-<label class="option">
-<input
-type="radio"
-name="q${q.id}"
-value="C">
-${escapeHtml(q.option_c)}
-</label>
-
-<label class="option">
-<input
-type="radio"
-name="q${q.id}"
-value="D">
-${escapeHtml(q.option_d)}
-</label>
-
-`;
-
-container.appendChild(div);
-
-});
-
-}
-
-
-/* =========================
-TIMER
-========================= */
-
-function startTimer(minutes){
-
-clearInterval(timerInterval);
-
-remainingSeconds =
-Number(minutes) * 60;
-
-updateTimer();
-
-timerInterval =
-setInterval(() => {
-
-remainingSeconds--;
-
-updateTimer();
-
-if(remainingSeconds <= 0){
-
-clearInterval(timerInterval);
-
-alert(
-"Time is over. Your test will be submitted."
-);
-
-submitTest();
-
-}
-
-},1000);
-
-}
-
-
-function updateTimer(){
-
-const min =
-Math.floor(
-remainingSeconds / 60
-);
-
-const sec =
-remainingSeconds % 60;
-
-document
-.getElementById("timer")
-.textContent =
-String(min).padStart(2,"0") +
-":" +
-String(sec).padStart(2,"0");
-
-}
-
-
-/* =========================
-SUBMIT TEST
-========================= */
-
-async function submitTest(){
-
-if(!currentTest || !currentStudent){
-
-return;
-}
-
-
-clearInterval(timerInterval);
-
-
-let score = 0;
-let totalMarks = 0;
-
-
-currentQuestions.forEach(q => {
-
-totalMarks +=
-Number(q.marks || 0);
-
-
-const selected =
-document.querySelector(
-`input[name="q${q.id}"]:checked`
-);
-
-
-if(
-selected &&
-selected.value ===
-q.correct_option
-){
-
-score +=
-Number(q.marks || 0);
-
-}
-
-});
-
-
-const {error} =
-await db
-.from("results")
-.insert({
-
-test_id:
-currentTest.id,
-
-student_id:
-currentStudent.id,
-
-score:
-score,
-
-total_marks:
-totalMarks,
-
-submitted_at:
-new Date().toISOString()
-
-});
-
-
-if(error){
-
-console.error(error);
-
-alert(
-"Result could not be saved: " +
-error.message
-);
-
-return;
-}
-
-
-document
-.getElementById("score")
-.textContent =
-score;
-
-
-document
-.getElementById("totalMarks")
-.textContent =
-totalMarks;
-
-
-hideAll();
-
-document
-.getElementById("resultPage")
-.classList.remove("hidden");
-
-}
-
-
-/* =========================
-TEACHER LOGIN
-========================= */
-
-async function teacherLogin(){
-
-const username =
-document
-.getElementById("teacherUsername")
-.value
-.trim();
-
-const password =
-document
-.getElementById("teacherPassword")
-.value;
-
-const message =
-document
-.getElementById("teacherLoginMessage");
-
-message.textContent = "";
-
-
-if(!username || !password){
-
-message.textContent =
-"Please enter username and password.";
-
-return;
-}
-
-
-const {data,error} =
-await db
-.from("teachers")
-.select("*")
-.eq("Username",username)
-.eq("Password",password)
-.maybeSingle();
-
-
-if(error){
-
-console.error(error);
-
-message.textContent =
-"Database error: " +
-error.message;
-
-return;
-}
-
-
-if(!data){
-
-message.textContent =
-"Invalid username or password.";
-
-return;
-}
-
-
-currentTeacher = data;
-
-
-document
-.getElementById("teacherWelcome")
-.textContent =
-"Welcome, " +
-(data.Name || username);
-
-
-showTeacherDashboard();
-
-}
-
-
-/* =========================
-TEACHER DASHBOARD
-========================= */
-
-function showTeacherDashboard(){
-
-hideAll();
-
-document
-.getElementById("teacherDashboard")
-.classList.remove("hidden");
-
-}
-
-
-/* =========================
-ADD QUESTION
-========================= */
-
-function addQuestion(){
-
-const container =
-document.getElementById(
-"teacherQuestions"
-);
-
-const number =
-container.children.length + 1;
-
-
-const div =
-document.createElement("div");
-
-div.className =
-"teacher-question";
-
-
-div.innerHTML = `
-
-<h4 style="margin-bottom:15px;">
-Question ${number}
-</h4>
-
-<label>Question</label>
-
-<textarea
-class="q-text"
-placeholder="Enter question"></textarea>
-
-<label>Option A</label>
-<input class="q-a">
-
-<label>Option B</label>
-<input class="q-b">
-
-<label>Option C</label>
-<input class="q-c">
-
-<label>Option D</label>
-<input class="q-d">
-
-<label>Correct Option</label>
-
-<select class="q-correct">
-
-<option value="A">A</option>
-<option value="B">B</option>
-<option value="C">C</option>
-<option value="D">D</option>
-
-</select>
-
-<label>Marks</label>
-
-<input
-class="q-marks"
-type="number"
-min="1"
-value="1">
-
-<button
-class="danger"
-onclick="this.parentElement.remove()">
-
-Remove Question
-
-</button>
-
-`;
-
-container.appendChild(div);
-
-}
-
-
-/* =========================
-CREATE TEST
-========================= */
-
-async function createTest(){
-
-const message =
-document
-.getElementById("teacherMessage");
-
-message.textContent = "";
-
-message.style.color =
-"#d92d20";
-
-
-const title =
-document
-.getElementById("newTitle")
-.value
-.trim();
-
-const className =
-document
-.getElementById("newClass")
-.value
-.trim();
-
-const subject =
-document
-.getElementById("newSubject")
-.value
-.trim();
-
-const chapter =
-document
-.getElementById("newChapter")
-.value
-.trim();
-
-const duration =
-Number(
-document
-.getElementById("newDuration")
-.value
-);
-
-
-if(
-!title ||
-!className ||
-!subject ||
-!chapter ||
-!duration
-){
-
-message.textContent =
-"Please complete all test details.";
-
-return;
-}
-
-
-const questionBoxes =
-document.querySelectorAll(
-".teacher-question"
-);
-
-
-if(questionBoxes.length === 0){
-
-message.textContent =
-"Please add at least one question.";
-
-return;
-}
-
-
-let totalMarks = 0;
-const questions = [];
-
-
-questionBoxes.forEach(box => {
-
-const questionText =
-box.querySelector(
-".q-text"
-).value.trim();
-
-const optionA =
-box.querySelector(
-".q-a"
-).value.trim();
-
-const optionB =
-box.querySelector(
-".q-b"
-).value.trim();
-
-const optionC =
-box.querySelector(
-".q-c"
-).value.trim();
-
-const optionD =
-box.querySelector(
-".q-d"
-).value.trim();
-
-const correct =
-box.querySelector(
-".q-correct"
-).value;
-
-const marks =
-Number(
-box.querySelector(
-".q-marks"
-).value
-);
-
-
-totalMarks += marks;
-
-
-questions.push({
-
-question_text:
-questionText,
-
-option_a:
-optionA,
-
-option_b:
-optionB,
-
-option_c:
-optionC,
-
-option_d:
-optionD,
-
-correct_option:
-correct,
-
-marks:
-marks
-
-});
-
-});
-
-
-for(const q of questions){
-
-if(
-!q.question_text ||
-!q.option_a ||
-!q.option_b ||
-!q.option_c ||
-!q.option_d
-){
-
-message.textContent =
-"Please complete every question.";
-
-return;
-
-}
-
-}
-
-
-const {
-data:test,
-error:testError
-} =
-await db
-.from("tests")
-.insert({
-
-title:
-title,
-
-class_name:
-className,
-
-subject:
-subject,
-
-chapter:
-chapter,
-
-duration_minutes:
-duration,
-
-total_marks:
-totalMarks,
-
-is_active:
-true
-
-})
-.select()
-.single();
-
-
-if(testError){
-
-console.error(testError);
-
-message.textContent =
-"Test could not be created: " +
-testError.message;
-
-return;
-}
-
-
-const questionRows =
-questions.map(q => ({
-
-test_id:
-test.id,
-
-question_text:
-q.question_text,
-
-option_a:
-q.option_a,
-
-option_b:
-q.option_b,
-
-option_c:
-q.option_c,
-
-option_d:
-q.option_d,
-
-correct_option:
-q.correct_option,
-
-marks:
-q.marks
-
-}));
-
-
-const {
-error:questionError
-} =
-await db
-.from("questions")
-.insert(questionRows);
-
-
-if(questionError){
-
-console.error(questionError);
-
-message.textContent =
-"Test created, but questions could not be saved: " +
-questionError.message;
-
-return;
-}
-
-
-message.style.color =
-"#07883b";
-
-message.textContent =
-"Test published successfully!";
-
-
-document
-.getElementById("newTitle")
-.value = "";
-
-document
-.getElementById("newClass")
-.value = "";
-
-document
-.getElementById("newSubject")
-.value = "";
-
-document
-.getElementById("newChapter")
-.value = "";
-
-document
-.getElementById("newDuration")
-.value = "";
-
-document
-.getElementById("teacherQuestions")
-.innerHTML = "";
-
-addQuestion();
-
-}
-
-
-/* =========================
-TEACHER RESULTS
-========================= */
-
-async function loadResults(){
-
-hideAll();
-
-document
-.getElementById("teacherResults")
-.classList.remove("hidden");
-
-
-const container =
-document.getElementById(
-"resultsContainer"
-);
-
-container.innerHTML =
-"<p>Loading results...</p>";
-
-
-const {data,error} =
-await db
-.from("results")
-.select(`
-id,
-score,
-total_marks,
-submitted_at,
-students (
-name,
-roll_number,
-class_name
-),
-tests (
-title,
-subject
-)
-`)
-.order(
-"submitted_at",
-{
-ascending:false
-}
-);
-
-
-if(error){
-
-console.error(error);
-
-container.innerHTML =
-"<p style='color:#d92d20;'>" +
-"Unable to load results: " +
-escapeHtml(error.message) +
-"</p>";
-
-return;
-}
-
-
-if(!data || data.length === 0){
-
-container.innerHTML =
-"<div class='no-results'>" +
-"No results available." +
-"</div>";
-
-return;
-}
-
-
-let html = `
-
-<div class="results-table-wrapper">
-
-<table class="results-table">
-
-<thead>
-
-<tr>
-<th>Student</th>
-<th>Roll No.</th>
-<th>Class</th>
-<th>Test</th>
-<th>Subject</th>
-<th>Score</th>
-<th>Total</th>
-<th>Date</th>
-</tr>
-
-</thead>
-
-<tbody>
-
-`;
-
-
-data.forEach(result => {
-
-const student =
-result.students || {};
-
-const test =
-result.tests || {};
-
-
-const date =
-result.submitted_at
-?
-new Date(
-result.submitted_at
-).toLocaleString()
-:
-"";
-
-
-html += `
-
-<tr>
-
-<td>
-${escapeHtml(
-student.name || ""
-)}
-</td>
-
-<td>
-${escapeHtml(
-student.roll_number || ""
-)}
-</td>
-
-<td>
-${escapeHtml(
-student.class_name || ""
-)}
-</td>
-
-<td>
-${escapeHtml(
-test.title || ""
-)}
-</td>
-
-<td>
-${escapeHtml(
-test.subject || ""
-)}
-</td>
-
-<td>
-<strong>
-${result.score}
-</strong>
-</td>
-
-<td>
-${result.total_marks}
-</td>
-
-<td>
-${escapeHtml(date)}
-</td>
-
-</tr>
-
-`;
-
-});
-
-
-html += `
-
-</tbody>
-
-</table>
-
-</div>
-
-`;
-
-
-container.innerHTML =
-html;
-
-}
-
-
-/* =========================
-ADMIN LOGIN
-========================= */
-
-async function adminLogin(){
-
-const username =
-document
-.getElementById("adminUsername")
-.value
-.trim();
-
-const password =
-document
-.getElementById("adminPassword")
-.value;
-
-const message =
-document
-.getElementById("adminLoginMessage");
-
-message.textContent = "";
-
-
-if(!username || !password){
-
-message.textContent =
-"Please enter username and password.";
-
-return;
-}
-
-
-const {data,error} =
-await db
-.from("admins")
-.select("*")
-.eq("username",username)
-.eq("password",password)
-.maybeSingle();
-
-
-if(error){
-
-console.error(error);
-
-message.textContent =
-"Database error: " +
-error.message;
-
-return;
-}
-
-
-if(!data){
-
-message.textContent =
-"Invalid admin username or password.";
-
-return;
-}
-
-
-currentAdmin = data;
-
-
-document
-.getElementById("adminWelcome")
-.textContent =
-"Welcome, " +
-(data.name || username);
-
-
-showAdminDashboard();
-
-}
-
-
-/* =========================
-ADMIN DASHBOARD
-========================= */
-
-function showAdminDashboard(){
-
-hideAll();
-
-document
-.getElementById("adminDashboard")
-.classList.remove("hidden");
-
-loadStudents();
-loadTeachers();
-
-}
-
-
-/* =========================
-CREATE STUDENT
-========================= */
-
-async function createStudent(){
-
-const message =
-document
-.getElementById(
-"studentCreateMessage"
-);
-
-message.textContent = "";
-
-message.style.color =
-"#d92d20";
-
-
-const name =
-document
-.getElementById("studentName")
-.value
-.trim();
-
-const roll =
-document
-.getElementById("studentRoll")
-.value
-.trim();
-
-const className =
-document
-.getElementById("studentClass")
-.value
-.trim();
-
-const username =
-document
-.getElementById(
-"studentNewUsername"
-)
-.value
-.trim();
-
-const password =
-document
-.getElementById(
-"studentNewPassword"
-)
-.value;
-
-
-if(
-!name ||
-!roll ||
-!className ||
-!username ||
-!password
-){
-
-message.textContent =
-"Please complete all fields.";
-
-return;
-}
-
-
-if(password.length < 6){
-
-message.textContent =
-"Password must be at least 6 characters.";
-
-return;
-}
-
-
-message.textContent =
-"Creating student...";
-
-
-try{
-
-const {data,error} =
-await db
-.from("students")
-.insert({
-
-name:
-name,
-
-roll_number:
-roll,
-
-class_name:
-className,
-
-username:
-username,
-
-password:
-password
-
-})
-.select()
-.single();
-
-
-if(error){
-
-console.error(error);
-
-message.textContent =
-"Student could not be created: " +
-error.message;
-
-return;
-}
-
-
-if(!data){
-
-message.textContent =
-"Student could not be created.";
-
-return;
-}
-
-
-message.style.color =
-"#07883b";
-
-message.textContent =
-"Student account created successfully.";
-
-
-document
-.getElementById("studentName")
-.value = "";
-
-document
-.getElementById("studentRoll")
-.value = "";
-
-document
-.getElementById("studentClass")
-.value = "";
-
-document
-.getElementById(
-"studentNewUsername"
-)
-.value = "";
-
-document
-.getElementById(
-"studentNewPassword"
-)
-.value = "";
-
-
-loadStudents();
-
-
-}catch(error){
-
-console.error(error);
-
-message.textContent =
-"Error: " +
-error.message;
-
-}
-
-}
-
-
-/* =========================
-CREATE TEACHER
-========================= */
-
-async function createTeacher(){
-
-const message =
-document
-.getElementById(
-"teacherCreateMessage"
-);
-
-message.textContent = "";
-
-message.style.color =
-"#d92d20";
-
-
-const name =
-document
-.getElementById("teacherName")
-.value
-.trim();
-
-const username =
-document
-.getElementById(
-"teacherNewUsername"
-)
-.value
-.trim();
-
-const password =
-document
-.getElementById(
-"teacherNewPassword"
-)
-.value;
-
-const className =
-document
-.getElementById("teacherClass")
-.value
-.trim();
-
-
-if(
-!name ||
-!username ||
-!password ||
-!className
-){
-
-message.textContent =
-"Please complete all fields.";
-
-return;
-}
-
-
-if(password.length < 6){
-
-message.textContent =
-"Password must be at least 6 characters.";
-
-return;
-}
-
-
-message.textContent =
-"Creating teacher...";
-
-
-try{
-
-const {data,error} =
-await db
-.from("teachers")
-.insert({
-
-Name:
-name,
-
-Username:
-username,
-
-Password:
-password,
-
-class_name:
-className
-
-})
-.select()
-.single();
-
-
-if(error){
-
-console.error(error);
-
-message.textContent =
-"Teacher could not be created: " +
-error.message;
-
-return;
-}
-
-
-if(!data){
-
-message.textContent =
-"Teacher could not be created.";
-
-return;
-}
-
-
-message.style.color =
-"#07883b";
-
-message.textContent =
-"Teacher account created successfully.";
-
-
-document
-.getElementById("teacherName")
-.value = "";
-
-document
-.getElementById(
-"teacherNewUsername"
-)
-.value = "";
-
-document
-.getElementById(
-"teacherNewPassword"
-)
-.value = "";
-
-document
-.getElementById("teacherClass")
-.value = "";
-
-
-loadTeachers();
-
-
-}catch(error){
-
-console.error(error);
-
-message.textContent =
-"Error: " +
-error.message;
-
-}
-
-}
-
-
-/* =========================
-ADMIN STUDENTS LIST
-========================= */
-
-async function loadStudents(){
-
-const container =
-document.getElementById(
-"studentsAdminList"
-);
-
-container.innerHTML =
-"Loading...";
-
-
-const {data,error} =
-await db
-.from("students")
-.select(
-"name,roll_number,class_name,username"
-)
-.order(
-"roll_number"
-);
-
-
-if(error){
-
-console.error(error);
-
-container.innerHTML =
-"<p>Unable to load students: " +
-escapeHtml(error.message) +
-"</p>";
-
-return;
-}
-
-
-if(!data || data.length === 0){
-
-container.innerHTML =
-"<p>No students found.</p>";
-
-return;
-}
-
-
-let html = `
-
-<div class="results-table-wrapper">
-
-<table class="results-table">
-
-<thead>
-
-<tr>
-<th>Name</th>
-<th>Roll No.</th>
-<th>Class</th>
-<th>Username</th>
-</tr>
-
-</thead>
-
-<tbody>
-
-`;
-
-
-data.forEach(student => {
-
-html += `
-
-<tr>
-
-<td>
-${escapeHtml(
-student.name || ""
-)}
-</td>
-
-<td>
-${escapeHtml(
-student.roll_number || ""
-)}
-</td>
-
-<td>
-${escapeHtml(
-student.class_name || ""
-)}
-</td>
-
-<td>
-${escapeHtml(
-student.username || ""
-)}
-</td>
-
-</tr>
-
-`;
-
-});
-
-
-html += `
-
-</tbody>
-
-</table>
-
-</div>
-
-`;
-
-
-container.innerHTML =
-html;
-
-}
-
-
-/* =========================
-ADMIN TEACHERS LIST
-========================= */
-
-async function loadTeachers(){
-
-const container =
-document.getElementById(
-"teachersAdminList"
-);
-
-container.innerHTML =
-"Loading...";
-
-
-const {data,error} =
-await db
-.from("teachers")
-.select("*")
-.order("Name");
-
-
-if(error){
-
-console.error(error);
-
-container.innerHTML =
-"<p>Unable to load teachers: " +
-escapeHtml(error.message) +
-"</p>";
-
-return;
-}
-
-
-if(!data || data.length === 0){
-
-container.innerHTML =
-"<p>No teachers found.</p>";
-
-return;
-}
-
-
-let html = `
-
-<div class="results-table-wrapper">
-
-<table class="results-table">
-
-<thead>
-
-<tr>
-<th>Name</th>
-<th>Username</th>
-<th>Class</th>
-</tr>
-
-</thead>
-
-<tbody>
-
-`;
-
-
-data.forEach(teacher => {
-
-html += `
-
-<tr>
-
-<td>
-${escapeHtml(
-teacher.Name || ""
-)}
-</td>
-
-<td>
-${escapeHtml(
-teacher.Username || ""
-)}
-</td>
-
-<td>
-${escapeHtml(
-teacher.class_name || ""
-)}
-</td>
-
-</tr>
-
-`;
-
-});
-
-
-html += `
-
-</tbody>
-
-</table>
-
-</div>
-
-`;
-
-
-container.innerHTML =
-html;
-
-}
-
-
-/* =========================
-LOGOUT
-========================= */
-
-function studentLogout(){
-
-currentStudent = null;
-
-clearInterval(timerInterval);
-
-goHome();
-
-}
-
-
-function teacherLogout(){
-
-currentTeacher = null;
-
-goHome();
-
-}
-
-
-function adminLogout(){
-
-currentAdmin = null;
-
-goHome();
-
-}
-
-
-/* =========================
-ESCAPE HTML
-========================= */
-
-function escapeHtml(value){
-
-if(
-value === null ||
-value === undefined
-){
-
-return "";
-
-}
-
-return String(value)
-
-.replace(/&/g,"&amp;")
-
-.replace(/</g,"&lt;")
-
-.replace(/>/g,"&gt;")
-
-.replace(/"/g,"&quot;")
-
-.replace(/'/g,"&#039;");
-
-}
-
-
-/* =========================
-INITIAL PAGE
-========================= */
-
-hideAll();
-
-document
-.getElementById("home")
-.classList.remove("hidden");
+/* =========================================================
+   START
+========================================================= */
+
+checkExistingSession();
 
 </script>
 
