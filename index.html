@@ -1443,90 +1443,96 @@ document
 
 async function determineRole() {
 
-  const roles = [
-    "admin",
-    "teacher",
-    "student"
-  ];
+  try {
 
-  for (const role of roles) {
-
-    try {
-
-      if (role === "admin") {
-
-        const data =
-          await callFunction(
-            "portal-data",
-            {
-              action:
-                "admin_dashboard"
-            }
-          );
-
-        if (data.success) {
-
-          currentRole = "admin";
-          adminData = data;
-          currentProfile = data.admin;
-
-          return;
+    const data =
+      await callFunction(
+        "portal-data",
+        {
+          action: "get_profile"
         }
-      }
+      );
 
-      if (role === "teacher") {
-
-        const data =
-          await callFunction(
-            "portal-data",
-            {
-              action:
-                "teacher_dashboard"
-            }
-          );
-
-        if (data.success) {
-
-          currentRole = "teacher";
-          teacherData = data;
-          currentProfile = data.teacher;
-
-          return;
-        }
-      }
-
-      if (role === "student") {
-
-        const data =
-          await callFunction(
-            "portal-data",
-            {
-              action:
-                "student_dashboard"
-            }
-          );
-
-        if (data.success) {
-
-          currentRole = "student";
-          studentData = data;
-          currentProfile = data.student;
-
-          return;
-        }
-      }
-
-    } catch {
-      // Try next role.
+    if (
+      !data ||
+      !data.success ||
+      !data.role ||
+      !data.profile
+    ) {
+      throw new Error(
+        "Your account exists, but no Student, Teacher or Admin profile is linked to it."
+      );
     }
+
+
+    /* =====================================================
+       ADMIN
+    ===================================================== */
+
+    if (
+      data.role === "admin"
+    ) {
+
+      currentRole = "admin";
+
+      currentProfile =
+        data.profile;
+
+      return;
+    }
+
+
+    /* =====================================================
+       TEACHER
+    ===================================================== */
+
+    if (
+      data.role === "teacher"
+    ) {
+
+      currentRole = "teacher";
+
+      currentProfile =
+        data.profile;
+
+      return;
+    }
+
+
+    /* =====================================================
+       STUDENT
+    ===================================================== */
+
+    if (
+      data.role === "student"
+    ) {
+
+      currentRole = "student";
+
+      currentProfile =
+        data.profile;
+
+      return;
+    }
+
+
+    throw new Error(
+      "Invalid account role."
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Role detection error:",
+      error
+    );
+
+    throw new Error(
+      error.message ||
+      "Unable to determine account role."
+    );
   }
-
-  throw new Error(
-    "Your account exists, but no Student, Teacher or Admin profile is linked to it."
-  );
 }
-
-
 /* =========================================================
    NAVIGATION
 ========================================================= */
