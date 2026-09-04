@@ -2770,8 +2770,7 @@ async function showAdminTests() {
 
     await refreshAdminData();
 
-    const tests =
-      adminData.tests || [];
+    const tests = adminData.tests || [];
 
     mainContent.innerHTML = `
 
@@ -2782,7 +2781,6 @@ async function showAdminTests() {
       <p class="page-subtitle">
         Overview of all tests in the examination system.
       </p>
-
 
       <div class="card">
 
@@ -2799,6 +2797,7 @@ async function showAdminTests() {
                 <th>Marks</th>
                 <th>Status</th>
                 <th>Ownership</th>
+                <th>Actions</th>
               </tr>
             </thead>
 
@@ -2848,12 +2847,22 @@ async function showAdminTests() {
                         }
                       </td>
 
+                      <td>
+                        <button
+                          class="btn btn-danger"
+                          type="button"
+                          onclick="adminDeleteTest(${test.id})"
+                        >
+                          Delete
+                        </button>
+                      </td>
+
                     </tr>
 
                   `).join("")
                   : `
                     <tr>
-                      <td colspan="7">
+                      <td colspan="8">
                         ${emptyState("No tests found.")}
                       </td>
                     </tr>
@@ -2874,8 +2883,46 @@ async function showAdminTests() {
     hideLoader();
   }
 }
+  async function adminDeleteTest(testId) {
 
+  const confirmed = confirm(
+    "Are you sure you want to delete this test?\n\nThis action cannot be undone."
+  );
 
+  if (!confirmed) return;
+
+  showLoader("Deleting test...");
+
+  try {
+
+    const result = await callFunction("admin-manage-user", {
+      action: "delete_test",
+      id: testId
+    });
+
+    if (result?.error) {
+      throw new Error(result.error);
+    }
+
+    alert("Test deleted successfully.");
+
+    await showAdminTests();
+
+  } catch (error) {
+
+    console.error("Admin delete test error:", error);
+
+    alert(
+      error.message ||
+      "Failed to delete test."
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+  
 /* =========================================================
    ADMIN RESULTS
 ========================================================= */
