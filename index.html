@@ -2846,17 +2846,23 @@ async function showAdminTests() {
                             : `<span class="badge badge-gray">Legacy</span>`
                         }
                       </td>
+<td>
+  <button
+    class="btn"
+    type="button"
+    onclick="adminViewTest(${test.id})"
+  >
+    View
+  </button>
 
-                      <td>
-                        <button
-                          class="btn btn-danger"
-                          type="button"
-                          onclick="adminDeleteTest(${test.id})"
-                        >
-                          Delete
-                        </button>
-                      </td>
-
+  <button
+    class="btn btn-danger"
+    type="button"
+    onclick="adminDeleteTest(${test.id})"
+  >
+    Delete
+  </button>
+</td>
                     </tr>
 
                   `).join("")
@@ -2922,7 +2928,168 @@ async function showAdminTests() {
     hideLoader();
   }
 }
-  
+  async function adminViewTest(testId) {
+
+  showLoader("Loading test...");
+
+  try {
+
+    const result = await callFunction("admin-manage-user", {
+      action: "view_test",
+      id: testId
+    });
+
+    if (result?.error) {
+      throw new Error(result.error);
+    }
+
+    const test = result.test;
+    const questions = result.questions || [];
+
+    mainContent.innerHTML = `
+
+      <div class="page-header">
+
+        <div>
+          <h1 class="page-title">
+            ${escapeHTML(test.title || "Test")}
+          </h1>
+
+          <p class="page-subtitle">
+            Test details and questions
+          </p>
+        </div>
+
+        <button
+          class="btn"
+          type="button"
+          onclick="showAdminTests()"
+        >
+          ← Back to Tests
+        </button>
+
+      </div>
+
+
+      <div class="card">
+
+        <h2>Test Details</h2>
+
+        <div class="table-wrap">
+
+          <table>
+
+            <tbody>
+
+              <tr>
+                <th>Test</th>
+                <td>${escapeHTML(test.title || "")}</td>
+              </tr>
+
+              <tr>
+                <th>Class</th>
+                <td>${escapeHTML(test.class_name || "")}</td>
+              </tr>
+
+              <tr>
+                <th>Subject</th>
+                <td>${escapeHTML(test.subject || "")}</td>
+              </tr>
+
+              <tr>
+                <th>Duration</th>
+                <td>${test.duration_minutes || 0} minutes</td>
+              </tr>
+
+              <tr>
+                <th>Total Marks</th>
+                <td>${test.total_marks || 0}</td>
+              </tr>
+
+              <tr>
+                <th>Status</th>
+                <td>
+                  ${
+                    test.is_active
+                      ? `<span class="badge badge-green">Active</span>`
+                      : `<span class="badge badge-gray">Inactive</span>`
+                  }
+                </td>
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+
+      <div class="card">
+
+        <h2>Questions (${questions.length})</h2>
+
+        ${
+          questions.length
+            ? questions.map((question, index) => `
+
+              <div class="card" style="margin-top: 15px;">
+
+                <strong>
+                  Question ${index + 1}
+                </strong>
+
+                <p>
+                  ${escapeHTML(
+                    question.question_text ||
+                    question.question ||
+                    ""
+                  )}
+                </p>
+
+                ${
+                  question.option_a ||
+                  question.option_b ||
+                  question.option_c ||
+                  question.option_d
+                    ? `
+                      <div>
+                        <p>A. ${escapeHTML(question.option_a || "")}</p>
+                        <p>B. ${escapeHTML(question.option_b || "")}</p>
+                        <p>C. ${escapeHTML(question.option_c || "")}</p>
+                        <p>D. ${escapeHTML(question.option_d || "")}</p>
+                      </div>
+                    `
+                    : ""
+                }
+
+              </div>
+
+            `).join("")
+            : `
+              ${emptyState("No questions found for this test.")}
+            `
+        }
+
+      </div>
+
+    `;
+
+  } catch (error) {
+
+    console.error("Admin view test error:", error);
+
+    alert(
+      error.message ||
+      "Failed to load test."
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
 /* =========================================================
    ADMIN RESULTS
 ========================================================= */
