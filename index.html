@@ -150,6 +150,28 @@
       margin-bottom: 7px;
     }
 
+    .password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrapper .input {
+  padding-right: 48px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  padding: 5px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+    
     .input,
     .select,
     .textarea {
@@ -5267,8 +5289,13 @@ supabaseClient.auth.onAuthStateChange(
 
 checkExistingSession();
   
-function togglePassword(inputId, button) {
-  const input = document.getElementById(inputId);
+function togglePassword(inputOrId, button) {
+  const input =
+    typeof inputOrId === "string"
+      ? document.getElementById(inputOrId)
+      : inputOrId;
+
+  if (!input) return;
 
   if (input.type === "password") {
     input.type = "text";
@@ -5278,6 +5305,50 @@ function togglePassword(inputId, button) {
     button.textContent = "👁";
   }
 }
+  function setupPasswordToggles(root = document) {
+  root.querySelectorAll('input[type="password"]').forEach(input => {
+    if (input.closest(".password-wrapper")) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "password-wrapper";
+
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "toggle-password";
+    button.textContent = "👁";
+    button.setAttribute("aria-label", "Show password");
+
+    button.addEventListener("click", () => {
+      togglePassword(input, button);
+
+      button.setAttribute(
+        "aria-label",
+        input.type === "password" ? "Show password" : "Hide password"
+      );
+    });
+
+    wrapper.appendChild(button);
+  });
+}
+
+setupPasswordToggles();
+  const passwordObserver = new MutationObserver(mutations => {
+  mutations.forEach(mutation => {
+    mutation.addedNodes.forEach(node => {
+      if (node.nodeType === 1) {
+        setupPasswordToggles(node);
+      }
+    });
+  });
+});
+
+passwordObserver.observe(document.body, {
+  childList: true,
+  subtree: true
+});
   
 </script>
 
