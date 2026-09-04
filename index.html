@@ -5238,6 +5238,7 @@ async function showStudentResults() {
                       <th>Score</th>
                       <th>Percentage</th>
                       <th>Date</th>
+                      <th>Review</th>
                     </tr>
                   </thead>
 
@@ -5285,14 +5286,22 @@ async function showStudentResults() {
 
                           </td>
 
-                          <td>
-                            ${formatDate(
-                              result.submitted_at
-                            )}
-                          </td>
+                        <td>
+  ${formatDate(
+    result.submitted_at
+  )}
+</td>
 
-                        </tr>
+<td>
+  <button
+    class="btn btn-primary"
+    onclick="showStudentResultDetails(${result.id})"
+  >
+    Review
+  </button>
+</td>
 
+</tr>
                       `;
                     }).join("")}
 
@@ -5324,7 +5333,201 @@ async function showStudentResults() {
   }
 }
 
+/* =========================================================
+   STUDENT RESULT DETAILS
+========================================================= */
 
+async function showStudentResultDetails(resultId) {
+
+  showLoader("Loading result review...");
+
+  try {
+
+    const data =
+      await callFunction(
+        "student-test-system",
+        {
+          action:
+            "get_result_details",
+          result_id:
+            resultId
+        }
+      );
+
+    const result =
+      data.result;
+
+    const answers =
+      data.answers || [];
+
+    mainContent.innerHTML = `
+
+      <h1 class="page-title">
+        Result Review
+      </h1>
+
+      <p class="page-subtitle">
+        Review your answers question by question.
+      </p>
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div class="card-title">
+            Score: ${result.score}/${result.total_marks}
+          </div>
+
+          <button
+            class="btn btn-secondary"
+            onclick="showStudentResults()"
+          >
+            Back to Results
+          </button>
+
+        </div>
+
+        <div>
+
+          ${
+            answers.length
+              ? answers.map((answer, index) => {
+
+                  const q =
+                    answer.questions || {};
+
+                  const options = {
+                    A: q.option_a,
+                    B: q.option_b,
+                    C: q.option_c,
+                    D: q.option_d
+                  };
+
+                  const selectedText =
+                    answer.selected_option
+                      ? `${answer.selected_option}. ${
+                          escapeHTML(
+                            options[
+                              answer.selected_option
+                            ] || ""
+                          )
+                        }`
+                      : "Not Answered";
+
+                  const correctText =
+                    `${answer.correct_option}. ${
+                      escapeHTML(
+                        options[
+                          answer.correct_option
+                        ] || ""
+                      )
+                    }`;
+
+                  return `
+
+                    <div class="card"
+                      style="
+                        margin-bottom:15px;
+                        border-left:4px solid ${
+                          answer.is_correct
+                            ? "var(--success)"
+                            : "var(--danger)"
+                        };
+                      "
+                    >
+
+                      <div
+                        style="
+                          display:flex;
+                          justify-content:space-between;
+                          gap:10px;
+                          margin-bottom:12px;
+                        "
+                      >
+
+                        <strong>
+                          Question ${index + 1}
+                        </strong>
+
+                        <span class="badge ${
+                          answer.is_correct
+                            ? "badge-green"
+                            : "badge-red"
+                        }">
+                          ${
+                            answer.is_correct
+                              ? "Correct"
+                              : "Wrong"
+                          }
+                        </span>
+
+                      </div>
+
+                      <div
+                        style="
+                          font-size:16px;
+                          font-weight:650;
+                          margin-bottom:14px;
+                        "
+                      >
+                        ${escapeHTML(
+                          q.question_text || "—"
+                        )}
+                      </div>
+
+                      <div>
+                        <strong>Your Answer:</strong>
+                        ${selectedText}
+                      </div>
+
+                      ${
+                        !answer.is_correct
+                          ? `
+                            <div
+                              style="
+                                margin-top:8px;
+                                font-weight:650;
+                              "
+                            >
+                              <strong>
+                                Correct Answer:
+                              </strong>
+                              ${correctText}
+                            </div>
+                          `
+                          : ""
+                      }
+
+                    </div>
+
+                  `;
+
+                }).join("")
+              : emptyState(
+                  "No question details found.",
+                  "Question-wise answer details are not available."
+                )
+          }
+
+        </div>
+
+      </div>
+    `;
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+
+  }
+}
+  
 /* =========================================================
    LOGOUT
 ========================================================= */
