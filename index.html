@@ -935,14 +935,17 @@
 
         <div class="form-group">
           <label>Password</label>
-          <input
-            id="loginPassword"
-            class="input"
-            type="password"
-            autocomplete="current-password"
-            placeholder="Enter password"
-            required
-          >
+        <div class="password-wrapper">
+  <input 
+    id="loginPassword" 
+    class="input" 
+    type="password" 
+    autocomplete="current-password" 
+    placeholder="Enter password" 
+    required 
+  >
+  <button type="button" class="toggle-password" onclick="togglePassword('loginPassword', this)">👁</button>
+</div> 
         </div>
 
         <button class="btn btn-primary full" type="submit">
@@ -5263,7 +5266,19 @@ supabaseClient.auth.onAuthStateChange(
 ========================================================= */
 
 checkExistingSession();
+  
+function togglePassword(inputId, button) {
+  const input = document.getElementById(inputId);
 
+  if (input.type === "password") {
+    input.type = "text";
+    button.textContent = "🙈";
+  } else {
+    input.type = "password";
+    button.textContent = "👁";
+  }
+}
+  
 </script>
 
 </body>
