@@ -4257,7 +4257,324 @@ async function viewTeacherResults(
   }
 }
 
+/* =========================================================
+   TEACHER RESULT DETAILS
+========================================================= */
 
+async function showTeacherResultDetails(
+  resultId,
+  title
+) {
+
+  showLoader(
+    "Loading result review..."
+  );
+
+  try {
+
+    const data =
+      await callFunction(
+        "portal-data",
+        {
+          action:
+            "teacher_result_details",
+
+          result_id:
+            resultId
+        }
+      );
+
+
+    const result =
+      data.result;
+
+    const answers =
+      data.answers || [];
+
+
+    const student =
+      result.students || {};
+
+    const test =
+      result.tests || {};
+
+
+    mainContent.innerHTML = `
+
+      <h1 class="page-title">
+        Student Result Review
+      </h1>
+
+      <p class="page-subtitle">
+        Question-wise review of the student's answers.
+      </p>
+
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <div>
+
+            <div class="card-title">
+              ${escapeHTML(
+                test.title ||
+                title ||
+                "Test"
+              )}
+            </div>
+
+            <div
+              style="
+                margin-top:6px;
+                color:var(--text-secondary);
+              "
+            >
+              Student:
+              <strong>
+                ${escapeHTML(
+                  student.name || "—"
+                )}
+              </strong>
+
+              &nbsp; | &nbsp;
+
+              Roll No:
+              <strong>
+                ${escapeHTML(
+                  String(
+                    student.roll_number ||
+                    "—"
+                  )
+                )}
+              </strong>
+            </div>
+
+          </div>
+
+
+          <button
+            class="btn btn-secondary"
+            onclick="viewTeacherResults(
+              ${result.test_id},
+              '${escapeAttr(
+                title || test.title || "Test"
+              )}'
+            )"
+          >
+            Back to Results
+          </button>
+
+        </div>
+
+
+        <div
+          style="
+            margin-bottom:20px;
+            padding:15px;
+            border-radius:10px;
+            background:var(--bg-secondary);
+          "
+        >
+
+          <strong>
+            Score:
+          </strong>
+
+          ${result.score}/${result.total_marks}
+
+        </div>
+
+
+        <div>
+
+          ${
+            answers.length
+
+              ? answers.map(
+                  (answer, index) => {
+
+                    const q =
+                      answer.questions ||
+                      {};
+
+
+                    const options = {
+
+                      A:
+                        q.option_a,
+
+                      B:
+                        q.option_b,
+
+                      C:
+                        q.option_c,
+
+                      D:
+                        q.option_d
+
+                    };
+
+
+                    const selectedText =
+                      answer.selected_option
+
+                        ? `${answer.selected_option}. ${
+                            escapeHTML(
+                              options[
+                                answer.selected_option
+                              ] || ""
+                            )
+                          }`
+
+                        : "Not Answered";
+
+
+                    const correctText =
+                      answer.correct_option
+
+                        ? `${answer.correct_option}. ${
+                            escapeHTML(
+                              options[
+                                answer.correct_option
+                              ] || ""
+                            )
+                          }`
+
+                        : "—";
+
+
+                    return `
+
+                      <div
+                        class="card"
+                        style="
+                          margin-bottom:15px;
+                          border-left:4px solid ${
+                            answer.is_correct
+                              ? "var(--success)"
+                              : "var(--danger)"
+                          };
+                        "
+                      >
+
+                        <div
+                          style="
+                            display:flex;
+                            justify-content:space-between;
+                            gap:10px;
+                            margin-bottom:12px;
+                          "
+                        >
+
+                          <strong>
+                            Question ${index + 1}
+                          </strong>
+
+
+                          <span
+                            class="badge ${
+                              answer.is_correct
+                                ? "badge-green"
+                                : "badge-red"
+                            }"
+                          >
+
+                            ${
+                              answer.is_correct
+                                ? "Correct"
+                                : "Wrong"
+                            }
+
+                          </span>
+
+                        </div>
+
+
+                        <div
+                          style="
+                            font-size:16px;
+                            font-weight:650;
+                            margin-bottom:14px;
+                          "
+                        >
+
+                          ${escapeHTML(
+                            q.question_text ||
+                            "—"
+                          )}
+
+                        </div>
+
+
+                        <div>
+
+                          <strong>
+                            Student Answer:
+                          </strong>
+
+                          ${selectedText}
+
+                        </div>
+
+
+                        ${
+                          !answer.is_correct
+
+                            ? `
+
+                              <div
+                                style="
+                                  margin-top:8px;
+                                  font-weight:650;
+                                "
+                              >
+
+                                <strong>
+                                  Correct Answer:
+                                </strong>
+
+                                ${correctText}
+
+                              </div>
+
+                            `
+
+                            : ""
+                        }
+
+                      </div>
+
+                    `;
+
+                  }
+                ).join("")
+
+              : emptyState(
+                  "No question details found.",
+                  "Question-wise answer details are not available."
+                )
+          }
+
+        </div>
+
+      </div>
+
+    `;
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+
+  }
+}
 /* =========================================================
    STUDENT DATA
 ========================================================= */
