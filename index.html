@@ -6,7 +6,8 @@
   <title>Tauheed Model School — Online Portal</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+<!-- MathLive: Mathematical Formula Editor -->
+<script src="https://unpkg.com/mathlive"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -3600,11 +3601,13 @@ function addQuestion() {
 
       <label>Question</label>
 
-      <textarea
-        class="textarea question-text"
-        placeholder="Enter question"
-        required
-      ></textarea>
+   <math-field
+  class="question-text"
+  placeholder="Type question or insert formula..."
+  virtual-keyboard-mode="manual"
+  smart-mode="on"
+  required
+></math-field>
 
     </div>
 
@@ -3751,12 +3754,12 @@ async function createTest(event) {
   const questions =
     questionElements.map(element => ({
 
-      question_text:
-        element
-          .querySelector(".question-text")
-          .value
-          .trim(),
-
+    question_text:
+  element
+    .querySelector(".question-text")
+    .getValue("latex")
+    .trim(),
+      
       option_a:
         element
           .querySelector(".option-a")
