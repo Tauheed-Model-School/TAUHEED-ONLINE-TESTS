@@ -4215,6 +4215,15 @@ async function viewTeacherResults(
                             )}
                           </td>
 
+<td>
+  <button
+    class="btn btn-primary btn-small"
+    onclick="showTeacherResultDetails(${result.id}, '${escapeAttr(title)}')"
+  >
+    Review
+  </button>
+</td>
+
                         </tr>
 
                       `;
