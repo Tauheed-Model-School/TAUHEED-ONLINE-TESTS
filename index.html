@@ -3601,14 +3601,22 @@ function addQuestion() {
 
       <label>Question</label>
 
-   <math-field
-  class="question-text"
-  placeholder="Type question or insert formula..."
-  virtual-keyboard-mode="manual"
-  smart-mode="on"
-  required
-></math-field>
+  <div class="question-editor">
+  <div class="question-toolbar">
+    <button type="button" onclick="formatQuestion('bold')"><b>B</b></button>
+    <button type="button" onclick="formatQuestion('italic')"><i>I</i></button>
+    <button type="button" onclick="formatQuestion('underline')"><u>U</u></button>
+    <button type="button" onclick="formatQuestion('justifyRight')">RTL</button>
+    <button type="button" onclick="insertQuestionMath(this)">∑ Math</button>
+  </div>
 
+  <div
+    class="question-text"
+    contenteditable="true"
+    dir="auto"
+    data-placeholder="Type your question here..."
+  ></div>
+</div>
     </div>
 
 
