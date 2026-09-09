@@ -6206,7 +6206,45 @@ passwordObserver.observe(document.body, {
   childList: true,
   subtree: true
 });
-  
+function formatQuestion(command) {
+  document.execCommand(command, false, null);
+}
+
+function insertQuestionMath(button) {
+  const editor = button.closest(".question-editor").querySelector(".question-text");
+
+  editor.focus();
+
+  const mathField = document.createElement("math-field");
+
+  mathField.setAttribute("virtual-keyboard-mode", "manual");
+  mathField.setAttribute("smart-mode", "on");
+
+  mathField.style.display = "inline-block";
+  mathField.style.minWidth = "120px";
+  mathField.style.margin = "0 4px";
+
+  const selection = window.getSelection();
+
+  if (selection && selection.rangeCount > 0) {
+    const range = selection.getRangeAt(0);
+
+    if (editor.contains(range.commonAncestorContainer)) {
+      range.deleteContents();
+      range.insertNode(mathField);
+      range.setStartAfter(mathField);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    } else {
+      editor.appendChild(mathField);
+    }
+  } else {
+    editor.appendChild(mathField);
+  }
+
+  mathField.focus();
+}  
 </script>
 
 </body>
