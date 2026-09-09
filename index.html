@@ -3762,10 +3762,10 @@ async function createTest(event) {
   const questions =
     questionElements.map(element => ({
 
-    question_text:
+  question_text:
   element
     .querySelector(".question-text")
-    .getValue("latex")
+    .innerHTML
     .trim(),
       
       option_a:
