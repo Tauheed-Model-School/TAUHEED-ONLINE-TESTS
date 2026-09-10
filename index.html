@@ -3642,15 +3642,26 @@ function addQuestion() {
   </div>
 </div>
 
-      <div class="option-row">
-        <span class="option-label">B</span>
-        <input
-          class="input option-b"
-          placeholder="Option B"
-          required
-        >
-      </div>
+    <div class="option-row">
+  <span class="option-label">B</span>
 
+  <div class="question-editor option-editor">
+    <div class="question-toolbar">
+      <button type="button" onclick="formatQuestion('bold')"><b>B</b></button>
+      <button type="button" onclick="formatQuestion('italic')"><i>I</i></button>
+      <button type="button" onclick="formatQuestion('underline')"><u>U</u></button>
+      <button type="button" onclick="formatQuestion('justifyRight')">RTL</button>
+      <button type="button" onclick="insertQuestionMath(this)">∑ Math</button>
+    </div>
+
+    <div
+      class="question-text option-b"
+      contenteditable="true"
+      dir="auto"
+      data-placeholder="Option B"
+    ></div>
+  </div>
+</div>
       <div class="option-row">
         <span class="option-label">C</span>
         <input
