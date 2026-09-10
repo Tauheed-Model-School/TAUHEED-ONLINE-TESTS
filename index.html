@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"> <span class="option-label">C</span>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -3662,15 +3662,26 @@ function addQuestion() {
     ></div>
   </div>
 </div>
-      <div class="option-row">
-        <span class="option-label">C</span>
-        <input
-          class="input option-c"
-          placeholder="Option C"
-          required
-        >
-      </div>
+     <div class="option-row">
+  <span class="option-label">C</span>
 
+  <div class="question-editor option-editor">
+    <div class="question-toolbar">
+      <button type="button" onclick="formatQuestion('bold')"><b>B</b></button>
+      <button type="button" onclick="formatQuestion('italic')"><i>I</i></button>
+      <button type="button" onclick="formatQuestion('underline')"><u>U</u></button>
+      <button type="button" onclick="formatQuestion('justifyRight')">RTL</button>
+      <button type="button" onclick="insertQuestionMath(this)">∑ Math</button>
+    </div>
+
+    <div
+      class="question-text option-c"
+      contenteditable="true"
+      dir="auto"
+      data-placeholder="Option C"
+    ></div>
+  </div>
+</div>
       <div class="option-row">
         <span class="option-label">D</span>
         <input
@@ -3802,12 +3813,12 @@ async function createTest(event) {
     .innerHTML
     .trim(),
       
-      option_c:
-        element
-          .querySelector(".option-c")
-          .value
-          .trim(),
-
+     option_c:
+  element
+    .querySelector(".option-c")
+    .innerHTML
+    .trim(),
+      
       option_d:
         element
           .querySelector(".option-d")
