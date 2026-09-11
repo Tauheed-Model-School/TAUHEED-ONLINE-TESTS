@@ -1104,7 +1104,83 @@ let examTimer = null;
 let examSecondsRemaining = 0;
 
 let modalResolve = null;
+/* =========================================================
+   SECURITY & ANTI-CHEATING
+========================================================= */
+let tabSwitchWarnings = 0;
+const MAX_WARNINGS = 3;
 
+function sanitizeRichContent(rawHtml) {
+  if (!rawHtml) return "";
+  const temp = document.createElement("div");
+  temp.innerHTML = rawHtml;
+
+  const dangerousElements = temp.querySelectorAll("script, iframe, object, embed, form");
+  dangerousElements.forEach(el => el.remove());
+
+  const allElements = temp.querySelectorAll("*");
+  allElements.forEach(el => {
+    Array.from(el.attributes).forEach(attr => {
+      if (attr.name.startsWith("on")) {
+        el.removeAttribute(attr.name);
+      }
+    });
+  });
+
+  return temp.innerHTML;
+}
+
+function initAntiCheating() {
+  tabSwitchWarnings = 0;
+  window.addEventListener("contextmenu", preventInspect);
+  window.addEventListener("copy", preventAction);
+  window.addEventListener("cut", preventAction);
+  window.addEventListener("paste", preventAction);
+  document.addEventListener("visibilitychange", handleTabSwitch);
+}
+
+function removeAntiCheating() {
+  window.removeEventListener("contextmenu", preventInspect);
+  window.removeEventListener("copy", preventAction);
+  window.removeEventListener("cut", preventAction);
+  window.removeEventListener("paste", preventAction);
+  document.removeEventListener("visibilitychange", handleTabSwitch);
+}
+
+function preventInspect(e) {
+  if (currentExam) {
+    e.preventDefault();
+    showToast("Right-click is disabled during examination.", "error");
+  }
+}
+
+function preventAction(e) {
+  if (currentExam) {
+    e.preventDefault();
+    showToast("Copying or pasting is not allowed.", "error");
+  }
+}
+
+function handleTabSwitch() {
+  if (!currentExam) return;
+
+  if (document.hidden) {
+    tabSwitchWarnings++;
+    if (tabSwitchWarnings >= MAX_WARNINGS) {
+      alert("Warning Limit Exceeded: You switched tabs multiple times. Exam is being submitted.");
+      submitExam(true);
+    } else {
+      alert(`Warning ${tabSwitchWarnings}/${MAX_WARNINGS}: Leaving the exam tab is not allowed! Re-focus immediately.`);
+    }
+  }
+}
+
+function cleanExamStorage() {
+  localStorage.removeItem("active_exam_data");
+  localStorage.removeItem("active_exam_end_time");
+  localStorage.removeItem("active_exam_answers");
+  removeAntiCheating();
+}
 
 /* =========================================================
    DOM
@@ -5008,149 +5084,106 @@ async function showStudentTests() {
 
 
 /* =========================================================
-   START TEST
+   START TEST & PERSISTENT TIMER
 ========================================================= */
 
 async function startTest(testId) {
-
-  const confirmed =
-    await confirmAction(
-      "Start Examination?",
-      "Once you start this examination, your attempt will be recorded when you submit it. You can only attempt each test once.",
-      "Start Test"
-    );
+  const confirmed = await confirmAction(
+    "Start Examination?",
+    "Once you start, leaving or refreshing the browser is restricted. You can only attempt each test once.",
+    "Start Test"
+  );
 
   if (!confirmed) return;
 
   showLoader("Loading examination...");
 
   try {
-
-    const data =
-      await callFunction(
-        "student-test-system",
-        {
-          action:
-            "get_test",
-
-          test_id:
-            testId
-        }
-      );
+    const data = await callFunction("student-test-system", {
+      action: "get_test",
+      test_id: testId
+    });
 
     currentExam = data;
-
     examAnswers = {};
 
-    startExamTimer(
-      Number(
-        data.test.duration_minutes
-      ) * 60
-    );
+    const durationSeconds = Number(data.test.duration_minutes) * 60;
+    const examEndTime = Date.now() + durationSeconds * 1000;
 
+    localStorage.setItem("active_exam_data", JSON.stringify(data));
+    localStorage.setItem("active_exam_end_time", examEndTime.toString());
+    localStorage.setItem("active_exam_answers", JSON.stringify({}));
+
+    initAntiCheating();
+    startExamTimer(durationSeconds);
     renderExam();
 
   } catch (error) {
-
-    if (
-      error.message
-        .toLowerCase()
-        .includes("already attempted")
-    ) {
-
-      showToast(
-        "You have already attempted this test.",
-        "error"
-      );
-
+    if (error.message.toLowerCase().includes("already attempted")) {
+      showToast("You have already attempted this test.", "error");
       await showStudentTests();
-
     } else {
-
-      showToast(
-        error.message,
-        "error"
-      );
+      showToast(error.message, "error");
     }
-
   } finally {
-
     hideLoader();
   }
 }
 
-
-/* =========================================================
-   EXAM TIMER
-========================================================= */
-
 function startExamTimer(seconds) {
-
   clearInterval(examTimer);
-
-  examSecondsRemaining =
-    seconds;
-
+  examSecondsRemaining = seconds;
   updateTimerDisplay();
 
-  examTimer =
-    setInterval(
-      () => {
+  examTimer = setInterval(() => {
+    const targetEnd = Number(localStorage.getItem("active_exam_end_time"));
+    if (targetEnd) {
+      examSecondsRemaining = Math.max(0, Math.round((targetEnd - Date.now()) / 1000));
+    } else {
+      examSecondsRemaining--;
+    }
 
-        examSecondsRemaining--;
+    updateTimerDisplay();
 
-        updateTimerDisplay();
+    if (examSecondsRemaining <= 0) {
+      clearInterval(examTimer);
+      showToast("Time is up. Your test is being submitted.", "error");
+      submitExam(true);
+    }
+  }, 1000);
+}
 
-        if (
-          examSecondsRemaining <= 0
-        ) {
+function checkExamRecovery() {
+  const savedExam = localStorage.getItem("active_exam_data");
+  const savedEndTime = Number(localStorage.getItem("active_exam_end_time"));
+  const savedAnswers = localStorage.getItem("active_exam_answers");
 
-          clearInterval(examTimer);
+  if (savedExam && savedEndTime) {
+    const remaining = Math.round((savedEndTime - Date.now()) / 1000);
 
-          showToast(
-            "Time is up. Your test is being submitted.",
-            "error"
-          );
+    if (remaining > 0) {
+      currentExam = JSON.parse(savedExam);
+      examAnswers = savedAnswers ? JSON.parse(savedAnswers) : {};
+      
+      initAntiCheating();
+      startExamTimer(remaining);
+      renderExam();
 
-          submitExam(true);
+      Object.entries(examAnswers).forEach(([qId, val]) => {
+        const input = document.querySelector(`input[name="question_${qId}"][value="${val}"]`);
+        if (input) {
+          input.checked = true;
+          input.closest(".answer-option")?.classList.add("selected");
         }
-
-      },
-      1000
-    );
-}
-
-
-function updateTimerDisplay() {
-
-  const timer =
-    document.getElementById(
-      "examTimer"
-    );
-
-  if (!timer) return;
-
-  const minutes =
-    Math.floor(
-      examSecondsRemaining / 60
-    );
-
-  const seconds =
-    examSecondsRemaining % 60;
-
-  timer.textContent =
-    `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
-
-  if (
-    examSecondsRemaining <= 60
-  ) {
-    timer.classList.add("danger");
-  } else {
-    timer.classList.remove("danger");
+      });
+      return true;
+    } else {
+      cleanExamStorage();
+    }
   }
+  return false;
 }
-
-
+  
 /* =========================================================
    RENDER EXAM
 ========================================================= */
