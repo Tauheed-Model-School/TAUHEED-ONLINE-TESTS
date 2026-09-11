@@ -899,18 +899,22 @@
       }
     }
 /* MathLive Formula Styling */
-    math-field {
-      display: inline-block;
-      min-width: 80px;
-      padding: 4px 8px;
-      margin: 0 4px;
-      background: #f8faf9;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 1.1em;
+   math-field {
+      display: inline-block !important;
+      min-width: 60px !important;
+      min-height: 28px !important;
       vertical-align: middle;
+      padding: 2px 6px;
+      margin: 0 4px;
+      font-size: 1.15em;
+      border: none !important;
+      background: transparent !important;
+      pointer-events: auto;
     }
 
+    .answer-option math-field {
+      pointer-events: none; /* Student option par click kare to radio select ho */
+    }
     /* Jab student ya admin dekh raha ho to border hat jaye */
     math-field[readonly] {
       background: transparent;
@@ -3955,53 +3959,26 @@ async function createTest(event) {
   }
 
 
-  const questions =
-    questionElements.map(element => ({
+const extractContent = (el) => {
+    if (!el) return "";
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll("math-field").forEach(mf => {
+      const latex = mf.value || (typeof mf.getValue === "function" ? mf.getValue() : "");
+      mf.textContent = latex;
+    });
+    return clone.innerHTML.trim();
+  };
 
-  question_text:
-  element
-    .querySelector(".question-text")
-    .innerHTML
-    .trim(),
-      
-    option_a:
-  element
-    .querySelector(".option-a")
-    .innerHTML
-    .trim(),
-      
-     option_b:
-  element
-    .querySelector(".option-b")
-    .innerHTML
-    .trim(),
-      
-     option_c:
-  element
-    .querySelector(".option-c")
-    .innerHTML
-    .trim(),
-      
-      option_d:
-  element
-    .querySelector(".option-d")
-    .innerHTML
-    .trim(),
-      
-      correct_option:
-        element
-          .querySelector(".correct-option")
-          .value,
-
-      marks:
-        Number(
-          element
-            .querySelector(".question-marks")
-            .value
-        )
-    }));
-
-
+  const questions = questionElements.map(element => ({
+    question_text: extractContent(element.querySelector(".question-text")),
+    option_a: extractContent(element.querySelector(".option-a")),
+    option_b: extractContent(element.querySelector(".option-b")),
+    option_c: extractContent(element.querySelector(".option-c")),
+    option_d: extractContent(element.querySelector(".option-d")),
+    correct_option: element.querySelector(".correct-option").value,
+    marks: Number(element.querySelector(".question-marks").value)
+  }));
+  
   showLoader("Creating test...");
 
   try {
@@ -5333,12 +5310,18 @@ function renderExam() {
     window.MathfieldElement.renderMathInDocument();
   }
 
+ // Har math-field me formula load karein aur lock karein
   document.querySelectorAll(".exam-question math-field").forEach(field => {
+    // Agar textContent me formula para hai to usko mathfield me set karein
+    const formula = field.textContent.trim();
+    if (formula && typeof field.setValue === "function") {
+      field.setValue(formula);
+    }
     field.setAttribute("readonly", "true");
     field.removeAttribute("virtual-keyboard-mode");
     field.setAttribute("contenteditable", "false");
   });
-
+  
   // Submit Listener
   document.getElementById("examForm").addEventListener("submit", event => {
     event.preventDefault();
