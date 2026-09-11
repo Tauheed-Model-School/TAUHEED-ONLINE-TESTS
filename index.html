@@ -5158,9 +5158,8 @@ async function showStudentTests() {
   }
 }
 
-
 /* =========================================================
-   START TEST & PERSISTENT TIMER
+   START TEST & RENDER EXAM (FULLY STABLE)
 ========================================================= */
 
 async function startTest(testId) {
@@ -5180,316 +5179,138 @@ async function startTest(testId) {
       test_id: testId
     });
 
+    if (!data || !data.test) {
+      throw new Error("Unable to load test details from server.");
+    }
+
     currentExam = data;
     examAnswers = {};
 
-    const durationSeconds = Number(data.test.duration_minutes) * 60;
+    const durationSeconds = (Number(data.test.duration_minutes) || 20) * 60;
     const examEndTime = Date.now() + durationSeconds * 1000;
 
     localStorage.setItem("active_exam_data", JSON.stringify(data));
     localStorage.setItem("active_exam_end_time", examEndTime.toString());
     localStorage.setItem("active_exam_answers", JSON.stringify({}));
 
-    initAntiCheating();
+    if (typeof initAntiCheating === "function") {
+      initAntiCheating();
+    }
+
     startExamTimer(durationSeconds);
     renderExam();
 
   } catch (error) {
-    if (error.message.toLowerCase().includes("already attempted")) {
+    console.error("Start Test Error:", error);
+    if (error.message && error.message.toLowerCase().includes("already attempted")) {
       showToast("You have already attempted this test.", "error");
       await showStudentTests();
     } else {
-      showToast(error.message, "error");
+      showToast(error.message || "Failed to start test.", "error");
     }
   } finally {
     hideLoader();
   }
 }
 
-function startExamTimer(seconds) {
-  clearInterval(examTimer);
-  examSecondsRemaining = seconds;
-  updateTimerDisplay();
-
-  examTimer = setInterval(() => {
-    const targetEnd = Number(localStorage.getItem("active_exam_end_time"));
-    if (targetEnd) {
-      examSecondsRemaining = Math.max(0, Math.round((targetEnd - Date.now()) / 1000));
-    } else {
-      examSecondsRemaining--;
-    }
-
-    updateTimerDisplay();
-
-    if (examSecondsRemaining <= 0) {
-      clearInterval(examTimer);
-      showToast("Time is up. Your test is being submitted.", "error");
-      submitExam(true);
-    }
-  }, 1000);
-}
-
-function checkExamRecovery() {
-  const savedExam = localStorage.getItem("active_exam_data");
-  const savedEndTime = Number(localStorage.getItem("active_exam_end_time"));
-  const savedAnswers = localStorage.getItem("active_exam_answers");
-
-  if (savedExam && savedEndTime) {
-    const remaining = Math.round((savedEndTime - Date.now()) / 1000);
-
-    if (remaining > 0) {
-      currentExam = JSON.parse(savedExam);
-      examAnswers = savedAnswers ? JSON.parse(savedAnswers) : {};
-      
-      initAntiCheating();
-      startExamTimer(remaining);
-      renderExam();
-
-      Object.entries(examAnswers).forEach(([qId, val]) => {
-        const input = document.querySelector(`input[name="question_${qId}"][value="${val}"]`);
-        if (input) {
-          input.checked = true;
-          input.closest(".answer-option")?.classList.add("selected");
-        }
-      });
-      return true;
-    } else {
-      cleanExamStorage();
-    }
-  }
-  return false;
-}
-  
-/* =========================================================
-   RENDER EXAM
-========================================================= */
-
-function renderExam() {
-
-  const test =
-    currentExam.test;
-
-  const questions =
-    currentExam.questions || [];
-
-
-  mainContent.innerHTML = `
-
-    <div class="exam-header">
-
-      <div>
-
-        <strong>
-          ${escapeHTML(test.title)}
-        </strong>
-
-        <div style="
-          color:var(--muted);
-          font-size:12px;
-          margin-top:3px;
-        ">
-          ${escapeHTML(test.subject)}
-          ·
-          ${test.total_marks || 0}
-          marks
-        </div>
-
-      </div>
-
-
-      <div
-        id="examTimer"
-        class="timer"
-      >
-        00:00
-      </div>
-
-    </div>
-
-
-    <form id="examForm">
-
-      ${
-        questions.map(
-          (question, index) => `
-
-            <div
-              class="exam-question"
-              data-question-id="${question.id}"
-            >
-
-              <div class="exam-q-number">
-                Question ${index + 1}
-                ·
-                ${question.marks || 0}
-                mark${Number(question.marks) === 1 ? "" : "s"}
-              </div>
-
-             <div class="exam-q-text">
-  ${question.question_text}
-</div>
-
-              ${renderAnswerOption(
-                question,
-                "A",
-                question.option_a
-              )}
-
-              ${renderAnswerOption(
-                question,
-                "B",
-                question.option_b
-              )}
-
-              ${renderAnswerOption(
-                question,
-                "C",
-                question.option_c
-              )}
-
-              ${renderAnswerOption(
-                question,
-                "D",
-                question.option_d
-              )}
-
-            </div>
-
-          `
-        ).join("")
-      }
-
-
-      <div class="card">
-
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          gap:15px;
-          flex-wrap:wrap;
-        ">
-
-          <div>
-
-            <strong>
-              Ready to submit?
-            </strong>
-
-            <div style="
-              color:var(--muted);
-              font-size:12px;
-              margin-top:4px;
-            ">
-              Unanswered questions will receive zero marks.
-            </div>
-
-          </div>
-
-          <button
-            type="submit"
-            class="btn btn-primary"
-          >
-            Submit Test
-          </button>
-
-        </div>
-
-      </div>
-
-    </form>
-  `;
-
-  document
-    .querySelectorAll("math-field")
-    .forEach(field => {
-      field.setAttribute("readonly", "");
-      field.setAttribute("contenteditable", "false");
-    });
-  document
-    .getElementById("examForm")
-    .addEventListener(
-      "submit",
-      event => {
-
-        event.preventDefault();
-
-        submitExam(false);
-      }
-    );
-
-
-  document
-    .querySelectorAll(
-      ".answer-option input"
-    )
-    .forEach(input => {
-
-      input.addEventListener(
-        "change",
-        () => {
-
-          const questionId =
-            Number(
-              input.dataset.questionId
-            );
-
-        examAnswers[questionId] = input.value;
-localStorage.setItem("active_exam_answers", JSON.stringify(examAnswers));
-          
-          document
-            .querySelectorAll(
-              `.answer-option[data-question-id="${questionId}"]`
-            )
-            .forEach(
-              element =>
-                element.classList.remove(
-                  "selected"
-                )
-            );
-
-          input
-            .closest(".answer-option")
-            .classList.add("selected");
-        }
-      );
-    });
-
-}
-
-
-function renderAnswerOption(
-  question,
-  letter,
-  text
-) {
-
+function renderAnswerOption(question, letter, text) {
+  const safeText = text || "—";
   return `
-
-    <label
-      class="answer-option"
-      data-question-id="${question.id}"
-    >
-
+    <label class="answer-option" data-question-id="${question.id}">
       <input
         type="radio"
         name="question_${question.id}"
         value="${letter}"
         data-question-id="${question.id}"
       >
-
-      <strong>
-        ${letter}.
-      </strong>
-
- <span>${renderMathContent(text)}</span>
- 
+      <strong>${letter}.</strong>
+      <span>${safeText}</span>
     </label>
-
   `;
 }
 
+function renderExam() {
+  if (!currentExam || !currentExam.test) return;
 
+  const test = currentExam.test;
+  const questions = currentExam.questions || [];
+
+  mainContent.innerHTML = `
+    <div class="exam-header">
+      <div>
+        <strong>${escapeHTML(test.title || "Examination")}</strong>
+        <div style="color:var(--muted); font-size:12px; margin-top:3px;">
+          ${escapeHTML(test.subject || "")} · ${test.total_marks || 0} marks
+        </div>
+      </div>
+      <div id="examTimer" class="timer">00:00</div>
+    </div>
+
+    <form id="examForm">
+      ${
+        questions.map((question, index) => `
+          <div class="exam-question" data-question-id="${question.id}">
+            <div class="exam-q-number">
+              Question ${index + 1} · ${question.marks || 1} mark${Number(question.marks) === 1 ? "" : "s"}
+            </div>
+
+            <div class="exam-q-text">
+              ${question.question_text || ""}
+            </div>
+
+            ${renderAnswerOption(question, "A", question.option_a)}
+            ${renderAnswerOption(question, "B", question.option_b)}
+            ${renderAnswerOption(question, "C", question.option_c)}
+            ${renderAnswerOption(question, "D", question.option_d)}
+          </div>
+        `).join("")
+      }
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap;">
+          <div>
+            <strong>Ready to submit?</strong>
+            <div style="color:var(--muted); font-size:12px; margin-top:4px;">
+              Unanswered questions will receive zero marks.
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            Submit Test
+          </button>
+        </div>
+      </div>
+    </form>
+  `;
+
+  // Student view me sabhi math-fields ko readonly set karein taake student edit na kar sake
+  setTimeout(() => {
+    document.querySelectorAll(".exam-question math-field").forEach(field => {
+      field.setAttribute("readonly", "true");
+      field.removeAttribute("virtual-keyboard-mode");
+      field.setAttribute("contenteditable", "false");
+    });
+  }, 50);
+
+  document.getElementById("examForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    submitExam(false);
+  });
+
+  document.querySelectorAll(".answer-option input").forEach(input => {
+    input.addEventListener("change", () => {
+      const questionId = Number(input.dataset.questionId);
+      examAnswers[questionId] = input.value;
+      localStorage.setItem("active_exam_answers", JSON.stringify(examAnswers));
+
+      document.querySelectorAll(`.answer-option[data-question-id="${questionId}"]`).forEach(el => {
+        el.classList.remove("selected");
+      });
+
+      input.closest(".answer-option").classList.add("selected");
+    });
+  });
+}
+  
 /* =========================================================
    SUBMIT EXAM
 ========================================================= */
