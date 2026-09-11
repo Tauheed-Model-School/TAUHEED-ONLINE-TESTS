@@ -3683,14 +3683,25 @@ function addQuestion() {
   </div>
 </div>
       <div class="option-row">
-        <span class="option-label">D</span>
-        <input
-          class="input option-d"
-          placeholder="Option D"
-          required
-        >
-      </div>
+  <span class="option-label">D</span>
 
+  <div class="question-editor option-editor">
+    <div class="question-toolbar">
+      <button type="button" onclick="formatQuestion('bold')"><b>B</b></button>
+      <button type="button" onclick="formatQuestion('italic')"><i>I</i></button>
+      <button type="button" onclick="formatQuestion('underline')"><u>U</u></button>
+      <button type="button" onclick="formatQuestion('justifyRight')">RTL</button>
+      <button type="button" onclick="insertQuestionMath(this)">∑ Math</button>
+    </div>
+
+    <div
+      class="question-text option-d"
+      contenteditable="true"
+      dir="auto"
+      data-placeholder="Option D"
+    ></div>
+  </div>
+</div>
     </div>
 
 
@@ -3820,11 +3831,11 @@ async function createTest(event) {
     .trim(),
       
       option_d:
-        element
-          .querySelector(".option-d")
-          .value
-          .trim(),
-
+  element
+    .querySelector(".option-d")
+    .innerHTML
+    .trim(),
+      
       correct_option:
         element
           .querySelector(".correct-option")
