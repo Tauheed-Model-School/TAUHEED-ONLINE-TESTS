@@ -5358,11 +5358,9 @@ function renderExam() {
               input.dataset.questionId
             );
 
-          examAnswers[
-            questionId
-          ] =
-            input.value;
-
+        examAnswers[questionId] = input.value;
+localStorage.setItem("active_exam_answers", JSON.stringify(examAnswers));
+          
           document
             .querySelectorAll(
               `.answer-option[data-question-id="${questionId}"]`
@@ -5479,7 +5477,9 @@ async function submitExam(
         }
       );
 
-
+cleanExamStorage();
+showResultScreen(result);
+    
     showResultScreen(
       result
     );
@@ -6027,15 +6027,17 @@ async function checkExistingSession() {
 
     buildNavigation();
 
-    if (currentRole === "admin")
+    if (currentRole === "admin") {
       await showAdminDashboard();
-
-    else if (currentRole === "teacher")
+    } else if (currentRole === "teacher") {
       await showTeacherDashboard();
-
-    else
-      await showStudentDashboard();
-
+    } else {
+      const isExamRestored = checkExamRecovery();
+      if (!isExamRestored) {
+        await showStudentDashboard();
+      }
+    }
+    
   } catch (error) {
 
     console.error(
