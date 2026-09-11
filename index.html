@@ -5291,7 +5291,12 @@ function renderExam() {
     </form>
   `;
 
-
+  document
+    .querySelectorAll("math-field")
+    .forEach(field => {
+      field.setAttribute("readonly", "");
+      field.setAttribute("contenteditable", "false");
+    });
   document
     .getElementById("examForm")
     .addEventListener(
