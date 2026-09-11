@@ -6257,6 +6257,8 @@ function insertQuestionMath(button) {
   editor.focus();
 
   const mathField = document.createElement("math-field");
+  mathField.setAttribute("readonly", "");
+mathField.setAttribute("contenteditable", "false");
 
   mathField.setAttribute("virtual-keyboard-mode", "manual");
   mathField.setAttribute("smart-mode", "on");
