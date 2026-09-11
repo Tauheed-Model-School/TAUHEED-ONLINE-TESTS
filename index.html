@@ -1320,17 +1320,29 @@ function escapeHTML(value) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-function renderMathContent(html) {
-  if (!html) return "—";
-  // Convert math-fields to readonly so students/admins cannot edit them
-  const temp = document.createElement("div");
-  temp.innerHTML = html;
+function renderMathContent(content) {
+  if (!content) return "—";
   
-  temp.querySelectorAll("math-field").forEach(mf => {
-    mf.setAttribute("readonly", "true");
-    mf.removeAttribute("virtual-keyboard-mode");
+  // 1. Agar puraani tarah <math-field> mojood ho to use parse karein
+  let clean = content.replace(/<math-field[^>]*>(.*?)<\/math-field>/gi, (match, formula) => {
+    const expr = formula.trim() || "x^2";
+    if (window.MathfieldElement && typeof window.MathfieldElement.toMarkup === "function") {
+      return `<span class="static-math">${window.MathfieldElement.toMarkup(expr)}</span>`;
+    }
+    return expr;
   });
-  
+
+  // 2. $$ formula $$ ko visual Math symbols me convert karein
+  clean = clean.replace(/\$\$(.*?)\$\$/g, (match, formula) => {
+    const expr = formula.trim();
+    if (window.MathfieldElement && typeof window.MathfieldElement.toMarkup === "function") {
+      return `<span class="static-math" style="display:inline-block; margin:0 4px; vertical-align:middle;">${window.MathfieldElement.toMarkup(expr)}</span>`;
+    }
+    return `<b>${expr}</b>`;
+  });
+
+  return clean;
+}  
   return temp.innerHTML;
 }
 function showToast(message, type = "normal") {
@@ -3962,13 +3974,13 @@ async function createTest(event) {
 const extractContent = (el) => {
     if (!el) return "";
     const clone = el.cloneNode(true);
-    // Asal elements se live values le kar clone me attribute set karein
+    // Asal elements se formula utha kar $$latex$$ me convert karein
     const originalMathFields = el.querySelectorAll("math-field");
     clone.querySelectorAll("math-field").forEach((mf, i) => {
       const orig = originalMathFields[i];
       const val = orig ? (orig.value || orig.getValue?.() || "x") : (mf.value || "x");
-      mf.setAttribute("value", val);
-      mf.innerHTML = val; // fallback for plain text
+      const textNode = document.createTextNode(` $$${val}$$ `);
+      mf.replaceWith(textNode);
     });
     return clone.innerHTML.trim();
   };
@@ -5263,31 +5275,31 @@ function renderExam() {
             </div>
 
             <div class="exam-q-text">
-              ${question.question_text || ""}
+              ${renderMathContent(question.question_text)}
             </div>
 
             <label class="answer-option" data-question-id="${question.id}">
               <input type="radio" name="question_${question.id}" value="A" data-question-id="${question.id}">
               <strong>A.</strong>
-              <span>${question.option_a || "—"}</span>
+              <span>${renderMathContent(question.option_a)}</span>
             </label>
 
             <label class="answer-option" data-question-id="${question.id}">
               <input type="radio" name="question_${question.id}" value="B" data-question-id="${question.id}">
               <strong>B.</strong>
-              <span>${question.option_b || "—"}</span>
+              <span>${renderMathContent(question.option_b)}</span>
             </label>
 
             <label class="answer-option" data-question-id="${question.id}">
               <input type="radio" name="question_${question.id}" value="C" data-question-id="${question.id}">
               <strong>C.</strong>
-              <span>${question.option_c || "—"}</span>
+              <span>${renderMathContent(question.option_c)}</span>
             </label>
 
             <label class="answer-option" data-question-id="${question.id}">
               <input type="radio" name="question_${question.id}" value="D" data-question-id="${question.id}">
               <strong>D.</strong>
-              <span>${question.option_d || "—"}</span>
+              <span>${renderMathContent(question.option_d)}</span>
             </label>
           </div>
         `).join("")
@@ -5309,21 +5321,6 @@ function renderExam() {
     </form>
   `;
 
-  // Student side par formula ko wazeh render aur lock karna
-  setTimeout(() => {
-    document.querySelectorAll(".exam-question math-field").forEach(field => {
-      const val = field.getAttribute("value") || field.textContent.trim();
-      if (val && typeof field.setValue === "function") {
-        field.setValue(val);
-      }
-      field.setAttribute("readonly", "true");
-      field.setAttribute("contenteditable", "false");
-      field.removeAttribute("virtual-keyboard-mode");
-      field.style.display = "inline-block";
-      field.style.visibility = "visible";
-    });
-  }, 100);
-  
   // Submit Listener
   document.getElementById("examForm").addEventListener("submit", event => {
     event.preventDefault();
