@@ -5159,7 +5159,7 @@ async function showStudentTests() {
 }
 
 /* =========================================================
-   START TEST & RENDER EXAM (FULLY STABLE)
+   START TEST & RENDER EXAM (GUARANTEED FIX)
 ========================================================= */
 
 async function startTest(testId) {
@@ -5180,27 +5180,29 @@ async function startTest(testId) {
     });
 
     if (!data || !data.test) {
-      throw new Error("Unable to load test details from server.");
+      throw new Error("Unable to load test data from server.");
     }
 
     currentExam = data;
     examAnswers = {};
 
-    const durationSeconds = (Number(data.test.duration_minutes) || 20) * 60;
-    const examEndTime = Date.now() + durationSeconds * 1000;
+    // 1. Pehle loader hide karein taake screen block na ho
+    hideLoader();
 
-    localStorage.setItem("active_exam_data", JSON.stringify(data));
-    localStorage.setItem("active_exam_end_time", examEndTime.toString());
-    localStorage.setItem("active_exam_answers", JSON.stringify({}));
+    // 2. Exam render karein
+    renderExam();
 
+    // 3. Timer start karein
+    const durationMinutes = Number(data.test.duration_minutes) || 20;
+    startExamTimer(durationMinutes * 60);
+
+    // 4. Anti-cheating initialize karein
     if (typeof initAntiCheating === "function") {
       initAntiCheating();
     }
 
-    startExamTimer(durationSeconds);
-    renderExam();
-
   } catch (error) {
+    hideLoader();
     console.error("Start Test Error:", error);
     if (error.message && error.message.toLowerCase().includes("already attempted")) {
       showToast("You have already attempted this test.", "error");
@@ -5208,25 +5210,24 @@ async function startTest(testId) {
     } else {
       showToast(error.message || "Failed to start test.", "error");
     }
-  } finally {
-    hideLoader();
   }
 }
 
-function renderAnswerOption(question, letter, text) {
-  const safeText = text || "—";
-  return `
-    <label class="answer-option" data-question-id="${question.id}">
-      <input
-        type="radio"
-        name="question_${question.id}"
-        value="${letter}"
-        data-question-id="${question.id}"
-      >
-      <strong>${letter}.</strong>
-      <span>${safeText}</span>
-    </label>
-  `;
+function startExamTimer(seconds) {
+  clearInterval(examTimer);
+  examSecondsRemaining = seconds;
+  updateTimerDisplay();
+
+  examTimer = setInterval(() => {
+    examSecondsRemaining--;
+    updateTimerDisplay();
+
+    if (examSecondsRemaining <= 0) {
+      clearInterval(examTimer);
+      showToast("Time is up. Your test is being submitted.", "error");
+      submitExam(true);
+    }
+  }, 1000);
 }
 
 function renderExam() {
@@ -5234,6 +5235,40 @@ function renderExam() {
 
   const test = currentExam.test;
   const questions = currentExam.questions || [];
+
+  const questionsHTML = questions.map((question, index) => {
+    return `
+      <div class="exam-question" data-question-id="${question.id}">
+        <div class="exam-q-number">
+          Question ${index + 1} · ${question.marks || 1} mark${Number(question.marks) === 1 ? "" : "s"}
+        </div>
+
+        <div class="exam-q-text">
+          ${question.question_text || ""}
+        </div>
+
+        <label class="answer-option" data-question-id="${question.id}">
+          <input type="radio" name="question_${question.id}" value="A" data-question-id="${question.id}">
+          <strong>A.</strong> <span>${question.option_a || "—"}</span>
+        </label>
+
+        <label class="answer-option" data-question-id="${question.id}">
+          <input type="radio" name="question_${question.id}" value="B" data-question-id="${question.id}">
+          <strong>B.</strong> <span>${question.option_b || "—"}</span>
+        </label>
+
+        <label class="answer-option" data-question-id="${question.id}">
+          <input type="radio" name="question_${question.id}" value="C" data-question-id="${question.id}">
+          <strong>C.</strong> <span>${question.option_c || "—"}</span>
+        </label>
+
+        <label class="answer-option" data-question-id="${question.id}">
+          <input type="radio" name="question_${question.id}" value="D" data-question-id="${question.id}">
+          <strong>D.</strong> <span>${question.option_d || "—"}</span>
+        </label>
+      </div>
+    `;
+  }).join("");
 
   mainContent.innerHTML = `
     <div class="exam-header">
@@ -5247,24 +5282,7 @@ function renderExam() {
     </div>
 
     <form id="examForm">
-      ${
-        questions.map((question, index) => `
-          <div class="exam-question" data-question-id="${question.id}">
-            <div class="exam-q-number">
-              Question ${index + 1} · ${question.marks || 1} mark${Number(question.marks) === 1 ? "" : "s"}
-            </div>
-
-            <div class="exam-q-text">
-              ${question.question_text || ""}
-            </div>
-
-            ${renderAnswerOption(question, "A", question.option_a)}
-            ${renderAnswerOption(question, "B", question.option_b)}
-            ${renderAnswerOption(question, "C", question.option_c)}
-            ${renderAnswerOption(question, "D", question.option_d)}
-          </div>
-        `).join("")
-      }
+      ${questionsHTML}
 
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap;">
@@ -5282,25 +5300,24 @@ function renderExam() {
     </form>
   `;
 
-  // Student view me sabhi math-fields ko readonly set karein taake student edit na kar sake
-  setTimeout(() => {
-    document.querySelectorAll(".exam-question math-field").forEach(field => {
-      field.setAttribute("readonly", "true");
-      field.removeAttribute("virtual-keyboard-mode");
-      field.setAttribute("contenteditable", "false");
-    });
-  }, 50);
+  // MathLive elements ko student side par non-editable karein
+  document.querySelectorAll(".exam-question math-field").forEach(field => {
+    field.setAttribute("readonly", "true");
+    field.removeAttribute("virtual-keyboard-mode");
+    field.setAttribute("contenteditable", "false");
+  });
 
-  document.getElementById("examForm").addEventListener("submit", (event) => {
+  // Submit listener
+  document.getElementById("examForm").addEventListener("submit", event => {
     event.preventDefault();
     submitExam(false);
   });
 
+  // Radio button click listener
   document.querySelectorAll(".answer-option input").forEach(input => {
     input.addEventListener("change", () => {
       const questionId = Number(input.dataset.questionId);
       examAnswers[questionId] = input.value;
-      localStorage.setItem("active_exam_answers", JSON.stringify(examAnswers));
 
       document.querySelectorAll(`.answer-option[data-question-id="${questionId}"]`).forEach(el => {
         el.classList.remove("selected");
@@ -5309,8 +5326,7 @@ function renderExam() {
       input.closest(".answer-option").classList.add("selected");
     });
   });
-}
-  
+}  
 /* =========================================================
    SUBMIT EXAM
 ========================================================= */
