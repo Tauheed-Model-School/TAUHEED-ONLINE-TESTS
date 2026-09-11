@@ -3962,9 +3962,13 @@ async function createTest(event) {
 const extractContent = (el) => {
     if (!el) return "";
     const clone = el.cloneNode(true);
-    clone.querySelectorAll("math-field").forEach(mf => {
-      const latex = mf.value || (typeof mf.getValue === "function" ? mf.getValue() : "");
-      mf.textContent = latex;
+    // Asal elements se live values le kar clone me attribute set karein
+    const originalMathFields = el.querySelectorAll("math-field");
+    clone.querySelectorAll("math-field").forEach((mf, i) => {
+      const orig = originalMathFields[i];
+      const val = orig ? (orig.value || orig.getValue?.() || "x") : (mf.value || "x");
+      mf.setAttribute("value", val);
+      mf.innerHTML = val; // fallback for plain text
     });
     return clone.innerHTML.trim();
   };
@@ -5305,22 +5309,20 @@ function renderExam() {
     </form>
   `;
 
-  // MathLive elements ko activate aur student ke liye lock karein
-  if (window.MathfieldElement && typeof window.MathfieldElement.renderMathInDocument === "function") {
-    window.MathfieldElement.renderMathInDocument();
-  }
-
- // Har math-field me formula load karein aur lock karein
-  document.querySelectorAll(".exam-question math-field").forEach(field => {
-    // Agar textContent me formula para hai to usko mathfield me set karein
-    const formula = field.textContent.trim();
-    if (formula && typeof field.setValue === "function") {
-      field.setValue(formula);
-    }
-    field.setAttribute("readonly", "true");
-    field.removeAttribute("virtual-keyboard-mode");
-    field.setAttribute("contenteditable", "false");
-  });
+  // Student side par formula ko wazeh render aur lock karna
+  setTimeout(() => {
+    document.querySelectorAll(".exam-question math-field").forEach(field => {
+      const val = field.getAttribute("value") || field.textContent.trim();
+      if (val && typeof field.setValue === "function") {
+        field.setValue(val);
+      }
+      field.setAttribute("readonly", "true");
+      field.setAttribute("contenteditable", "false");
+      field.removeAttribute("virtual-keyboard-mode");
+      field.style.display = "inline-block";
+      field.style.visibility = "visible";
+    });
+  }, 100);
   
   // Submit Listener
   document.getElementById("examForm").addEventListener("submit", event => {
@@ -6217,31 +6219,27 @@ passwordObserver.observe(document.body, {
 function formatQuestion(command) {
   document.execCommand(command, false, null);
 }
-
 function insertQuestionMath(button) {
-  const editor = button.closest(".question-editor").querySelector(".question-text");
+  // Yeh line ab question aur charon options dono me kaam karegi
+  const editor = button.closest(".question-editor").querySelector(".question-text, .option-a, .option-b, .option-c, .option-d");
+  if (!editor) return;
   editor.focus();
 
   const mathField = document.createElement("math-field");
   mathField.setAttribute("virtual-keyboard-mode", "manual");
   mathField.setAttribute("smart-mode", "on");
-  mathField.setValue("x^2"); // simple initial placeholder
+  mathField.setValue("x^2");
 
-  // Formula ke baad ek normal space node add karenge taake cursor aage type kar sake
-  const trailingSpace = document.createTextNode("\u00A0"); 
+  const trailingSpace = document.createTextNode("\u00A0");
 
   const selection = window.getSelection();
   if (selection && selection.rangeCount > 0) {
     const range = selection.getRangeAt(0);
-
     if (editor.contains(range.commonAncestorContainer)) {
       range.deleteContents();
       range.insertNode(mathField);
-      
-      // Math field ke foran baad space lagayein
       mathField.after(trailingSpace);
 
-      // Cursor ko space ke theek aage set karein taake teacher foran English/Urdu type kar sake
       const newRange = document.createRange();
       newRange.setStartAfter(trailingSpace);
       newRange.collapse(true);
@@ -6255,19 +6253,7 @@ function insertQuestionMath(button) {
     editor.appendChild(mathField);
     editor.appendChild(trailingSpace);
   }
-
-  // Box ke bahar click karke normal typing resume karne ka event
-  mathField.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowRight" && mathField.selectionIsAtEnd) {
-      const sel = window.getSelection();
-      const r = document.createRange();
-      r.setStartAfter(trailingSpace);
-      r.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(r);
-    }
-  });
-}  
+}
 </script>
 
 </body>
