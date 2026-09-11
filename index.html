@@ -1441,50 +1441,37 @@ document
 
 
 /* =========================================================
-   EDGE FUNCTION CALL
+   EDGE FUNCTION CALL (AUTH FIXED)
 ========================================================= */
 
-async function callFunction(
-  functionName,
-  payload
-) {
+async function callFunction(functionName, payload) {
+  // Fresh session retrieve karein
+  let { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
-  const {
-    data: {
-      session
-    }
-  } = await supabaseClient.auth.getSession();
-
-  if (!session) {
-    throw new Error(
-      "Your session has expired. Please sign in again."
-    );
+  // Agar session expire hone wala ho ya null ho to refresh karein
+  if (!session || sessionError) {
+    const refreshRes = await supabaseClient.auth.refreshSession();
+    session = refreshRes.data?.session;
   }
 
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/functions/v1/${functionName}`,
-      {
-        method: "POST",
+  if (!session || !session.access_token) {
+    throw new Error("Your session has expired. Please sign in again.");
+  }
 
-        headers: {
-          "Authorization":
-            `Bearer ${session.access_token}`,
-
-          "apikey":
-            SUPABASE_PUBLISHABLE_KEY,
-
-          "Content-Type":
-            "application/json"
-        },
-
-        body:
-          JSON.stringify(payload)
-      }
-    );
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/${functionName}`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${session.access_token.trim()}`,
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    }
+  );
 
   let data = {};
-
   try {
     data = await response.json();
   } catch {
@@ -1492,7 +1479,6 @@ async function callFunction(
   }
 
   if (!response.ok) {
-
     throw new Error(
       data.error ||
       data.message ||
@@ -1502,8 +1488,6 @@ async function callFunction(
 
   return data;
 }
-
-
 /* =========================================================
    LOGIN ROLE
 ========================================================= */
