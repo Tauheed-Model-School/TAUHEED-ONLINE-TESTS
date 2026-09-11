@@ -5159,7 +5159,7 @@ async function showStudentTests() {
 }
 
 /* =========================================================
-   START TEST & RENDER EXAM (GUARANTEED FIX)
+   START TEST, TIMER & MATHLIVE ENGINE (PERFECT SYNC)
 ========================================================= */
 
 async function startTest(testId) {
@@ -5186,17 +5186,21 @@ async function startTest(testId) {
     currentExam = data;
     examAnswers = {};
 
-    // 1. Pehle loader hide karein taake screen block na ho
     hideLoader();
 
-    // 2. Exam render karein
+    // 1. Exam HTML render karein
     renderExam();
 
-    // 3. Timer start karein
-    const durationMinutes = Number(data.test.duration_minutes) || 20;
-    startExamTimer(durationMinutes * 60);
+    // 2. Persistent Timer initialize karein
+    const durationSeconds = (Number(data.test.duration_minutes) || 20) * 60;
+    const examEndTime = Date.now() + durationSeconds * 1000;
 
-    // 4. Anti-cheating initialize karein
+    localStorage.setItem("active_exam_data", JSON.stringify(data));
+    localStorage.setItem("active_exam_end_time", examEndTime.toString());
+    localStorage.setItem("active_exam_answers", JSON.stringify({}));
+
+    startExamTimer(durationSeconds);
+
     if (typeof initAntiCheating === "function") {
       initAntiCheating();
     }
@@ -5219,7 +5223,13 @@ function startExamTimer(seconds) {
   updateTimerDisplay();
 
   examTimer = setInterval(() => {
-    examSecondsRemaining--;
+    const targetEnd = Number(localStorage.getItem("active_exam_end_time"));
+    if (targetEnd) {
+      examSecondsRemaining = Math.max(0, Math.round((targetEnd - Date.now()) / 1000));
+    } else {
+      examSecondsRemaining--;
+    }
+
     updateTimerDisplay();
 
     if (examSecondsRemaining <= 0) {
@@ -5230,45 +5240,27 @@ function startExamTimer(seconds) {
   }, 1000);
 }
 
+function updateTimerDisplay() {
+  const timer = document.getElementById("examTimer");
+  if (!timer) return;
+
+  const minutes = Math.floor(examSecondsRemaining / 60);
+  const seconds = examSecondsRemaining % 60;
+
+  timer.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+  if (examSecondsRemaining <= 60) {
+    timer.classList.add("danger");
+  } else {
+    timer.classList.remove("danger");
+  }
+}
+
 function renderExam() {
   if (!currentExam || !currentExam.test) return;
 
   const test = currentExam.test;
   const questions = currentExam.questions || [];
-
-  const questionsHTML = questions.map((question, index) => {
-    return `
-      <div class="exam-question" data-question-id="${question.id}">
-        <div class="exam-q-number">
-          Question ${index + 1} · ${question.marks || 1} mark${Number(question.marks) === 1 ? "" : "s"}
-        </div>
-
-        <div class="exam-q-text">
-          ${question.question_text || ""}
-        </div>
-
-        <label class="answer-option" data-question-id="${question.id}">
-          <input type="radio" name="question_${question.id}" value="A" data-question-id="${question.id}">
-          <strong>A.</strong> <span>${question.option_a || "—"}</span>
-        </label>
-
-        <label class="answer-option" data-question-id="${question.id}">
-          <input type="radio" name="question_${question.id}" value="B" data-question-id="${question.id}">
-          <strong>B.</strong> <span>${question.option_b || "—"}</span>
-        </label>
-
-        <label class="answer-option" data-question-id="${question.id}">
-          <input type="radio" name="question_${question.id}" value="C" data-question-id="${question.id}">
-          <strong>C.</strong> <span>${question.option_c || "—"}</span>
-        </label>
-
-        <label class="answer-option" data-question-id="${question.id}">
-          <input type="radio" name="question_${question.id}" value="D" data-question-id="${question.id}">
-          <strong>D.</strong> <span>${question.option_d || "—"}</span>
-        </label>
-      </div>
-    `;
-  }).join("");
 
   mainContent.innerHTML = `
     <div class="exam-header">
@@ -5282,7 +5274,43 @@ function renderExam() {
     </div>
 
     <form id="examForm">
-      ${questionsHTML}
+      ${
+        questions.map((question, index) => `
+          <div class="exam-question" data-question-id="${question.id}">
+            <div class="exam-q-number">
+              Question ${index + 1} · ${question.marks || 1} mark${Number(question.marks) === 1 ? "" : "s"}
+            </div>
+
+            <div class="exam-q-text">
+              ${question.question_text || ""}
+            </div>
+
+            <label class="answer-option" data-question-id="${question.id}">
+              <input type="radio" name="question_${question.id}" value="A" data-question-id="${question.id}">
+              <strong>A.</strong>
+              <span>${question.option_a || "—"}</span>
+            </label>
+
+            <label class="answer-option" data-question-id="${question.id}">
+              <input type="radio" name="question_${question.id}" value="B" data-question-id="${question.id}">
+              <strong>B.</strong>
+              <span>${question.option_b || "—"}</span>
+            </label>
+
+            <label class="answer-option" data-question-id="${question.id}">
+              <input type="radio" name="question_${question.id}" value="C" data-question-id="${question.id}">
+              <strong>C.</strong>
+              <span>${question.option_c || "—"}</span>
+            </label>
+
+            <label class="answer-option" data-question-id="${question.id}">
+              <input type="radio" name="question_${question.id}" value="D" data-question-id="${question.id}">
+              <strong>D.</strong>
+              <span>${question.option_d || "—"}</span>
+            </label>
+          </div>
+        `).join("")
+      }
 
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap;">
@@ -5300,14 +5328,18 @@ function renderExam() {
     </form>
   `;
 
-  // MathLive elements ko student side par non-editable karein
+  // MathLive elements ko activate aur student ke liye lock karein
+  if (window.MathfieldElement && typeof window.MathfieldElement.renderMathInDocument === "function") {
+    window.MathfieldElement.renderMathInDocument();
+  }
+
   document.querySelectorAll(".exam-question math-field").forEach(field => {
     field.setAttribute("readonly", "true");
     field.removeAttribute("virtual-keyboard-mode");
     field.setAttribute("contenteditable", "false");
   });
 
-  // Submit listener
+  // Submit Listener
   document.getElementById("examForm").addEventListener("submit", event => {
     event.preventDefault();
     submitExam(false);
@@ -5318,6 +5350,7 @@ function renderExam() {
     input.addEventListener("change", () => {
       const questionId = Number(input.dataset.questionId);
       examAnswers[questionId] = input.value;
+      localStorage.setItem("active_exam_answers", JSON.stringify(examAnswers));
 
       document.querySelectorAll(`.answer-option[data-question-id="${questionId}"]`).forEach(el => {
         el.classList.remove("selected");
@@ -5326,8 +5359,8 @@ function renderExam() {
       input.closest(".answer-option").classList.add("selected");
     });
   });
-}  
-/* =========================================================
+}
+  /* =========================================================
    SUBMIT EXAM
 ========================================================= */
 
