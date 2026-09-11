@@ -1,1348 +1,1573 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head></head>
-  <body>
-    <span class="option-label">C</span>
+<html lang="en"> <span class="option-label">C</span>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tauheed Model School — Online Portal</title>
 
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tauheed Model School — Online Portal</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- MathLive: Mathematical Formula Editor -->
+<script src="https://unpkg.com/mathlive"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- MathLive: Mathematical Formula Editor -->
-    <script src="https://unpkg.com/mathlive"></script>
-    <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+    :root {
+      --green: #0b6b4f;
+      --green-dark: #064936;
+      --green-light: #eaf7f2;
+      --gold: #c9a227;
+      --bg: #f5f7f6;
+      --card: #ffffff;
+      --text: #17221e;
+      --muted: #718078;
+      --border: #e4e9e6;
+      --danger: #c0392b;
+      --danger-bg: #fff0ee;
+      --success: #16865b;
+      --shadow: 0 12px 35px rgba(16, 37, 29, .08);
+      --radius: 18px;
+    }
 
-      :root {
-        --green: #0b6b4f;
-        --green-dark: #064936;
-        --green-light: #eaf7f2;
-        --gold: #c9a227;
-        --bg: #f5f7f6;
-        --card: #ffffff;
-        --text: #17221e;
-        --muted: #718078;
-        --border: #e4e9e6;
-        --danger: #c0392b;
-        --danger-bg: #fff0ee;
-        --success: #16865b;
-        --shadow: 0 12px 35px rgba(16, 37, 29, 0.08);
-        --radius: 18px;
-      }
+    body {
+      font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
-      body {
-        font-family:
-          Inter,
-          ui-sans-serif,
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        min-height: 100vh;
-      }
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
 
-      button,
-      input,
-      select,
-      textarea {
-        font: inherit;
-      }
+    button {
+      cursor: pointer;
+    }
 
-      button {
-        cursor: pointer;
-      }
+    .hidden {
+      display: none !important;
+    }
 
-      .hidden {
-        display: none !important;
-      }
-
-      /* =========================
+    /* =========================
        LOGIN
     ========================= */
 
-      #loginScreen {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 25px;
-        background:
-          radial-gradient(circle at top left, #dff4eb 0, transparent 35%),
-          radial-gradient(circle at bottom right, #eef5df 0, transparent 35%), var(--bg);
-      }
+    #loginScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 25px;
+      background:
+        radial-gradient(circle at top left, #dff4eb 0, transparent 35%),
+        radial-gradient(circle at bottom right, #eef5df 0, transparent 35%),
+        var(--bg);
+    }
 
-      .login-card {
-        width: 100%;
-        max-width: 440px;
-        background: white;
-        border: 1px solid var(--border);
-        border-radius: 28px;
-        padding: 38px;
-        box-shadow: var(--shadow);
-      }
+    .login-card {
+      width: 100%;
+      max-width: 440px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 38px;
+      box-shadow: var(--shadow);
+    }
 
-      .school-logo {
-        width: 72px;
-        height: 72px;
-        border-radius: 22px;
-        background: var(--green);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 20px;
-        font-size: 27px;
-        font-weight: 800;
-        box-shadow: 0 10px 25px rgba(11, 107, 79, 0.22);
-      }
+    .school-logo {
+      width: 72px;
+      height: 72px;
+      border-radius: 22px;
+      background: var(--green);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 27px;
+      font-weight: 800;
+      box-shadow: 0 10px 25px rgba(11,107,79,.22);
+    }
 
-      .login-card h1 {
-        text-align: center;
-        font-size: 25px;
-        margin-bottom: 7px;
-      }
+    .login-card h1 {
+      text-align: center;
+      font-size: 25px;
+      margin-bottom: 7px;
+    }
 
-      .login-card .subtitle {
-        text-align: center;
-        color: var(--muted);
-        margin-bottom: 28px;
-        font-size: 14px;
-      }
+    .login-card .subtitle {
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 28px;
+      font-size: 14px;
+    }
 
-      .role-tabs {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        background: #f1f4f2;
-        border-radius: 13px;
-        padding: 4px;
-        margin-bottom: 22px;
-      }
+    .role-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      background: #f1f4f2;
+      border-radius: 13px;
+      padding: 4px;
+      margin-bottom: 22px;
+    }
 
-      .role-tab {
-        border: 0;
-        background: transparent;
-        padding: 11px 5px;
-        border-radius: 10px;
-        color: var(--muted);
-        font-weight: 700;
-        font-size: 13px;
-      }
+    .role-tab {
+      border: 0;
+      background: transparent;
+      padding: 11px 5px;
+      border-radius: 10px;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 13px;
+    }
 
-      .role-tab.active {
-        background: white;
-        color: var(--green);
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
-      }
+    .role-tab.active {
+      background: white;
+      color: var(--green);
+      box-shadow: 0 3px 10px rgba(0,0,0,.06);
+    }
 
-      .form-group {
-        margin-bottom: 16px;
-      }
+    .form-group {
+      margin-bottom: 16px;
+    }
 
-      .form-group label {
-        display: block;
-        font-size: 13px;
-        font-weight: 700;
-        margin-bottom: 7px;
-      }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
 
-      .password-wrapper {
-        position: relative;
-        width: 100%;
-      }
+    .password-wrapper {
+  position: relative;
+  width: 100%;
+}
 
-      .password-wrapper .input {
-        padding-right: 48px;
-      }
+.password-wrapper .input {
+  padding-right: 48px;
+}
 
-      .toggle-password {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        border: 0;
-        background: transparent;
-        padding: 5px;
-        cursor: pointer;
-        font-size: 18px;
-        line-height: 1;
-      }
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  padding: 5px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+    
+    .input,
+    .select,
+    .textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: white;
+      padding: 13px 14px;
+      border-radius: 12px;
+      outline: none;
+      color: var(--text);
+      transition: .2s;
+    }
 
-      .input,
-      .select,
-      .textarea {
-        width: 100%;
-        border: 1px solid var(--border);
-        background: white;
-        padding: 13px 14px;
-        border-radius: 12px;
-        outline: none;
-        color: var(--text);
-        transition: 0.2s;
-      }
+    .input:focus,
+    .select:focus,
+    .textarea:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(11,107,79,.08);
+    }
 
-      .input:focus,
-      .select:focus,
-      .textarea:focus {
-        border-color: var(--green);
-        box-shadow: 0 0 0 3px rgba(11, 107, 79, 0.08);
-      }
+    .textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
 
-      .textarea {
-        min-height: 90px;
-        resize: vertical;
-      }
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 17px;
+      font-weight: 750;
+      transition: .2s;
+    }
 
-      .btn {
-        border: 0;
-        border-radius: 12px;
-        padding: 12px 17px;
-        font-weight: 750;
-        transition: 0.2s;
-      }
+    .btn:hover {
+      transform: translateY(-1px);
+    }
 
-      .btn:hover {
-        transform: translateY(-1px);
-      }
+    .btn-primary {
+      background: var(--green);
+      color: white;
+    }
 
-      .btn-primary {
-        background: var(--green);
-        color: white;
-      }
+    .btn-primary:hover {
+      background: var(--green-dark);
+    }
 
-      .btn-primary:hover {
-        background: var(--green-dark);
-      }
+    .btn-secondary {
+      background: #eef3f0;
+      color: var(--green-dark);
+    }
 
-      .btn-secondary {
-        background: #eef3f0;
-        color: var(--green-dark);
-      }
+    .btn-danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
 
-      .btn-danger {
-        background: var(--danger-bg);
-        color: var(--danger);
-      }
+    .btn-small {
+      padding: 8px 11px;
+      font-size: 12px;
+      border-radius: 9px;
+    }
 
-      .btn-small {
-        padding: 8px 11px;
-        font-size: 12px;
-        border-radius: 9px;
-      }
+    .full {
+      width: 100%;
+    }
 
-      .full {
-        width: 100%;
-      }
+    .error-box,
+    .success-box {
+      padding: 12px 14px;
+      border-radius: 11px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
 
-      .error-box,
-      .success-box {
-        padding: 12px 14px;
-        border-radius: 11px;
-        margin-bottom: 16px;
-        font-size: 13px;
-        line-height: 1.5;
-      }
+    .error-box {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
 
-      .error-box {
-        background: var(--danger-bg);
-        color: var(--danger);
-      }
+    .success-box {
+      background: #eaf8f1;
+      color: var(--success);
+    }
 
-      .success-box {
-        background: #eaf8f1;
-        color: var(--success);
-      }
-
-      /* =========================
+    /* =========================
        APP
     ========================= */
 
-      #app {
-        min-height: 100vh;
-      }
+    #app {
+      min-height: 100vh;
+    }
 
-      .topbar {
-        height: 72px;
-        background: white;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 28px;
-        position: sticky;
-        top: 0;
-        z-index: 100;
-      }
+    .topbar {
+      height: 72px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
 
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 800;
-      }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+    }
 
-      .brand-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        background: var(--green);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-      }
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--green);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
 
-      .brand small {
-        display: block;
-        color: var(--muted);
-        font-weight: 500;
-        font-size: 11px;
-        margin-top: 2px;
-      }
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 11px;
+      margin-top: 2px;
+    }
 
-      .top-user {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
+    .top-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-      .user-pill {
-        background: var(--green-light);
-        color: var(--green-dark);
-        padding: 8px 13px;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: 700;
-      }
+    .user-pill {
+      background: var(--green-light);
+      color: var(--green-dark);
+      padding: 8px 13px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+    }
 
-      .app-layout {
-        display: flex;
-        min-height: calc(100vh - 72px);
-      }
+    .app-layout {
+      display: flex;
+      min-height: calc(100vh - 72px);
+    }
 
-      .sidebar {
-        width: 245px;
-        background: #fff;
-        border-right: 1px solid var(--border);
-        padding: 22px 15px;
-        flex-shrink: 0;
-      }
+    .sidebar {
+      width: 245px;
+      background: #fff;
+      border-right: 1px solid var(--border);
+      padding: 22px 15px;
+      flex-shrink: 0;
+    }
 
-      .nav-title {
-        color: #9aa59f;
-        font-size: 10px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        margin: 8px 12px 9px;
-      }
+    .nav-title {
+      color: #9aa59f;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      margin: 8px 12px 9px;
+    }
 
-      .nav-btn {
-        width: 100%;
-        border: 0;
-        background: transparent;
-        color: #5e6d65;
-        text-align: left;
-        padding: 11px 13px;
-        border-radius: 11px;
-        margin-bottom: 3px;
-        font-weight: 650;
-        font-size: 13px;
-      }
+    .nav-btn {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: #5e6d65;
+      text-align: left;
+      padding: 11px 13px;
+      border-radius: 11px;
+      margin-bottom: 3px;
+      font-weight: 650;
+      font-size: 13px;
+    }
 
-      .nav-btn:hover,
-      .nav-btn.active {
-        background: var(--green-light);
-        color: var(--green-dark);
-      }
+    .nav-btn:hover,
+    .nav-btn.active {
+      background: var(--green-light);
+      color: var(--green-dark);
+    }
 
-      .main {
-        flex: 1;
-        padding: 28px;
-        min-width: 0;
-      }
+    .main {
+      flex: 1;
+      padding: 28px;
+      min-width: 0;
+    }
 
-      .page-title {
-        font-size: 27px;
-        margin-bottom: 5px;
-      }
+    .page-title {
+      font-size: 27px;
+      margin-bottom: 5px;
+    }
 
-      .page-subtitle {
-        color: var(--muted);
-        font-size: 14px;
-        margin-bottom: 25px;
-      }
+    .page-subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 25px;
+    }
 
-      /* =========================
+    /* =========================
        CARDS / STATS
     ========================= */
 
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 15px;
-        margin-bottom: 25px;
-      }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 25px;
+    }
 
-      .stat-card {
-        background: white;
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 20px;
-        box-shadow: 0 5px 18px rgba(0, 0, 0, 0.025);
-      }
+    .stat-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 5px 18px rgba(0,0,0,.025);
+    }
 
-      .stat-label {
-        color: var(--muted);
-        font-size: 12px;
-        font-weight: 700;
-        margin-bottom: 8px;
-      }
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
 
-      .stat-value {
-        font-size: 29px;
-        font-weight: 850;
-        color: var(--green-dark);
-      }
+    .stat-value {
+      font-size: 29px;
+      font-weight: 850;
+      color: var(--green-dark);
+    }
 
-      .card {
-        background: white;
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        box-shadow: 0 5px 18px rgba(0, 0, 0, 0.025);
-        padding: 22px;
-        margin-bottom: 20px;
-      }
+    .card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 5px 18px rgba(0,0,0,.025);
+      padding: 22px;
+      margin-bottom: 20px;
+    }
 
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 15px;
-        margin-bottom: 17px;
-      }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 17px;
+    }
 
-      .card-title {
-        font-size: 17px;
-        font-weight: 800;
-      }
+    .card-title {
+      font-size: 17px;
+      font-weight: 800;
+    }
 
-      .grid-2 {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 18px;
-      }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
 
-      .grid-3 {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 15px;
-      }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
 
-      /* =========================
+    /* =========================
        TABLES
     ========================= */
 
-      .table-wrap {
-        overflow-x: auto;
-      }
+    .table-wrap {
+      overflow-x: auto;
+    }
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 650px;
-      }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 650px;
+    }
 
-      th {
-        text-align: left;
-        color: #849089;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        padding: 11px 10px;
-        border-bottom: 1px solid var(--border);
-      }
+    th {
+      text-align: left;
+      color: #849089;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      padding: 11px 10px;
+      border-bottom: 1px solid var(--border);
+    }
 
-      td {
-        padding: 13px 10px;
-        border-bottom: 1px solid #edf0ee;
-        font-size: 13px;
-        vertical-align: middle;
-      }
+    td {
+      padding: 13px 10px;
+      border-bottom: 1px solid #edf0ee;
+      font-size: 13px;
+      vertical-align: middle;
+    }
 
-      tr:last-child td {
-        border-bottom: 0;
-      }
+    tr:last-child td {
+      border-bottom: 0;
+    }
 
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 5px 9px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 750;
-      }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 750;
+    }
 
-      .badge-green {
-        background: #e9f8f0;
-        color: #16704f;
-      }
+    .badge-green {
+      background: #e9f8f0;
+      color: #16704f;
+    }
 
-      .badge-gray {
-        background: #f0f2f1;
-        color: #68756e;
-      }
+    .badge-gray {
+      background: #f0f2f1;
+      color: #68756e;
+    }
 
-      .badge-red {
-        background: #fff0ee;
-        color: #bd3c30;
-      }
+    .badge-red {
+      background: #fff0ee;
+      color: #bd3c30;
+    }
 
-      /* =========================
+    /* =========================
        TEST BUILDER
     ========================= */
 
-      .question-builder {
-        border: 1px solid var(--border);
-        border-radius: 15px;
-        padding: 18px;
-        margin-bottom: 14px;
-        background: #fbfcfb;
-      }
+    .question-builder {
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      padding: 18px;
+      margin-bottom: 14px;
+      background: #fbfcfb;
+    }
 
-      .question-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 13px;
-      }
+    .question-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 13px;
+    }
 
-      .question-number {
-        font-weight: 800;
-        color: var(--green-dark);
-      }
+    .question-number {
+      font-weight: 800;
+      color: var(--green-dark);
+    }
 
-      .options-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-top: 10px;
-      }
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
 
-      .option-row {
-        position: relative;
-      }
+    .option-row {
+      position: relative;
+    }
 
-      .option-label {
-        position: absolute;
-        left: 10px;
-        top: 12px;
-        font-size: 12px;
-        font-weight: 800;
-        color: var(--green);
-      }
+    .option-label {
+      position: absolute;
+      left: 10px;
+      top: 12px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--green);
+    }
 
-      .option-row .input {
-        padding-left: 32px;
-      }
+    .option-row .input {
+      padding-left: 32px;
+    }
 
-      .marks-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-top: 12px;
-      }
+    .marks-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
 
-      .marks-input {
-        width: 90px;
-      }
+    .marks-input {
+      width: 90px;
+    }
 
-      /* =========================
+    /* =========================
        TEST CARDS
     ========================= */
 
-      .test-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
-      }
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
 
-      .test-card {
-        background: white;
-        border: 1px solid var(--border);
-        border-radius: 17px;
-        padding: 18px;
-        transition: 0.2s;
-      }
+    .test-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      padding: 18px;
+      transition: .2s;
+    }
 
-      .test-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow);
-      }
+    .test-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
 
-      .test-subject {
-        color: var(--green);
-        font-size: 11px;
-        font-weight: 800;
-        text-transform: uppercase;
-        margin-bottom: 7px;
-      }
+    .test-subject {
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
 
-      .test-title {
-        font-size: 16px;
-        font-weight: 800;
-        margin-bottom: 10px;
-      }
+    .test-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
 
-      .test-meta {
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.8;
-      }
+    .test-meta {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+    }
 
-      .test-actions {
-        margin-top: 15px;
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
+    .test-actions {
+      margin-top: 15px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
 
-      /* =========================
+    /* =========================
        EXAM
     ========================= */
 
-      .exam-header {
-        position: sticky;
-        top: 72px;
-        z-index: 20;
-        background: white;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 16px 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 18px;
-        box-shadow: 0 7px 20px rgba(0, 0, 0, 0.05);
-      }
+    .exam-header {
+      position: sticky;
+      top: 72px;
+      z-index: 20;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      box-shadow: 0 7px 20px rgba(0,0,0,.05);
+    }
 
-      .timer {
-        background: #fff3dc;
-        color: #9b6500;
-        border-radius: 12px;
-        padding: 10px 14px;
-        font-size: 18px;
-        font-weight: 850;
-        min-width: 100px;
-        text-align: center;
-      }
+    .timer {
+      background: #fff3dc;
+      color: #9b6500;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 18px;
+      font-weight: 850;
+      min-width: 100px;
+      text-align: center;
+    }
 
-      .timer.danger {
-        background: #fff0ee;
-        color: var(--danger);
-      }
+    .timer.danger {
+      background: #fff0ee;
+      color: var(--danger);
+    }
 
-      .exam-question {
-        background: white;
-        border: 1px solid var(--border);
-        border-radius: 17px;
-        padding: 22px;
-        margin-bottom: 14px;
-      }
+    .exam-question {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      padding: 22px;
+      margin-bottom: 14px;
+    }
 
-      .exam-q-number {
-        color: var(--green);
-        font-size: 11px;
-        font-weight: 850;
-        text-transform: uppercase;
-        margin-bottom: 9px;
-      }
+    .exam-q-number {
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+      margin-bottom: 9px;
+    }
 
-      .exam-q-text {
-        font-size: 16px;
-        font-weight: 750;
-        line-height: 1.55;
-        margin-bottom: 15px;
-      }
+    .exam-q-text {
+      font-size: 16px;
+      font-weight: 750;
+      line-height: 1.55;
+      margin-bottom: 15px;
+    }
 
-      .answer-option {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 13px;
-        border: 1px solid var(--border);
-        border-radius: 11px;
-        margin-bottom: 8px;
-        cursor: pointer;
-        transition: 0.15s;
-      }
+    .answer-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: .15s;
+    }
 
-      .answer-option:hover {
-        border-color: var(--green);
-        background: var(--green-light);
-      }
+    .answer-option:hover {
+      border-color: var(--green);
+      background: var(--green-light);
+    }
 
-      .answer-option.selected {
-        border-color: var(--green);
-        background: var(--green-light);
-      }
+    .answer-option.selected {
+      border-color: var(--green);
+      background: var(--green-light);
+    }
 
-      .answer-option input {
-        accent-color: var(--green);
-      }
+    .answer-option input {
+      accent-color: var(--green);
+    }
 
-      .result-hero {
-        background: linear-gradient(135deg, var(--green-dark), var(--green));
-        color: white;
-        border-radius: 22px;
-        padding: 30px;
-        text-align: center;
-        margin-bottom: 20px;
-      }
+    .result-hero {
+      background: linear-gradient(135deg, var(--green-dark), var(--green));
+      color: white;
+      border-radius: 22px;
+      padding: 30px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-      .result-score {
-        font-size: 48px;
-        font-weight: 900;
-        margin: 8px 0;
-      }
+    .result-score {
+      font-size: 48px;
+      font-weight: 900;
+      margin: 8px 0;
+    }
 
-      /* =========================
+    /* =========================
        MODAL / LOADER
     ========================= */
 
-      .modal-backdrop {
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 22, 16, .55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1000;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 520px;
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 25px 70px rgba(0,0,0,.2);
+    }
+
+    .modal h3 {
+      margin-bottom: 8px;
+      font-size: 19px;
+    }
+
+    .modal p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 9px;
+    }
+
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,.75);
+      backdrop-filter: blur(3px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loader-box {
+      background: white;
+      padding: 20px 25px;
+      border-radius: 15px;
+      box-shadow: var(--shadow);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      max-width: 360px;
+      padding: 13px 16px;
+      border-radius: 12px;
+      background: #1d2a24;
+      color: white;
+      z-index: 3000;
+      box-shadow: var(--shadow);
+      font-size: 13px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 45px 20px;
+      color: var(--muted);
+    }
+
+    .empty strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
+
+    .search-input {
+      max-width: 300px;
+    }
+
+    @media (max-width: 1100px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .test-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 800px) {
+      .sidebar {
+        width: 205px;
+      }
+
+      .main {
+        padding: 18px;
+      }
+
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .test-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 650px) {
+      .topbar {
+        padding: 0 15px;
+      }
+
+      .brand-text {
+        display: none;
+      }
+
+      .sidebar {
         position: fixed;
-        inset: 0;
-        background: rgba(7, 22, 16, 0.55);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        z-index: 1000;
+        left: 0;
+        bottom: 0;
+        top: 72px;
+        width: 68px;
+        z-index: 90;
+        padding: 12px 8px;
       }
 
-      .modal {
-        width: 100%;
-        max-width: 520px;
-        background: white;
-        border-radius: 20px;
-        padding: 25px;
-        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
+      .nav-title {
+        display: none;
       }
 
-      .modal h3 {
-        margin-bottom: 8px;
-        font-size: 19px;
-      }
-
-      .modal p {
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.6;
-        margin-bottom: 20px;
-      }
-
-      .modal-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 9px;
-      }
-
-      #loader {
-        position: fixed;
-        inset: 0;
-        background: rgba(255, 255, 255, 0.75);
-        backdrop-filter: blur(3px);
-        z-index: 2000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .loader-box {
-        background: white;
-        padding: 20px 25px;
-        border-radius: 15px;
-        box-shadow: var(--shadow);
-        font-size: 14px;
-        font-weight: 700;
-      }
-
-      .toast {
-        position: fixed;
-        right: 20px;
-        bottom: 20px;
-        max-width: 360px;
-        padding: 13px 16px;
-        border-radius: 12px;
-        background: #1d2a24;
-        color: white;
-        z-index: 3000;
-        box-shadow: var(--shadow);
-        font-size: 13px;
-      }
-
-      .empty {
+      .nav-btn {
         text-align: center;
-        padding: 45px 20px;
-        color: var(--muted);
+        padding: 12px 5px;
+        font-size: 10px;
       }
 
-      .empty strong {
-        display: block;
-        color: var(--text);
-        margin-bottom: 5px;
+      .main {
+        margin-left: 68px;
+        padding: 15px;
       }
 
-      .search-input {
-        max-width: 300px;
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
       }
 
-      @media (max-width: 1100px) {
-        .stats-grid {
-          grid-template-columns: repeat(2, 1fr);
-        }
-
-        .test-grid {
-          grid-template-columns: repeat(2, 1fr);
-        }
+      .stat-card {
+        padding: 15px;
       }
 
-      @media (max-width: 800px) {
-        .sidebar {
-          width: 205px;
-        }
-
-        .main {
-          padding: 18px;
-        }
-
-        .grid-2,
-        .grid-3 {
-          grid-template-columns: 1fr;
-        }
-
-        .test-grid {
-          grid-template-columns: 1fr;
-        }
+      .stat-value {
+        font-size: 24px;
       }
 
-      @media (max-width: 650px) {
-        .topbar {
-          padding: 0 15px;
-        }
-
-        .brand-text {
-          display: none;
-        }
-
-        .sidebar {
-          position: fixed;
-          left: 0;
-          bottom: 0;
-          top: 72px;
-          width: 68px;
-          z-index: 90;
-          padding: 12px 8px;
-        }
-
-        .nav-title {
-          display: none;
-        }
-
-        .nav-btn {
-          text-align: center;
-          padding: 12px 5px;
-          font-size: 10px;
-        }
-
-        .main {
-          margin-left: 68px;
-          padding: 15px;
-        }
-
-        .stats-grid {
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
-        }
-
-        .stat-card {
-          padding: 15px;
-        }
-
-        .stat-value {
-          font-size: 24px;
-        }
-
-        .login-card {
-          padding: 25px 20px;
-        }
-
-        .options-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .exam-header {
-          top: 72px;
-          padding: 12px;
-        }
-
-        .timer {
-          font-size: 15px;
-          min-width: 80px;
-        }
+      .login-card {
+        padding: 25px 20px;
       }
-    </style>
 
-    <!-- =====================================================
+      .options-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .exam-header {
+        top: 72px;
+        padding: 12px;
+      }
+
+      .timer {
+        font-size: 15px;
+        min-width: 80px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- =====================================================
        LOADER
   ====================================================== -->
 
-    <div id="loader" class="hidden">
-      <div class="loader-box" id="loaderText">Loading...</div>
-    </div>
+  <div id="loader" class="hidden">
+    <div class="loader-box" id="loaderText">Loading...</div>
+  </div>
 
-    <!-- =====================================================
+  <!-- =====================================================
        LOGIN
   ====================================================== -->
 
-    <section id="loginScreen">
-      <div class="login-card">
-        <div class="school-logo">TMS</div>
+  <section id="loginScreen">
 
-        <h1>Tauheed Model School</h1>
+    <div class="login-card">
 
-        <div class="subtitle">Secure Online Examination Portal</div>
+      <div class="school-logo">TMS</div>
 
-        <div class="role-tabs">
-          <button class="role-tab active" data-role="student">Student</button>
+      <h1>Tauheed Model School</h1>
 
-          <button class="role-tab" data-role="teacher">Teacher</button>
+      <div class="subtitle">
+        Secure Online Examination Portal
+      </div>
 
-          <button class="role-tab" data-role="admin">Admin</button>
+      <div class="role-tabs">
+        <button class="role-tab active" data-role="student">
+          Student
+        </button>
+
+        <button class="role-tab" data-role="teacher">
+          Teacher
+        </button>
+
+        <button class="role-tab" data-role="admin">
+          Admin
+        </button>
+      </div>
+
+      <div id="loginError" class="error-box hidden"></div>
+
+      <form id="loginForm">
+
+        <div class="form-group">
+          <label>Username</label>
+          <input
+            id="loginUsername"
+            class="input"
+            autocomplete="username"
+            placeholder="Enter username"
+            required
+          >
         </div>
 
-        <div id="loginError" class="error-box hidden"></div>
+        <div class="form-group">
+          <label>Password</label>
+        <div class="password-wrapper">
+  <input 
+    id="loginPassword" 
+    class="input" 
+    type="password" 
+    autocomplete="current-password" 
+    placeholder="Enter password" 
+    required 
+  >
+  <button type="button" class="toggle-password" onclick="togglePassword('loginPassword', this)">👁</button>
+</div> 
+        </div>
 
-        <form id="loginForm">
-          <div class="form-group">
-            <label>Username</label>
-            <input id="loginUsername" class="input" autocomplete="username" placeholder="Enter username" required="" />
-          </div>
+        <button class="btn btn-primary full" type="submit">
+          Sign In
+        </button>
 
-          <div class="form-group">
-            <label>Password</label>
-            <div class="password-wrapper">
-              <input
-                id="loginPassword"
-                class="input"
-                type="password"
-                autocomplete="current-password"
-                placeholder="Enter password"
-                required=""
-              />
-              <button type="button" class="toggle-password" onclick="togglePassword('loginPassword', this)">👁</button>
-            </div>
-          </div>
+      </form>
 
-          <button class="btn btn-primary full" type="submit">Sign In</button>
-        </form>
-      </div>
-    </section>
+    </div>
 
-    <!-- =====================================================
+  </section>
+
+
+  <!-- =====================================================
        APPLICATION
   ====================================================== -->
 
-    <section id="app" class="hidden">
-      <header class="topbar">
-        <div class="brand">
-          <div class="brand-icon">T</div>
+  <section id="app" class="hidden">
 
-          <div class="brand-text">
-            Tauheed Model School
-            <small>Online Examination Portal</small>
-          </div>
+    <header class="topbar">
+
+      <div class="brand">
+        <div class="brand-icon">T</div>
+
+        <div class="brand-text">
+          Tauheed Model School
+          <small>Online Examination Portal</small>
         </div>
-
-        <div class="top-user">
-          <span id="topUser" class="user-pill">User</span>
-
-          <button id="logoutBtn" class="btn btn-secondary btn-small">Logout</button>
-        </div>
-      </header>
-
-      <div class="app-layout">
-        <aside class="sidebar">
-          <div id="navigation"></div>
-        </aside>
-
-        <main class="main" id="mainContent"></main>
       </div>
-    </section>
 
-    <!-- =====================================================
+      <div class="top-user">
+
+        <span id="topUser" class="user-pill">
+          User
+        </span>
+
+        <button
+          id="logoutBtn"
+          class="btn btn-secondary btn-small"
+        >
+          Logout
+        </button>
+
+      </div>
+
+    </header>
+
+
+    <div class="app-layout">
+
+      <aside class="sidebar">
+        <div id="navigation"></div>
+      </aside>
+
+      <main class="main" id="mainContent"></main>
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
        MODAL
   ====================================================== -->
 
-    <div id="modalBackdrop" class="modal-backdrop hidden">
-      <div class="modal">
-        <h3 id="modalTitle"></h3>
+  <div id="modalBackdrop" class="modal-backdrop hidden">
 
-        <p id="modalMessage"></p>
+    <div class="modal">
 
-        <div class="modal-actions">
-          <button id="modalCancel" class="btn btn-secondary">Cancel</button>
+      <h3 id="modalTitle"></h3>
 
-          <button id="modalConfirm" class="btn btn-danger">Confirm</button>
-        </div>
+      <p id="modalMessage"></p>
+
+      <div class="modal-actions">
+
+        <button
+          id="modalCancel"
+          class="btn btn-secondary"
+        >
+          Cancel
+        </button>
+
+        <button
+          id="modalConfirm"
+          class="btn btn-danger"
+        >
+          Confirm
+        </button>
+
       </div>
+
     </div>
 
-    <div id="toast" class="toast hidden"></div>
+  </div>
 
-    <script>
-      /* =========================================================
+
+  <div id="toast" class="toast hidden"></div>
+
+
+<script>
+/* =========================================================
    SUPABASE
 ========================================================= */
 
-      const SUPABASE_URL = "https://ykvegtlzgzyfwmlvmpti.supabase.co";
+const SUPABASE_URL =
+  "https://ykvegtlzgzyfwmlvmpti.supabase.co";
 
-      const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_elTo8AsqYV5HQs5RG26OFg_IPsqv1UW";
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_elTo8AsqYV5HQs5RG26OFg_IPsqv1UW";
 
-      const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
 
-      /* =========================================================
+
+/* =========================================================
    STATE
 ========================================================= */
 
-      let currentRole = "student";
-      let currentUser = null;
-      let currentProfile = null;
+let currentRole = "student";
+let currentUser = null;
+let currentProfile = null;
 
-      let adminData = null;
-      let teacherData = null;
-      let studentData = null;
+let adminData = null;
+let teacherData = null;
+let studentData = null;
 
-      let currentExam = null;
-      let examAnswers = {};
-      let examTimer = null;
-      let examSecondsRemaining = 0;
+let currentExam = null;
+let examAnswers = {};
+let examTimer = null;
+let examSecondsRemaining = 0;
 
-      let modalResolve = null;
+let modalResolve = null;
 
-      /* =========================================================
+
+/* =========================================================
    DOM
 ========================================================= */
 
-      const loginScreen = document.getElementById("loginScreen");
+const loginScreen =
+  document.getElementById("loginScreen");
 
-      const app = document.getElementById("app");
+const app =
+  document.getElementById("app");
 
-      const mainContent = document.getElementById("mainContent");
+const mainContent =
+  document.getElementById("mainContent");
 
-      const navigation = document.getElementById("navigation");
+const navigation =
+  document.getElementById("navigation");
 
-      const topUser = document.getElementById("topUser");
+const topUser =
+  document.getElementById("topUser");
 
-      const loader = document.getElementById("loader");
+const loader =
+  document.getElementById("loader");
 
-      const loaderText = document.getElementById("loaderText");
+const loaderText =
+  document.getElementById("loaderText");
 
-      const toast = document.getElementById("toast");
+const toast =
+  document.getElementById("toast");
 
-      /* =========================================================
+
+/* =========================================================
    HELPERS
 ========================================================= */
 
-      function showLoader(text = "Loading...") {
-        loaderText.textContent = text;
-        loader.classList.remove("hidden");
-      }
+function showLoader(text = "Loading...") {
+  loaderText.textContent = text;
+  loader.classList.remove("hidden");
+}
 
-      function hideLoader() {
-        loader.classList.add("hidden");
-      }
+function hideLoader() {
+  loader.classList.add("hidden");
+}
 
-      function escapeHTML(value) {
-        return String(value ?? "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#039;");
-      }
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
-      function showToast(message, type = "normal") {
-        toast.textContent = message;
+function showToast(message, type = "normal") {
 
-        toast.style.background = type === "error" ? "#b93228" : type === "success" ? "#16724f" : "#1d2a24";
+  toast.textContent = message;
 
-        toast.classList.remove("hidden");
+  toast.style.background =
+    type === "error"
+      ? "#b93228"
+      : type === "success"
+        ? "#16724f"
+        : "#1d2a24";
 
-        setTimeout(() => {
-          toast.classList.add("hidden");
-        }, 3500);
-      }
+  toast.classList.remove("hidden");
 
-      function showLoginError(message) {
-        const box = document.getElementById("loginError");
+  setTimeout(() => {
+    toast.classList.add("hidden");
+  }, 3500);
+}
 
-        box.textContent = message;
-        box.classList.remove("hidden");
-      }
+function showLoginError(message) {
+  const box =
+    document.getElementById("loginError");
 
-      function clearLoginError() {
-        document.getElementById("loginError").classList.add("hidden");
-      }
+  box.textContent = message;
+  box.classList.remove("hidden");
+}
 
-      function formatDate(date) {
-        if (!date) return "—";
+function clearLoginError() {
+  document
+    .getElementById("loginError")
+    .classList.add("hidden");
+}
 
-        return new Date(date).toLocaleString(undefined, {
-          dateStyle: "medium",
-          timeStyle: "short",
-        });
-      }
+function formatDate(date) {
 
-      function percent(score, total) {
-        if (!total) return 0;
+  if (!date) return "—";
 
-        return Math.round((Number(score) / Number(total)) * 100);
-      }
+  return new Date(date).toLocaleString(
+    undefined,
+    {
+      dateStyle: "medium",
+      timeStyle: "short"
+    }
+  );
+}
 
-      function authEmail(username) {
-        return `${String(username).trim().toLowerCase()}@tauheed.local`;
-      }
+function percent(score, total) {
 
-      /* =========================================================
+  if (!total) return 0;
+
+  return Math.round(
+    (Number(score) / Number(total)) * 100
+  );
+}
+
+function authEmail(username) {
+  return `${String(username).trim().toLowerCase()}@tauheed.local`;
+}
+
+
+/* =========================================================
    MODAL
 ========================================================= */
 
-      function confirmAction(title, message, confirmText = "Confirm") {
-        return new Promise((resolve) => {
-          modalResolve = resolve;
+function confirmAction(title, message, confirmText = "Confirm") {
 
-          document.getElementById("modalTitle").textContent = title;
+  return new Promise(resolve => {
 
-          document.getElementById("modalMessage").textContent = message;
+    modalResolve = resolve;
 
-          document.getElementById("modalConfirm").textContent = confirmText;
+    document.getElementById("modalTitle").textContent =
+      title;
 
-          document.getElementById("modalBackdrop").classList.remove("hidden");
-        });
-      }
+    document.getElementById("modalMessage").textContent =
+      message;
 
-      function closeModal(result) {
-        document.getElementById("modalBackdrop").classList.add("hidden");
+    document.getElementById("modalConfirm").textContent =
+      confirmText;
 
-        if (modalResolve) {
-          modalResolve(result);
-          modalResolve = null;
-        }
-      }
+    document
+      .getElementById("modalBackdrop")
+      .classList.remove("hidden");
+  });
+}
 
-      document.getElementById("modalCancel").addEventListener("click", () => closeModal(false));
+function closeModal(result) {
 
-      document.getElementById("modalConfirm").addEventListener("click", () => closeModal(true));
+  document
+    .getElementById("modalBackdrop")
+    .classList.add("hidden");
 
-      /* =========================================================
+  if (modalResolve) {
+    modalResolve(result);
+    modalResolve = null;
+  }
+}
+
+document
+  .getElementById("modalCancel")
+  .addEventListener(
+    "click",
+    () => closeModal(false)
+  );
+
+document
+  .getElementById("modalConfirm")
+  .addEventListener(
+    "click",
+    () => closeModal(true)
+  );
+
+
+/* =========================================================
    EDGE FUNCTION CALL
 ========================================================= */
 
-      async function callFunction(functionName, payload) {
-        const {
-          data: { session },
-        } = await supabaseClient.auth.getSession();
+async function callFunction(
+  functionName,
+  payload
+) {
 
-        if (!session) {
-          throw new Error("Your session has expired. Please sign in again.");
-        }
+  const {
+    data: {
+      session
+    }
+  } = await supabaseClient.auth.getSession();
 
-        const response = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
-          method: "POST",
+  if (!session) {
+    throw new Error(
+      "Your session has expired. Please sign in again."
+    );
+  }
 
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/functions/v1/${functionName}`,
+      {
+        method: "POST",
 
-            apikey: SUPABASE_PUBLISHABLE_KEY,
+        headers: {
+          "Authorization":
+            `Bearer ${session.access_token}`,
 
-            "Content-Type": "application/json",
-          },
+          "apikey":
+            SUPABASE_PUBLISHABLE_KEY,
 
-          body: JSON.stringify(payload),
-        });
+          "Content-Type":
+            "application/json"
+        },
 
-        let data = {};
-
-        try {
-          data = await response.json();
-        } catch {
-          data = {};
-        }
-
-        if (!response.ok) {
-          throw new Error(data.error || data.message || `Request failed (${response.status})`);
-        }
-
-        return data;
+        body:
+          JSON.stringify(payload)
       }
+    );
 
-      /* =========================================================
+  let data = {};
+
+  try {
+    data = await response.json();
+  } catch {
+    data = {};
+  }
+
+  if (!response.ok) {
+
+    throw new Error(
+      data.error ||
+      data.message ||
+      `Request failed (${response.status})`
+    );
+  }
+
+  return data;
+}
+
+
+/* =========================================================
    LOGIN ROLE
 ========================================================= */
 
-      document.querySelectorAll(".role-tab").forEach((button) => {
-        button.addEventListener("click", () => {
-          document.querySelectorAll(".role-tab").forEach((btn) => btn.classList.remove("active"));
+document
+  .querySelectorAll(".role-tab")
+  .forEach(button => {
 
-          button.classList.add("active");
+    button.addEventListener(
+      "click",
+      () => {
 
-          currentRole = button.dataset.role;
+        document
+          .querySelectorAll(".role-tab")
+          .forEach(btn =>
+            btn.classList.remove("active")
+          );
 
-          clearLoginError();
-        });
-      });
+        button.classList.add("active");
 
-      /* =========================================================
+        currentRole =
+          button.dataset.role;
+
+        clearLoginError();
+      }
+    );
+  });
+
+
+/* =========================================================
    LOGIN
 ========================================================= */
 
-      document.getElementById("loginForm").addEventListener("submit", async (event) => {
-        event.preventDefault();
+document
+  .getElementById("loginForm")
+  .addEventListener(
+    "submit",
+    async event => {
 
-        clearLoginError();
+      event.preventDefault();
 
-        const username = document.getElementById("loginUsername").value.trim();
+      clearLoginError();
 
-        const password = document.getElementById("loginPassword").value;
+      const username =
+        document
+          .getElementById("loginUsername")
+          .value
+          .trim();
 
-        if (!username || !password) {
-          showLoginError("Username and password are required.");
-          return;
-        }
+      const password =
+        document
+          .getElementById("loginPassword")
+          .value;
 
-        showLoader("Signing in...");
+      if (!username || !password) {
+        showLoginError(
+          "Username and password are required."
+        );
+        return;
+      }
 
-        try {
-          const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email: authEmail(username),
+      showLoader("Signing in...");
 
-            password,
+      try {
+
+        const {
+          data,
+          error
+        } =
+          await supabaseClient.auth.signInWithPassword({
+            email:
+              authEmail(username),
+
+            password
           });
 
-          if (error) {
-            throw error;
-          }
-
-          currentUser = data.user;
-
-          await determineRole();
-
-          loginScreen.classList.add("hidden");
-          app.classList.remove("hidden");
-
-          topUser.textContent =
-            currentProfile?.name ||
-            currentProfile?.Name ||
-            currentProfile?.username ||
-            currentProfile?.Username ||
-            username;
-
-          buildNavigation();
-
-          if (currentRole === "admin") {
-            await showAdminDashboard();
-          } else if (currentRole === "teacher") {
-            await showTeacherDashboard();
-          } else {
-            await showStudentDashboard();
-          }
-
-          showToast("Signed in successfully.", "success");
-        } catch (error) {
-          console.error(error);
-
-          showLoginError(error.message || "Unable to sign in.");
-
-          await supabaseClient.auth.signOut();
-        } finally {
-          hideLoader();
+        if (error) {
+          throw error;
         }
-      });
 
-      /* =========================================================
+        currentUser =
+          data.user;
+
+        await determineRole();
+
+        loginScreen.classList.add("hidden");
+        app.classList.remove("hidden");
+
+        topUser.textContent =
+          currentProfile?.name ||
+          currentProfile?.Name ||
+          currentProfile?.username ||
+          currentProfile?.Username ||
+          username;
+
+        buildNavigation();
+
+        if (currentRole === "admin") {
+          await showAdminDashboard();
+        }
+        else if (currentRole === "teacher") {
+          await showTeacherDashboard();
+        }
+        else {
+          await showStudentDashboard();
+        }
+
+        showToast(
+          "Signed in successfully.",
+          "success"
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        showLoginError(
+          error.message ||
+          "Unable to sign in."
+        );
+
+        await supabaseClient.auth.signOut();
+
+      } finally {
+
+        hideLoader();
+      }
+    }
+  );
+
+
+/* =========================================================
    DETERMINE ROLE
 ========================================================= */
 
-      async function determineRole() {
-        try {
-          const data = await callFunction("portal-data", {
-            action: "get_profile",
-          });
+async function determineRole() {
 
-          if (!data || !data.success || !data.role || !data.profile) {
-            throw new Error("Your account exists, but no Student, Teacher or Admin profile is linked to it.");
-          }
+  try {
 
-          /* =====================================================
+    const data =
+      await callFunction(
+        "portal-data",
+        {
+          action: "get_profile"
+        }
+      );
+
+    if (
+      !data ||
+      !data.success ||
+      !data.role ||
+      !data.profile
+    ) {
+      throw new Error(
+        "Your account exists, but no Student, Teacher or Admin profile is linked to it."
+      );
+    }
+
+
+    /* =====================================================
        ADMIN
     ===================================================== */
 
-          if (data.role === "admin") {
-            currentRole = "admin";
+    if (
+      data.role === "admin"
+    ) {
 
-            currentProfile = data.profile;
+      currentRole = "admin";
 
-            return;
-          }
+      currentProfile =
+        data.profile;
 
-          /* =====================================================
+      return;
+    }
+
+
+    /* =====================================================
        TEACHER
     ===================================================== */
 
-          if (data.role === "teacher") {
-            currentRole = "teacher";
+    if (
+      data.role === "teacher"
+    ) {
 
-            currentProfile = data.profile;
+      currentRole = "teacher";
 
-            return;
-          }
+      currentProfile =
+        data.profile;
 
-          /* =====================================================
+      return;
+    }
+
+
+    /* =====================================================
        STUDENT
     ===================================================== */
 
-          if (data.role === "student") {
-            currentRole = "student";
+    if (
+      data.role === "student"
+    ) {
 
-            currentProfile = data.profile;
+      currentRole = "student";
 
-            return;
-          }
+      currentProfile =
+        data.profile;
 
-          throw new Error("Invalid account role.");
-        } catch (error) {
-          console.error("Role detection error:", error);
+      return;
+    }
 
-          throw new Error(error.message || "Unable to determine account role.");
-        }
-      }
-      /* =========================================================
+
+    throw new Error(
+      "Invalid account role."
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Role detection error:",
+      error
+    );
+
+    throw new Error(
+      error.message ||
+      "Unable to determine account role."
+    );
+  }
+}
+/* =========================================================
    NAVIGATION
 ========================================================= */
 
-      function buildNavigation() {
-        if (currentRole === "admin") {
-          navigation.innerHTML = `
+function buildNavigation() {
+
+  if (currentRole === "admin") {
+
+    navigation.innerHTML = `
       <div class="nav-title">Administration</div>
 
       <button class="nav-btn active"
@@ -1370,8 +1595,11 @@
         Results
       </button>
     `;
-        } else if (currentRole === "teacher") {
-          navigation.innerHTML = `
+  }
+
+  else if (currentRole === "teacher") {
+
+    navigation.innerHTML = `
       <div class="nav-title">Teacher</div>
 
       <button class="nav-btn active"
@@ -1389,8 +1617,11 @@
         My Tests
       </button>
     `;
-        } else {
-          navigation.innerHTML = `
+  }
+
+  else {
+
+    navigation.innerHTML = `
       <div class="nav-title">Student</div>
 
       <button class="nav-btn active"
@@ -1408,82 +1639,132 @@
         My Results
       </button>
     `;
+  }
+
+
+  navigation
+    .querySelectorAll(".nav-btn")
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        async () => {
+
+          navigation
+            .querySelectorAll(".nav-btn")
+            .forEach(btn =>
+              btn.classList.remove("active")
+            );
+
+          button.classList.add("active");
+
+          await navigate(
+            button.dataset.page
+          );
         }
+      );
+    });
+}
 
-        navigation.querySelectorAll(".nav-btn").forEach((button) => {
-          button.addEventListener("click", async () => {
-            navigation.querySelectorAll(".nav-btn").forEach((btn) => btn.classList.remove("active"));
 
-            button.classList.add("active");
+async function navigate(page) {
 
-            await navigate(button.dataset.page);
-          });
-        });
-      }
+  try {
 
-      async function navigate(page) {
-        try {
-          if (page === "admin-dashboard") return showAdminDashboard();
+    if (page === "admin-dashboard")
+      return showAdminDashboard();
 
-          if (page === "admin-students") return showAdminStudents();
+    if (page === "admin-students")
+      return showAdminStudents();
 
-          if (page === "admin-teachers") return showAdminTeachers();
+    if (page === "admin-teachers")
+      return showAdminTeachers();
 
-          if (page === "admin-tests") return showAdminTests();
+    if (page === "admin-tests")
+      return showAdminTests();
 
-          if (page === "admin-results") return showAdminResults();
+    if (page === "admin-results")
+      return showAdminResults();
 
-          if (page === "teacher-dashboard") return showTeacherDashboard();
+    if (page === "teacher-dashboard")
+      return showTeacherDashboard();
 
-          if (page === "teacher-create") return showTeacherCreate();
+    if (page === "teacher-create")
+      return showTeacherCreate();
 
-          if (page === "teacher-tests") return showTeacherTests();
+    if (page === "teacher-tests")
+      return showTeacherTests();
 
-          if (page === "student-dashboard") return showStudentDashboard();
+    if (page === "student-dashboard")
+      return showStudentDashboard();
 
-          if (page === "student-tests") return showStudentTests();
+    if (page === "student-tests")
+      return showStudentTests();
 
-          if (page === "student-results") return showStudentResults();
-        } catch (error) {
-          console.error(error);
+    if (page === "student-results")
+      return showStudentResults();
 
-          showToast(error.message || "Unable to load page.", "error");
-        }
-      }
+  } catch (error) {
 
-      /* =========================================================
+    console.error(error);
+
+    showToast(
+      error.message ||
+      "Unable to load page.",
+      "error"
+    );
+  }
+}
+
+
+/* =========================================================
    ADMIN DATA REFRESH
 ========================================================= */
 
-      async function refreshAdminData() {
-        adminData = await callFunction("portal-data", {
-          action: "admin_dashboard_summary",
-        });
+async function refreshAdminData() {
 
-        currentProfile = adminData.admin;
+  adminData =
+    await callFunction(
+      "portal-data",
+      {
+        action:
+        "admin_dashboard_summary"
       }
+    );
 
-      /* =========================================================
+  currentProfile =
+    adminData.admin;
+}
+
+
+/* =========================================================
    ADMIN DASHBOARD
 ========================================================= */
 
-      async function showAdminDashboard() {
-        showLoader("Loading dashboard...");
+async function showAdminDashboard() {
 
-        try {
-          await refreshAdminData();
+  showLoader("Loading dashboard...");
 
-          const students = adminData.students || [];
+  try {
 
-          const teachers = adminData.teachers || [];
+    await refreshAdminData();
 
-          const tests = adminData.tests || [];
+    const students =
+      adminData.students || [];
 
-          const results = adminData.results || [];
+    const teachers =
+      adminData.teachers || [];
 
-          const counts = adminData.counts || {};
+    const tests =
+      adminData.tests || [];
 
-          mainContent.innerHTML = `
+    const results =
+      adminData.results || [];
+  
+    const counts =
+  adminData.counts || {};
+
+    mainContent.innerHTML = `
 
       <h1 class="page-title">
         Admin Dashboard
@@ -1559,8 +1840,7 @@
                     <tbody>
                       ${students
                         .slice(0, 5)
-                        .map(
-                          (student) => `
+                        .map(student => `
                           <tr>
                             <td>
                               ${escapeHTML(student.name)}
@@ -1578,8 +1858,7 @@
                               }
                             </td>
                           </tr>
-                        `,
-                        )
+                        `)
                         .join("")}
                     </tbody>
                   </table>
@@ -1622,15 +1901,18 @@
                     <tbody>
                       ${results
                         .slice(0, 5)
-                        .map(
-                          (result) => `
+                        .map(result => `
                           <tr>
                             <td>
-                              ${escapeHTML(result.students?.name || "—")}
+                              ${escapeHTML(
+                                result.students?.name || "—"
+                              )}
                             </td>
 
                             <td>
-                              ${escapeHTML(result.tests?.title || "—")}
+                              ${escapeHTML(
+                                result.tests?.title || "—"
+                              )}
                             </td>
 
                             <td>
@@ -1639,8 +1921,7 @@
                               </strong>
                             </td>
                           </tr>
-                        `,
-                        )
+                        `)
                         .join("")}
                     </tbody>
                   </table>
@@ -1653,24 +1934,29 @@
 
       </div>
     `;
-        } finally {
-          hideLoader();
-        }
-      }
 
-      /* =========================================================
+  } finally {
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
    ADMIN STUDENTS
 ========================================================= */
 
-      async function showAdminStudents() {
-        showLoader("Loading students...");
+async function showAdminStudents() {
 
-        try {
-          await refreshAdminData();
+  showLoader("Loading students...");
 
-          const students = adminData.students || [];
+  try {
 
-          mainContent.innerHTML = `
+    await refreshAdminData();
+
+    const students =
+      adminData.students || [];
+
+    mainContent.innerHTML = `
 
       <h1 class="page-title">
         Student Management
@@ -1721,9 +2007,7 @@
 
               ${
                 students.length
-                  ? students
-                      .map(
-                        (student) => `
+                  ? students.map(student => `
 
                     <tr>
 
@@ -1783,9 +2067,7 @@
 
                     </tr>
 
-                  `,
-                      )
-                      .join("")
+                  `).join("")
                   : `
                     <tr>
                       <td colspan="6">
@@ -1804,16 +2086,29 @@
       </div>
     `;
 
-          document.getElementById("newStudentBtn").addEventListener("click", renderNewStudentForm);
-        } finally {
-          hideLoader();
-        }
-      }
 
-      function renderNewStudentForm() {
-        const container = document.getElementById("studentFormContainer");
+    document
+      .getElementById("newStudentBtn")
+      .addEventListener(
+        "click",
+        renderNewStudentForm
+      );
 
-        container.innerHTML = `
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+function renderNewStudentForm() {
+
+  const container =
+    document.getElementById(
+      "studentFormContainer"
+    );
+
+  container.innerHTML = `
 
     <div class="card" style="background:#fbfcfb">
 
@@ -1895,112 +2190,190 @@
     </div>
   `;
 
-        document.getElementById("newStudentForm").addEventListener("submit", createStudent);
+
+  document
+    .getElementById("newStudentForm")
+    .addEventListener(
+      "submit",
+      createStudent
+    );
+}
+
+
+async function createStudent(event) {
+
+  event.preventDefault();
+
+  showLoader("Creating student account...");
+
+  try {
+
+    await callFunction(
+      "admin-manage-user",
+      {
+        action: "create_student",
+
+        name:
+          document.getElementById("studentName").value,
+
+        username:
+          document.getElementById("studentUsername").value,
+
+        password:
+          document.getElementById("studentPassword").value,
+
+        class_name:
+          document.getElementById("studentClass").value,
+
+        roll_number:
+          document.getElementById("studentRoll").value
       }
+    );
 
-      async function createStudent(event) {
-        event.preventDefault();
+    showToast(
+      "Student account created successfully.",
+      "success"
+    );
 
-        showLoader("Creating student account...");
+    await showAdminStudents();
 
-        try {
-          await callFunction("admin-manage-user", {
-            action: "create_student",
+  } catch (error) {
 
-            name: document.getElementById("studentName").value,
+    showToast(
+      error.message,
+      "error"
+    );
 
-            username: document.getElementById("studentUsername").value,
+  } finally {
 
-            password: document.getElementById("studentPassword").value,
+    hideLoader();
+  }
+}
 
-            class_name: document.getElementById("studentClass").value,
 
-            roll_number: document.getElementById("studentRoll").value,
-          });
+async function activateStudent(
+  id,
+  name
+) {
 
-          showToast("Student account created successfully.", "success");
+ const password = await showPasswordPrompt(
+  `Create a password for ${name}.`
+);
+  
+  if (!password) return;
 
-          await showAdminStudents();
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
-        }
+  if (password.length < 6) {
+
+    showToast(
+      "Password must be at least 6 characters.",
+      "error"
+    );
+
+    return;
+  }
+
+  showLoader("Activating student account...");
+
+  try {
+
+    await callFunction(
+      "admin-manage-user",
+      {
+        action:
+          "activate_student",
+
+        id,
+
+        password
       }
+    );
 
-      async function activateStudent(id, name) {
-        const password = await showPasswordPrompt(`Create a password for ${name}.`);
+    showToast(
+      "Student account activated.",
+      "success"
+    );
 
-        if (!password) return;
+    await showAdminStudents();
 
-        if (password.length < 6) {
-          showToast("Password must be at least 6 characters.", "error");
+  } catch (error) {
 
-          return;
-        }
+    showToast(
+      error.message,
+      "error"
+    );
 
-        showLoader("Activating student account...");
+  } finally {
 
-        try {
-          await callFunction("admin-manage-user", {
-            action: "activate_student",
+    hideLoader();
+  }
+}
 
-            id,
 
-            password,
-          });
+async function deleteStudent(
+  id,
+  name
+) {
 
-          showToast("Student account activated.", "success");
+  const confirmed =
+    await confirmAction(
+      "Delete Student?",
+      `Deleting ${name} will also delete this student's associated results because the database is configured with ON DELETE CASCADE.`,
+      "Delete Student"
+    );
 
-          await showAdminStudents();
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
-        }
+  if (!confirmed) return;
+
+  showLoader("Deleting student...");
+
+  try {
+
+    await callFunction(
+      "admin-manage-user",
+      {
+        action:
+          "delete_student",
+
+        id
       }
+    );
 
-      async function deleteStudent(id, name) {
-        const confirmed = await confirmAction(
-          "Delete Student?",
-          `Deleting ${name} will also delete this student's associated results because the database is configured with ON DELETE CASCADE.`,
-          "Delete Student",
-        );
+    showToast(
+      "Student and associated results deleted.",
+      "success"
+    );
 
-        if (!confirmed) return;
+    await showAdminStudents();
 
-        showLoader("Deleting student...");
+  } catch (error) {
 
-        try {
-          await callFunction("admin-manage-user", {
-            action: "delete_student",
+    showToast(
+      error.message,
+      "error"
+    );
 
-            id,
-          });
+  } finally {
 
-          showToast("Student and associated results deleted.", "success");
+    hideLoader();
+  }
+}
 
-          await showAdminStudents();
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
-        }
-      }
 
-      /* =========================================================
+/* =========================================================
    ADMIN TEACHERS
 ========================================================= */
 
-      async function showAdminTeachers() {
-        showLoader("Loading teachers...");
+async function showAdminTeachers() {
 
-        try {
-          await refreshAdminData();
+  showLoader("Loading teachers...");
 
-          const teachers = adminData.teachers || [];
+  try {
 
-          mainContent.innerHTML = `
+    await refreshAdminData();
+
+    const teachers =
+      adminData.teachers || [];
+
+    mainContent.innerHTML = `
 
       <h1 class="page-title">
         Teacher Management
@@ -2050,9 +2423,7 @@
 
               ${
                 teachers.length
-                  ? teachers
-                      .map(
-                        (teacher) => `
+                  ? teachers.map(teacher => `
 
                     <tr>
 
@@ -2108,9 +2479,7 @@
 
                     </tr>
 
-                  `,
-                      )
-                      .join("")
+                  `).join("")
                   : `
                     <tr>
                       <td colspan="5">
@@ -2129,14 +2498,26 @@
       </div>
     `;
 
-          document.getElementById("newTeacherBtn").addEventListener("click", renderNewTeacherForm);
-        } finally {
-          hideLoader();
-        }
-      }
 
-      function renderNewTeacherForm() {
-        document.getElementById("teacherFormContainer").innerHTML = `
+    document
+      .getElementById("newTeacherBtn")
+      .addEventListener(
+        "click",
+        renderNewTeacherForm
+      );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+function renderNewTeacherForm() {
+
+  document
+    .getElementById("teacherFormContainer")
+    .innerHTML = `
 
       <div class="card" style="background:#fbfcfb">
 
@@ -2211,110 +2592,188 @@
       </div>
     `;
 
-        document.getElementById("newTeacherForm").addEventListener("submit", createTeacher);
+
+  document
+    .getElementById("newTeacherForm")
+    .addEventListener(
+      "submit",
+      createTeacher
+    );
+}
+
+
+async function createTeacher(event) {
+
+  event.preventDefault();
+
+  showLoader("Creating teacher account...");
+
+  try {
+
+    await callFunction(
+      "admin-manage-user",
+      {
+        action:
+          "create_teacher",
+
+        name:
+          document.getElementById("teacherName").value,
+
+        username:
+          document.getElementById("teacherUsername").value,
+
+        password:
+          document.getElementById("teacherPassword").value,
+
+        class_name:
+          document.getElementById("teacherClass").value
       }
+    );
 
-      async function createTeacher(event) {
-        event.preventDefault();
+    showToast(
+      "Teacher account created successfully.",
+      "success"
+    );
 
-        showLoader("Creating teacher account...");
+    await showAdminTeachers();
 
-        try {
-          await callFunction("admin-manage-user", {
-            action: "create_teacher",
+  } catch (error) {
 
-            name: document.getElementById("teacherName").value,
+    showToast(
+      error.message,
+      "error"
+    );
 
-            username: document.getElementById("teacherUsername").value,
+  } finally {
 
-            password: document.getElementById("teacherPassword").value,
+    hideLoader();
+  }
+}
 
-            class_name: document.getElementById("teacherClass").value,
-          });
 
-          showToast("Teacher account created successfully.", "success");
+async function activateTeacher(
+  id,
+  name
+) {
 
-          await showAdminTeachers();
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
-        }
+  const password =
+    prompt(
+      `Create a password for ${name}.\nMinimum 6 characters:`
+    );
+
+  if (!password) return;
+
+  if (password.length < 6) {
+
+    showToast(
+      "Password must be at least 6 characters.",
+      "error"
+    );
+
+    return;
+  }
+
+  showLoader("Activating teacher account...");
+
+  try {
+
+    await callFunction(
+      "admin-manage-user",
+      {
+        action:
+          "activate_teacher",
+
+        id,
+
+        password
       }
+    );
 
-      async function activateTeacher(id, name) {
-        const password = prompt(`Create a password for ${name}.\nMinimum 6 characters:`);
+    showToast(
+      "Teacher account activated.",
+      "success"
+    );
 
-        if (!password) return;
+    await showAdminTeachers();
 
-        if (password.length < 6) {
-          showToast("Password must be at least 6 characters.", "error");
+  } catch (error) {
 
-          return;
-        }
+    showToast(
+      error.message,
+      "error"
+    );
 
-        showLoader("Activating teacher account...");
+  } finally {
 
-        try {
-          await callFunction("admin-manage-user", {
-            action: "activate_teacher",
+    hideLoader();
+  }
+}
 
-            id,
 
-            password,
-          });
+async function deleteTeacher(
+  id,
+  name
+) {
 
-          showToast("Teacher account activated.", "success");
+  const confirmed =
+    await confirmAction(
+      "Delete Teacher?",
+      `Are you sure you want to permanently delete ${name}'s teacher account?`,
+      "Delete Teacher"
+    );
 
-          await showAdminTeachers();
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
-        }
+  if (!confirmed) return;
+
+  showLoader("Deleting teacher...");
+
+  try {
+
+    await callFunction(
+      "admin-manage-user",
+      {
+        action:
+          "delete_teacher",
+
+        id
       }
+    );
 
-      async function deleteTeacher(id, name) {
-        const confirmed = await confirmAction(
-          "Delete Teacher?",
-          `Are you sure you want to permanently delete ${name}'s teacher account?`,
-          "Delete Teacher",
-        );
+    showToast(
+      "Teacher deleted successfully.",
+      "success"
+    );
 
-        if (!confirmed) return;
+    await showAdminTeachers();
 
-        showLoader("Deleting teacher...");
+  } catch (error) {
 
-        try {
-          await callFunction("admin-manage-user", {
-            action: "delete_teacher",
+    showToast(
+      error.message,
+      "error"
+    );
 
-            id,
-          });
+  } finally {
 
-          showToast("Teacher deleted successfully.", "success");
+    hideLoader();
+  }
+}
 
-          await showAdminTeachers();
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
-        }
-      }
 
-      /* =========================================================
+/* =========================================================
    ADMIN TESTS
 ========================================================= */
 
-      async function showAdminTests() {
-        showLoader("Loading tests...");
+async function showAdminTests() {
 
-        try {
-          await refreshAdminData();
+  showLoader("Loading tests...");
 
-          const tests = adminData.tests || [];
+  try {
 
-          mainContent.innerHTML = `
+    await refreshAdminData();
+
+    const tests = adminData.tests || [];
+
+    mainContent.innerHTML = `
 
       <h1 class="page-title">
         Tests
@@ -2347,9 +2806,7 @@
 
               ${
                 tests.length
-                  ? tests
-                      .map(
-                        (test) => `
+                  ? tests.map(test => `
 
                     <tr>
 
@@ -2409,9 +2866,7 @@
 </td>
                     </tr>
 
-                  `,
-                      )
-                      .join("")
+                  `).join("")
                   : `
                     <tr>
                       <td colspan="8">
@@ -2429,55 +2884,70 @@
 
       </div>
     `;
-        } finally {
-          hideLoader();
-        }
-      }
-      async function adminDeleteTest(testId) {
-        const confirmed = confirm("Are you sure you want to delete this test?\n\nThis action cannot be undone.");
 
-        if (!confirmed) return;
+  } finally {
 
-        showLoader("Deleting test...");
+    hideLoader();
+  }
+}
+  async function adminDeleteTest(testId) {
 
-        try {
-          const result = await callFunction("admin-manage-user", {
-            action: "delete_test",
-            id: testId,
-          });
+  const confirmed = confirm(
+    "Are you sure you want to delete this test?\n\nThis action cannot be undone."
+  );
 
-          if (result?.error) {
-            throw new Error(result.error);
-          }
+  if (!confirmed) return;
 
-          alert("Test deleted successfully.");
+  showLoader("Deleting test...");
 
-          await showAdminTests();
-        } catch (error) {
-          console.error("Admin delete test error:", error);
+  try {
 
-          alert(error.message || "Failed to delete test.");
-        } finally {
-          hideLoader();
-        }
-      }
-      async function adminViewTest(testId) {
-        showLoader("Loading test...");
+    const result = await callFunction("admin-manage-user", {
+      action: "delete_test",
+      id: testId
+    });
 
-        try {
-          const result = await callFunction("admin-manage-user", {
-            action: "view_test",
-            id: testId,
-          });
+    if (result?.error) {
+      throw new Error(result.error);
+    }
 
-          if (result?.error) {
-            throw new Error(result.error);
-          }
+    alert("Test deleted successfully.");
 
-          const test = result.test;
-          const questions = result.questions || [];
+    await showAdminTests();
 
-          mainContent.innerHTML = `
+  } catch (error) {
+
+    console.error("Admin delete test error:", error);
+
+    alert(
+      error.message ||
+      "Failed to delete test."
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+  async function adminViewTest(testId) {
+
+  showLoader("Loading test...");
+
+  try {
+
+    const result = await callFunction("admin-manage-user", {
+      action: "view_test",
+      id: testId
+    });
+
+    if (result?.error) {
+      throw new Error(result.error);
+    }
+
+    const test = result.test;
+    const questions = result.questions || [];
+
+    mainContent.innerHTML = `
 
       <div class="page-header">
 
@@ -2563,9 +3033,7 @@
 
         ${
           questions.length
-            ? questions
-                .map(
-                  (question, index) => `
+            ? questions.map((question, index) => `
 
               <div class="card" style="margin-top: 15px;">
 
@@ -2574,11 +3042,18 @@
                 </strong>
 
                 <p>
-                  ${escapeHTML(question.question_text || question.question || "")}
+                  ${escapeHTML(
+                    question.question_text ||
+                    question.question ||
+                    ""
+                  )}
                 </p>
 
                 ${
-                  question.option_a || question.option_b || question.option_c || question.option_d
+                  question.option_a ||
+                  question.option_b ||
+                  question.option_c ||
+                  question.option_d
                     ? `
                       <div>
                         <p>A. ${escapeHTML(question.option_a || "")}</p>
@@ -2592,9 +3067,7 @@
 
               </div>
 
-            `,
-                )
-                .join("")
+            `).join("")
             : `
               ${emptyState("No questions found for this test.")}
             `
@@ -2603,27 +3076,37 @@
       </div>
 
     `;
-        } catch (error) {
-          console.error("Admin view test error:", error);
 
-          alert(error.message || "Failed to load test.");
-        } finally {
-          hideLoader();
-        }
-      }
-      /* =========================================================
+  } catch (error) {
+
+    console.error("Admin view test error:", error);
+
+    alert(
+      error.message ||
+      "Failed to load test."
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+/* =========================================================
    ADMIN RESULTS
 ========================================================= */
 
-      async function showAdminResults() {
-        showLoader("Loading results...");
+async function showAdminResults() {
 
-        try {
-          await refreshAdminData();
+  showLoader("Loading results...");
 
-          const results = adminData.results || [];
+  try {
 
-          mainContent.innerHTML = `
+    await refreshAdminData();
+
+    const results =
+      adminData.results || [];
+
+    mainContent.innerHTML = `
 
       <h1 class="page-title">
         Results
@@ -2656,30 +3139,42 @@
 
               ${
                 results.length
-                  ? results
-                      .map((result) => {
-                        const pct = percent(result.score, result.total_marks);
+                  ? results.map(result => {
 
-                        return `
+                      const pct =
+                        percent(
+                          result.score,
+                          result.total_marks
+                        );
+
+                      return `
 
                         <tr>
 
                           <td>
                             <strong>
-                              ${escapeHTML(result.students?.name || "—")}
+                              ${escapeHTML(
+                                result.students?.name || "—"
+                              )}
                             </strong>
                           </td>
 
                           <td>
-                            ${escapeHTML(result.students?.class_name || "—")}
+                            ${escapeHTML(
+                              result.students?.class_name || "—"
+                            )}
                           </td>
 
                           <td>
-                            ${escapeHTML(result.tests?.title || "—")}
+                            ${escapeHTML(
+                              result.tests?.title || "—"
+                            )}
                           </td>
 
                           <td>
-                            ${escapeHTML(result.tests?.subject || "—")}
+                            ${escapeHTML(
+                              result.tests?.subject || "—"
+                            )}
                           </td>
 
                           <td>
@@ -2687,20 +3182,25 @@
                           </td>
 
                           <td>
-                            <span class="badge ${pct >= 50 ? "badge-green" : "badge-red"}">
+                            <span class="badge ${
+                              pct >= 50
+                                ? "badge-green"
+                                : "badge-red"
+                            }">
                               ${pct}%
                             </span>
                           </td>
 
                           <td>
-                            ${formatDate(result.submitted_at)}
+                            ${formatDate(
+                              result.submitted_at
+                            )}
                           </td>
 
                         </tr>
 
                       `;
-                      })
-                      .join("")
+                    }).join("")
                   : `
                     <tr>
                       <td colspan="7">
@@ -2718,35 +3218,51 @@
 
       </div>
     `;
-        } finally {
-          hideLoader();
-        }
-      }
 
-      /* =========================================================
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
    TEACHER DASHBOARD
 ========================================================= */
 
-      async function refreshTeacherData() {
-        teacherData = await callFunction("portal-data", {
-          action: "teacher_dashboard",
-        });
+async function refreshTeacherData() {
 
-        currentProfile = teacherData.teacher;
+  teacherData =
+    await callFunction(
+      "portal-data",
+      {
+        action:
+          "teacher_dashboard"
       }
+    );
 
-      async function showTeacherDashboard() {
-        showLoader("Loading teacher dashboard...");
+  currentProfile =
+    teacherData.teacher;
+}
 
-        try {
-          await refreshTeacherData();
 
-          const tests = teacherData.tests || [];
+async function showTeacherDashboard() {
 
-          mainContent.innerHTML = `
+  showLoader("Loading teacher dashboard...");
+
+  try {
+
+    await refreshTeacherData();
+
+    const tests =
+      teacherData.tests || [];
+
+    mainContent.innerHTML = `
 
       <h1 class="page-title">
-        Welcome, ${escapeHTML(teacherData.teacher?.Name || "Teacher")}
+        Welcome, ${escapeHTML(
+          teacherData.teacher?.Name || "Teacher"
+        )}
       </h1>
 
       <p class="page-subtitle">
@@ -2766,21 +3282,29 @@
         <div class="stat-card">
           <div class="stat-label">Active Tests</div>
           <div class="stat-value">
-            ${tests.filter((t) => t.is_active).length}
+            ${tests.filter(t => t.is_active).length}
           </div>
         </div>
 
         <div class="stat-card">
           <div class="stat-label">Classes</div>
           <div class="stat-value">
-            ${new Set(tests.map((t) => t.class_name)).size}
+            ${
+              new Set(
+                tests.map(t => t.class_name)
+              ).size
+            }
           </div>
         </div>
 
         <div class="stat-card">
           <div class="stat-label">Subjects</div>
           <div class="stat-value">
-            ${new Set(tests.map((t) => t.subject)).size}
+            ${
+              new Set(
+                tests.map(t => t.subject)
+              ).size
+            }
           </div>
         </div>
 
@@ -2823,10 +3347,7 @@
 
                   <tbody>
 
-                    ${tests
-                      .slice(0, 8)
-                      .map(
-                        (test) => `
+                    ${tests.slice(0, 8).map(test => `
 
                       <tr>
 
@@ -2858,9 +3379,7 @@
 
                       </tr>
 
-                    `,
-                      )
-                      .join("")}
+                    `).join("")}
 
                   </tbody>
 
@@ -2868,26 +3387,34 @@
 
               </div>
             `
-            : emptyState("No tests yet.", "Create your first examination.")
+            : emptyState(
+                "No tests yet.",
+                "Create your first examination."
+              )
         }
 
       </div>
     `;
-        } finally {
-          hideLoader();
-        }
-      }
 
-      /* =========================================================
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
    TEACHER CREATE TEST
 ========================================================= */
 
-      let questionCount = 0;
+let questionCount = 0;
 
-      function showTeacherCreate() {
-        questionCount = 0;
 
-        mainContent.innerHTML = `
+function showTeacherCreate() {
+
+  questionCount = 0;
+
+  mainContent.innerHTML = `
 
     <h1 class="page-title">
       Create Test
@@ -2924,7 +3451,9 @@
             <input
               id="testClass"
               class="input"
-              value="${escapeHTML(teacherData?.teacher?.class_name || "")}"
+              value="${escapeHTML(
+                teacherData?.teacher?.class_name || ""
+              )}"
               placeholder="e.g. 9th"
               required
             >
@@ -3007,25 +3536,44 @@
     </form>
   `;
 
-        document.getElementById("addQuestionBtn").addEventListener("click", () => addQuestion());
 
-        document.getElementById("testBuilderForm").addEventListener("submit", createTest);
+  document
+    .getElementById("addQuestionBtn")
+    .addEventListener(
+      "click",
+      () => addQuestion()
+    );
 
-        addQuestion();
-      }
+  document
+    .getElementById("testBuilderForm")
+    .addEventListener(
+      "submit",
+      createTest
+    );
 
-      function addQuestion() {
-        questionCount++;
+  addQuestion();
+}
 
-        const container = document.getElementById("questionsContainer");
 
-        const div = document.createElement("div");
+function addQuestion() {
 
-        div.className = "question-builder";
+  questionCount++;
 
-        div.dataset.question = questionCount;
+  const container =
+    document.getElementById(
+      "questionsContainer"
+    );
 
-        div.innerHTML = `
+  const div =
+    document.createElement("div");
+
+  div.className =
+    "question-builder";
+
+  div.dataset.question =
+    questionCount;
+
+  div.innerHTML = `
 
     <div class="question-top">
 
@@ -3189,94 +3737,203 @@
     </div>
   `;
 
-        container.appendChild(div);
 
-        const removeButton = div.querySelector(".remove-question");
+  container.appendChild(div);
 
-        if (removeButton) {
-          removeButton.addEventListener("click", () => {
-            div.remove();
 
-            renumberQuestions();
-          });
-        }
+  const removeButton =
+    div.querySelector(
+      ".remove-question"
+    );
+
+  if (removeButton) {
+
+    removeButton.addEventListener(
+      "click",
+      () => {
+
+        div.remove();
+
+        renumberQuestions();
       }
+    );
+  }
+}
 
-      function renumberQuestions() {
-        document.querySelectorAll(".question-builder").forEach((element, index) => {
-          element.querySelector(".question-number").textContent = `Question ${index + 1}`;
-        });
+
+function renumberQuestions() {
+
+  document
+    .querySelectorAll(
+      ".question-builder"
+    )
+    .forEach(
+      (element, index) => {
+
+        element
+          .querySelector(
+            ".question-number"
+          )
+          .textContent =
+            `Question ${index + 1}`;
       }
+    );
+}
 
-      async function createTest(event) {
-        event.preventDefault();
 
-        const questionElements = Array.from(document.querySelectorAll(".question-builder"));
+async function createTest(event) {
 
-        if (!questionElements.length) {
-          showToast("Add at least one question.", "error");
+  event.preventDefault();
 
-          return;
+  const questionElements =
+    Array.from(
+      document.querySelectorAll(
+        ".question-builder"
+      )
+    );
+
+  if (!questionElements.length) {
+
+    showToast(
+      "Add at least one question.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const questions =
+    questionElements.map(element => ({
+
+  question_text:
+  element
+    .querySelector(".question-text")
+    .innerHTML
+    .trim(),
+      
+    option_a:
+  element
+    .querySelector(".option-a")
+    .innerHTML
+    .trim(),
+      
+     option_b:
+  element
+    .querySelector(".option-b")
+    .innerHTML
+    .trim(),
+      
+     option_c:
+  element
+    .querySelector(".option-c")
+    .innerHTML
+    .trim(),
+      
+      option_d:
+  element
+    .querySelector(".option-d")
+    .innerHTML
+    .trim(),
+      
+      correct_option:
+        element
+          .querySelector(".correct-option")
+          .value,
+
+      marks:
+        Number(
+          element
+            .querySelector(".question-marks")
+            .value
+        )
+    }));
+
+
+  showLoader("Creating test...");
+
+  try {
+
+    const result =
+      await callFunction(
+        "teacher-manage-tests",
+        {
+          action:
+            "create_test",
+
+          title:
+            document
+              .getElementById("testTitle")
+              .value
+              .trim(),
+
+          class_name:
+            document
+              .getElementById("testClass")
+              .value
+              .trim(),
+
+          subject:
+            document
+              .getElementById("testSubject")
+              .value
+              .trim(),
+
+          chapter:
+            document
+              .getElementById("testChapter")
+              .value
+              .trim(),
+
+          duration_minutes:
+            Number(
+              document
+                .getElementById("testDuration")
+                .value
+            ),
+
+          questions
         }
+      );
 
-        const questions = questionElements.map((element) => ({
-          question_text: element.querySelector(".question-text").innerHTML.trim(),
 
-          option_a: element.querySelector(".option-a").innerHTML.trim(),
+    showToast(
+      `Test created successfully. Total marks: ${result.total_marks}`,
+      "success"
+    );
 
-          option_b: element.querySelector(".option-b").innerHTML.trim(),
+    await showTeacherTests();
 
-          option_c: element.querySelector(".option-c").innerHTML.trim(),
+  } catch (error) {
 
-          option_d: element.querySelector(".option-d").innerHTML.trim(),
+    showToast(
+      error.message,
+      "error"
+    );
 
-          correct_option: element.querySelector(".correct-option").value,
+  } finally {
 
-          marks: Number(element.querySelector(".question-marks").value),
-        }));
+    hideLoader();
+  }
+}
 
-        showLoader("Creating test...");
 
-        try {
-          const result = await callFunction("teacher-manage-tests", {
-            action: "create_test",
-
-            title: document.getElementById("testTitle").value.trim(),
-
-            class_name: document.getElementById("testClass").value.trim(),
-
-            subject: document.getElementById("testSubject").value.trim(),
-
-            chapter: document.getElementById("testChapter").value.trim(),
-
-            duration_minutes: Number(document.getElementById("testDuration").value),
-
-            questions,
-          });
-
-          showToast(`Test created successfully. Total marks: ${result.total_marks}`, "success");
-
-          await showTeacherTests();
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
-        }
-      }
-
-      /* =========================================================
+/* =========================================================
    TEACHER TESTS
 ========================================================= */
 
-      async function showTeacherTests() {
-        showLoader("Loading tests...");
+async function showTeacherTests() {
 
-        try {
-          await refreshTeacherData();
+  showLoader("Loading tests...");
 
-          const tests = teacherData.tests || [];
+  try {
 
-          mainContent.innerHTML = `
+    await refreshTeacherData();
+
+    const tests =
+      teacherData.tests || [];
+
+    mainContent.innerHTML = `
 
       <h1 class="page-title">
         My Tests
@@ -3292,9 +3949,7 @@
           ? `
             <div class="test-grid">
 
-              ${tests
-                .map(
-                  (test) => `
+              ${tests.map(test => `
 
                 <div class="test-card">
 
@@ -3362,87 +4017,155 @@
 
                 </div>
 
-              `,
-                )
-                .join("")}
+              `).join("")}
 
             </div>
           `
           : `
             <div class="card">
-              ${emptyState("No tests created yet.", "Create your first test from the Create Test section.")}
+              ${emptyState(
+                "No tests created yet.",
+                "Create your first test from the Create Test section."
+              )}
             </div>
           `
       }
     `;
-        } finally {
-          hideLoader();
-        }
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+async function toggleTeacherTest(
+  id,
+  newStatus
+) {
+
+  showLoader(
+    newStatus
+      ? "Activating test..."
+      : "Deactivating test..."
+  );
+
+  try {
+
+    await callFunction(
+      "teacher-manage-tests",
+      {
+        action:
+          "toggle_test",
+
+        test_id:
+          id,
+
+        is_active:
+          newStatus
       }
+    );
 
-      async function toggleTeacherTest(id, newStatus) {
-        showLoader(newStatus ? "Activating test..." : "Deactivating test...");
+    showToast(
+      newStatus
+        ? "Test activated."
+        : "Test deactivated.",
+      "success"
+    );
 
-        try {
-          await callFunction("teacher-manage-tests", {
-            action: "toggle_test",
+    await showTeacherTests();
 
-            test_id: id,
+  } catch (error) {
 
-            is_active: newStatus,
-          });
+    showToast(
+      error.message,
+      "error"
+    );
 
-          showToast(newStatus ? "Test activated." : "Test deactivated.", "success");
+  } finally {
 
-          await showTeacherTests();
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
-        }
+    hideLoader();
+  }
+}
+
+
+async function deleteTeacherTest(
+  id,
+  title
+) {
+
+  const confirmed =
+    await confirmAction(
+      "Delete Test?",
+      `This will permanently delete "${title}" and, because of your current database CASCADE rules, its questions and associated results.`,
+      "Delete Test"
+    );
+
+  if (!confirmed) return;
+
+  showLoader("Deleting test...");
+
+  try {
+
+    await callFunction(
+      "teacher-manage-tests",
+      {
+        action:
+          "delete_test",
+
+        test_id:
+          id
       }
+    );
 
-      async function deleteTeacherTest(id, title) {
-        const confirmed = await confirmAction(
-          "Delete Test?",
-          `This will permanently delete "${title}" and, because of your current database CASCADE rules, its questions and associated results.`,
-          "Delete Test",
-        );
+    showToast(
+      "Test and associated data deleted.",
+      "success"
+    );
 
-        if (!confirmed) return;
+    await showTeacherTests();
 
-        showLoader("Deleting test...");
+  } catch (error) {
 
-        try {
-          await callFunction("teacher-manage-tests", {
-            action: "delete_test",
+    showToast(
+      error.message,
+      "error"
+    );
 
-            test_id: id,
-          });
+  } finally {
 
-          showToast("Test and associated data deleted.", "success");
+    hideLoader();
+  }
+}
 
-          await showTeacherTests();
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
+
+async function viewTeacherResults(
+  testId,
+  title
+) {
+
+  showLoader("Loading results...");
+
+  try {
+
+    const data =
+      await callFunction(
+        "portal-data",
+        {
+          action:
+            "test_results",
+
+          test_id:
+            testId
         }
-      }
+      );
 
-      async function viewTeacherResults(testId, title) {
-        showLoader("Loading results...");
 
-        try {
-          const data = await callFunction("portal-data", {
-            action: "test_results",
+    const results =
+      data.results || [];
 
-            test_id: testId,
-          });
 
-          const results = data.results || [];
-
-          mainContent.innerHTML = `
+    mainContent.innerHTML = `
 
       <div style="
         display:flex;
@@ -3495,26 +4218,36 @@
 
                   <tbody>
 
-                    ${results
-                      .map((result) => {
-                        const pct = percent(result.score, result.total_marks);
+                    ${results.map(result => {
 
-                        return `
+                      const pct =
+                        percent(
+                          result.score,
+                          result.total_marks
+                        );
+
+                      return `
 
                         <tr>
 
                           <td>
                             <strong>
-                              ${escapeHTML(result.students?.name || "—")}
+                              ${escapeHTML(
+                                result.students?.name || "—"
+                              )}
                             </strong>
                           </td>
 
                           <td>
-                            ${escapeHTML(result.students?.roll_number || "—")}
+                            ${escapeHTML(
+                              result.students?.roll_number || "—"
+                            )}
                           </td>
 
                           <td>
-                            ${escapeHTML(result.students?.class_name || "—")}
+                            ${escapeHTML(
+                              result.students?.class_name || "—"
+                            )}
                           </td>
 
                           <td>
@@ -3522,13 +4255,19 @@
                           </td>
 
                           <td>
-                            <span class="badge ${pct >= 50 ? "badge-green" : "badge-red"}">
+                            <span class="badge ${
+                              pct >= 50
+                                ? "badge-green"
+                                : "badge-red"
+                            }">
                               ${pct}%
                             </span>
                           </td>
 
                           <td>
-                            ${formatDate(result.submitted_at)}
+                            ${formatDate(
+                              result.submitted_at
+                            )}
                           </td>
 
 <td>
@@ -3543,8 +4282,7 @@
                         </tr>
 
                       `;
-                      })
-                      .join("")}
+                    }).join("")}
 
                   </tbody>
 
@@ -3552,41 +4290,71 @@
 
               </div>
             `
-            : emptyState("No submissions yet.", "Students who complete this test will appear here.")
+            : emptyState(
+                "No submissions yet.",
+                "Students who complete this test will appear here."
+              )
         }
 
       </div>
     `;
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
-        }
-      }
 
-      /* =========================================================
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+/* =========================================================
    TEACHER RESULT DETAILS
 ========================================================= */
 
-      async function showTeacherResultDetails(resultId, title) {
-        showLoader("Loading result review...");
+async function showTeacherResultDetails(
+  resultId,
+  title
+) {
 
-        try {
-          const data = await callFunction("portal-data", {
-            action: "teacher_result_details",
+  showLoader(
+    "Loading result review..."
+  );
 
-            result_id: resultId,
-          });
+  try {
 
-          const result = data.result;
+    const data =
+      await callFunction(
+        "portal-data",
+        {
+          action:
+            "teacher_result_details",
 
-          const answers = data.answers || [];
+          result_id:
+            resultId
+        }
+      );
 
-          const student = result.students || {};
 
-          const test = result.tests || {};
+    const result =
+      data.result;
 
-          mainContent.innerHTML = `
+    const answers =
+      data.answers || [];
+
+
+    const student =
+      result.students || {};
+
+    const test =
+      result.tests || {};
+
+
+    mainContent.innerHTML = `
 
       <h1 class="page-title">
         Student Result Review
@@ -3604,7 +4372,11 @@
           <div>
 
             <div class="card-title">
-              ${escapeHTML(test.title || title || "Test")}
+              ${escapeHTML(
+                test.title ||
+                title ||
+                "Test"
+              )}
             </div>
 
             <div
@@ -3615,14 +4387,21 @@
             >
               Student:
               <strong>
-                ${escapeHTML(student.name || "—")}
+                ${escapeHTML(
+                  student.name || "—"
+                )}
               </strong>
 
               &nbsp; | &nbsp;
 
               Roll No:
               <strong>
-                ${escapeHTML(String(student.roll_number || "—"))}
+                ${escapeHTML(
+                  String(
+                    student.roll_number ||
+                    "—"
+                  )
+                )}
               </strong>
             </div>
 
@@ -3633,7 +4412,9 @@
             class="btn btn-secondary"
             onclick="viewTeacherResults(
               ${result.test_id},
-              '${escapeAttr(title || test.title || "Test")}'
+              '${escapeAttr(
+                title || test.title || "Test"
+              )}'
             )"
           >
             Back to Results
@@ -3664,27 +4445,59 @@
 
           ${
             answers.length
-              ? answers
-                  .map((answer, index) => {
-                    const q = answer.questions || {};
+
+              ? answers.map(
+                  (answer, index) => {
+
+                    const q =
+                      answer.questions ||
+                      {};
+
 
                     const options = {
-                      A: q.option_a,
 
-                      B: q.option_b,
+                      A:
+                        q.option_a,
 
-                      C: q.option_c,
+                      B:
+                        q.option_b,
 
-                      D: q.option_d,
+                      C:
+                        q.option_c,
+
+                      D:
+                        q.option_d
+
                     };
 
-                    const selectedText = answer.selected_option
-                      ? `${answer.selected_option}. ${escapeHTML(options[answer.selected_option] || "")}`
-                      : "Not Answered";
 
-                    const correctText = answer.correct_option
-                      ? `${answer.correct_option}. ${escapeHTML(options[answer.correct_option] || "")}`
-                      : "—";
+                    const selectedText =
+                      answer.selected_option
+
+                        ? `${answer.selected_option}. ${
+                            escapeHTML(
+                              options[
+                                answer.selected_option
+                              ] || ""
+                            )
+                          }`
+
+                        : "Not Answered";
+
+
+                    const correctText =
+                      answer.correct_option
+
+                        ? `${answer.correct_option}. ${
+                            escapeHTML(
+                              options[
+                                answer.correct_option
+                              ] || ""
+                            )
+                          }`
+
+                        : "—";
+
 
                     return `
 
@@ -3692,7 +4505,11 @@
                         class="card"
                         style="
                           margin-bottom:15px;
-                          border-left:4px solid ${answer.is_correct ? "var(--success)" : "var(--danger)"};
+                          border-left:4px solid ${
+                            answer.is_correct
+                              ? "var(--success)"
+                              : "var(--danger)"
+                          };
                         "
                       >
 
@@ -3711,10 +4528,18 @@
 
 
                           <span
-                            class="badge ${answer.is_correct ? "badge-green" : "badge-red"}"
+                            class="badge ${
+                              answer.is_correct
+                                ? "badge-green"
+                                : "badge-red"
+                            }"
                           >
 
-                            ${answer.is_correct ? "Correct" : "Wrong"}
+                            ${
+                              answer.is_correct
+                                ? "Correct"
+                                : "Wrong"
+                            }
 
                           </span>
 
@@ -3729,7 +4554,10 @@
                           "
                         >
 
-                          ${escapeHTML(q.question_text || "—")}
+                          ${escapeHTML(
+                            q.question_text ||
+                            "—"
+                          )}
 
                         </div>
 
@@ -3747,6 +4575,7 @@
 
                         ${
                           !answer.is_correct
+
                             ? `
 
                               <div
@@ -3765,15 +4594,21 @@
                               </div>
 
                             `
+
                             : ""
                         }
 
                       </div>
 
                     `;
-                  })
-                  .join("")
-              : emptyState("No question details found.", "Question-wise answer details are not available.")
+
+                  }
+                ).join("")
+
+              : emptyState(
+                  "No question details found.",
+                  "Question-wise answer details are not available."
+                )
           }
 
         </div>
@@ -3781,48 +4616,78 @@
       </div>
 
     `;
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
-        }
-      }
-      /* =========================================================
+
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+
+  }
+}
+/* =========================================================
    STUDENT DATA
 ========================================================= */
 
-      async function refreshStudentData() {
-        studentData = await callFunction("portal-data", {
-          action: "student_dashboard",
-        });
+async function refreshStudentData() {
 
-        currentProfile = studentData.student;
+  studentData =
+    await callFunction(
+      "portal-data",
+      {
+        action:
+          "student_dashboard"
       }
+    );
 
-      /* =========================================================
+  currentProfile =
+    studentData.student;
+}
+
+
+/* =========================================================
    STUDENT DASHBOARD
 ========================================================= */
 
-      async function showStudentDashboard() {
-        showLoader("Loading student dashboard...");
+async function showStudentDashboard() {
 
-        try {
-          await refreshStudentData();
+  showLoader("Loading student dashboard...");
 
-          const tests = studentData.tests || [];
+  try {
 
-          const results = studentData.results || [];
+    await refreshStudentData();
 
-          const attempted = new Set(results.map((result) => Number(result.test_id)));
+    const tests =
+      studentData.tests || [];
 
-          mainContent.innerHTML = `
+    const results =
+      studentData.results || [];
+
+    const attempted =
+      new Set(
+        results.map(
+          result => Number(result.test_id)
+        )
+      );
+
+
+    mainContent.innerHTML = `
 
       <h1 class="page-title">
-        Welcome, ${escapeHTML(studentData.student?.name || "Student")}
+        Welcome, ${escapeHTML(
+          studentData.student?.name || "Student"
+        )}
       </h1>
 
       <p class="page-subtitle">
-        Class ${escapeHTML(studentData.student?.class_name || "—")} · Online Examination Portal
+        Class ${escapeHTML(
+          studentData.student?.class_name || "—"
+        )} · Online Examination Portal
       </p>
 
 
@@ -3856,7 +4721,14 @@
           </div>
 
           <div class="stat-value">
-            ${tests.filter((test) => !attempted.has(Number(test.id))).length}
+            ${
+              tests.filter(
+                test =>
+                  !attempted.has(
+                    Number(test.id)
+                  )
+              ).length
+            }
           </div>
         </div>
 
@@ -3868,7 +4740,14 @@
 
           <div class="stat-value">
 
-            ${results.length ? `${percent(results[0].score, results[0].total_marks)}%` : "—"}
+            ${
+              results.length
+                ? `${percent(
+                    results[0].score,
+                    results[0].total_marks
+                  )}%`
+                : "—"
+            }
 
           </div>
         </div>
@@ -3899,12 +4778,14 @@
             ? `
               <div class="test-grid">
 
-                ${tests
-                  .slice(0, 3)
-                  .map((test) => {
-                    const done = attempted.has(Number(test.id));
+                ${tests.slice(0, 3).map(test => {
 
-                    return `
+                  const done =
+                    attempted.has(
+                      Number(test.id)
+                    );
+
+                  return `
 
                     <div class="test-card">
 
@@ -3951,44 +4832,71 @@
                     </div>
 
                   `;
-                  })
-                  .join("")}
+                }).join("")}
 
               </div>
             `
-            : emptyState("No active tests available.", "Your teacher has not published a test for your class yet.")
+            : emptyState(
+                "No active tests available.",
+                "Your teacher has not published a test for your class yet."
+              )
         }
 
       </div>
     `;
-        } finally {
-          hideLoader();
-        }
-      }
 
-      /* =========================================================
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
    STUDENT TESTS
 ========================================================= */
 
-      async function showStudentTests() {
-        showLoader("Loading available tests...");
+async function showStudentTests() {
 
-        try {
-          const data = await callFunction("student-test-system", {
-            action: "get_tests",
-          });
+  showLoader("Loading available tests...");
 
-          const tests = data.tests || [];
+  try {
 
-          const resultData = await callFunction("student-test-system", {
-            action: "get_results",
-          });
+    const data =
+      await callFunction(
+        "student-test-system",
+        {
+          action:
+            "get_tests"
+        }
+      );
 
-          const results = resultData.results || [];
+    const tests =
+      data.tests || [];
 
-          const attempted = new Set(results.map((result) => Number(result.test_id)));
 
-          mainContent.innerHTML = `
+    const resultData =
+      await callFunction(
+        "student-test-system",
+        {
+          action:
+            "get_results"
+        }
+      );
+
+    const results =
+      resultData.results || [];
+
+    const attempted =
+      new Set(
+        results.map(
+          result =>
+            Number(result.test_id)
+        )
+      );
+
+
+    mainContent.innerHTML = `
 
       <h1 class="page-title">
         Available Tests
@@ -4004,11 +4912,14 @@
           ? `
             <div class="test-grid">
 
-              ${tests
-                .map((test) => {
-                  const done = attempted.has(Number(test.id));
+              ${tests.map(test => {
 
-                  return `
+                const done =
+                  attempted.has(
+                    Number(test.id)
+                  );
+
+                return `
 
                   <div class="test-card">
 
@@ -4034,7 +4945,11 @@
                       Total Marks:
                       ${test.total_marks || 0}
 
-                      ${test.chapter ? `<br>Chapter: ${escapeHTML(test.chapter)}` : ""}
+                      ${
+                        test.chapter
+                          ? `<br>Chapter: ${escapeHTML(test.chapter)}`
+                          : ""
+                      }
 
                     </div>
 
@@ -4063,121 +4978,193 @@
                   </div>
 
                 `;
-                })
-                .join("")}
+              }).join("")}
 
             </div>
           `
           : `
             <div class="card">
-              ${emptyState("No tests available.", "There are currently no active tests for your class.")}
+              ${emptyState(
+                "No tests available.",
+                "There are currently no active tests for your class."
+              )}
             </div>
           `
       }
     `;
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
-        }
-      }
 
-      /* =========================================================
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
    START TEST
 ========================================================= */
 
-      async function startTest(testId) {
-        const confirmed = await confirmAction(
-          "Start Examination?",
-          "Once you start this examination, your attempt will be recorded when you submit it. You can only attempt each test once.",
-          "Start Test",
-        );
+async function startTest(testId) {
 
-        if (!confirmed) return;
+  const confirmed =
+    await confirmAction(
+      "Start Examination?",
+      "Once you start this examination, your attempt will be recorded when you submit it. You can only attempt each test once.",
+      "Start Test"
+    );
 
-        showLoader("Loading examination...");
+  if (!confirmed) return;
 
-        try {
-          const data = await callFunction("student-test-system", {
-            action: "get_test",
+  showLoader("Loading examination...");
 
-            test_id: testId,
-          });
+  try {
 
-          currentExam = data;
+    const data =
+      await callFunction(
+        "student-test-system",
+        {
+          action:
+            "get_test",
 
-          examAnswers = {};
-
-          startExamTimer(Number(data.test.duration_minutes) * 60);
-
-          renderExam();
-        } catch (error) {
-          if (error.message.toLowerCase().includes("already attempted")) {
-            showToast("You have already attempted this test.", "error");
-
-            await showStudentTests();
-          } else {
-            showToast(error.message, "error");
-          }
-        } finally {
-          hideLoader();
+          test_id:
+            testId
         }
-      }
+      );
 
-      /* =========================================================
+    currentExam = data;
+
+    examAnswers = {};
+
+    startExamTimer(
+      Number(
+        data.test.duration_minutes
+      ) * 60
+    );
+
+    renderExam();
+
+  } catch (error) {
+
+    if (
+      error.message
+        .toLowerCase()
+        .includes("already attempted")
+    ) {
+
+      showToast(
+        "You have already attempted this test.",
+        "error"
+      );
+
+      await showStudentTests();
+
+    } else {
+
+      showToast(
+        error.message,
+        "error"
+      );
+    }
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
    EXAM TIMER
 ========================================================= */
 
-      function startExamTimer(seconds) {
-        clearInterval(examTimer);
+function startExamTimer(seconds) {
 
-        examSecondsRemaining = seconds;
+  clearInterval(examTimer);
+
+  examSecondsRemaining =
+    seconds;
+
+  updateTimerDisplay();
+
+  examTimer =
+    setInterval(
+      () => {
+
+        examSecondsRemaining--;
 
         updateTimerDisplay();
 
-        examTimer = setInterval(() => {
-          examSecondsRemaining--;
+        if (
+          examSecondsRemaining <= 0
+        ) {
 
-          updateTimerDisplay();
+          clearInterval(examTimer);
 
-          if (examSecondsRemaining <= 0) {
-            clearInterval(examTimer);
+          showToast(
+            "Time is up. Your test is being submitted.",
+            "error"
+          );
 
-            showToast("Time is up. Your test is being submitted.", "error");
-
-            submitExam(true);
-          }
-        }, 1000);
-      }
-
-      function updateTimerDisplay() {
-        const timer = document.getElementById("examTimer");
-
-        if (!timer) return;
-
-        const minutes = Math.floor(examSecondsRemaining / 60);
-
-        const seconds = examSecondsRemaining % 60;
-
-        timer.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-
-        if (examSecondsRemaining <= 60) {
-          timer.classList.add("danger");
-        } else {
-          timer.classList.remove("danger");
+          submitExam(true);
         }
-      }
 
-      /* =========================================================
+      },
+      1000
+    );
+}
+
+
+function updateTimerDisplay() {
+
+  const timer =
+    document.getElementById(
+      "examTimer"
+    );
+
+  if (!timer) return;
+
+  const minutes =
+    Math.floor(
+      examSecondsRemaining / 60
+    );
+
+  const seconds =
+    examSecondsRemaining % 60;
+
+  timer.textContent =
+    `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}`;
+
+  if (
+    examSecondsRemaining <= 60
+  ) {
+    timer.classList.add("danger");
+  } else {
+    timer.classList.remove("danger");
+  }
+}
+
+
+/* =========================================================
    RENDER EXAM
 ========================================================= */
 
-      function renderExam() {
-        const test = currentExam.test;
+function renderExam() {
 
-        const questions = currentExam.questions || [];
+  const test =
+    currentExam.test;
 
-        mainContent.innerHTML = `
+  const questions =
+    currentExam.questions || [];
+
+
+  mainContent.innerHTML = `
 
     <div class="exam-header">
 
@@ -4213,8 +5200,8 @@
 
     <form id="examForm">
 
-      ${questions
-        .map(
+      ${
+        questions.map(
           (question, index) => `
 
             <div
@@ -4233,19 +5220,35 @@
   ${question.question_text}
 </div>
 
-              ${renderAnswerOption(question, "A", question.option_a)}
+              ${renderAnswerOption(
+                question,
+                "A",
+                question.option_a
+              )}
 
-              ${renderAnswerOption(question, "B", question.option_b)}
+              ${renderAnswerOption(
+                question,
+                "B",
+                question.option_b
+              )}
 
-              ${renderAnswerOption(question, "C", question.option_c)}
+              ${renderAnswerOption(
+                question,
+                "C",
+                question.option_c
+              )}
 
-              ${renderAnswerOption(question, "D", question.option_d)}
+              ${renderAnswerOption(
+                question,
+                "D",
+                question.option_d
+              )}
 
             </div>
 
-          `,
-        )
-        .join("")}
+          `
+        ).join("")
+      }
 
 
       <div class="card">
@@ -4288,29 +5291,68 @@
     </form>
   `;
 
-        document.getElementById("examForm").addEventListener("submit", (event) => {
-          event.preventDefault();
 
-          submitExam(false);
-        });
+  document
+    .getElementById("examForm")
+    .addEventListener(
+      "submit",
+      event => {
 
-        document.querySelectorAll(".answer-option input").forEach((input) => {
-          input.addEventListener("change", () => {
-            const questionId = Number(input.dataset.questionId);
+        event.preventDefault();
 
-            examAnswers[questionId] = input.value;
-
-            document
-              .querySelectorAll(`.answer-option[data-question-id="${questionId}"]`)
-              .forEach((element) => element.classList.remove("selected"));
-
-            input.closest(".answer-option").classList.add("selected");
-          });
-        });
+        submitExam(false);
       }
+    );
 
-      function renderAnswerOption(question, letter, text) {
-        return `
+
+  document
+    .querySelectorAll(
+      ".answer-option input"
+    )
+    .forEach(input => {
+
+      input.addEventListener(
+        "change",
+        () => {
+
+          const questionId =
+            Number(
+              input.dataset.questionId
+            );
+
+          examAnswers[
+            questionId
+          ] =
+            input.value;
+
+          document
+            .querySelectorAll(
+              `.answer-option[data-question-id="${questionId}"]`
+            )
+            .forEach(
+              element =>
+                element.classList.remove(
+                  "selected"
+                )
+            );
+
+          input
+            .closest(".answer-option")
+            .classList.add("selected");
+        }
+      );
+    });
+
+}
+
+
+function renderAnswerOption(
+  question,
+  letter,
+  text
+) {
+
+  return `
 
     <label
       class="answer-option"
@@ -4335,60 +5377,105 @@
     </label>
 
   `;
-      }
+}
 
-      /* =========================================================
+
+/* =========================================================
    SUBMIT EXAM
 ========================================================= */
 
-      async function submitExam(automatic = false) {
-        if (!automatic) {
-          const confirmed = await confirmAction(
-            "Submit Test?",
-            "Your answers will be marked automatically and this test cannot be attempted again after submission.",
-            "Submit Test",
-          );
+async function submitExam(
+  automatic = false
+) {
 
-          if (!confirmed) return;
+  if (!automatic) {
+
+    const confirmed =
+      await confirmAction(
+        "Submit Test?",
+        "Your answers will be marked automatically and this test cannot be attempted again after submission.",
+        "Submit Test"
+      );
+
+    if (!confirmed) return;
+  }
+
+
+  clearInterval(examTimer);
+
+  showLoader(
+    automatic
+      ? "Submitting automatically..."
+      : "Submitting test..."
+  );
+
+
+  try {
+
+    const answers =
+      Object.entries(
+        examAnswers
+      ).map(
+        ([question_id, selected_option]) => ({
+          question_id:
+            Number(question_id),
+
+          selected_option
+        })
+      );
+
+
+    const result =
+      await callFunction(
+        "student-test-system",
+        {
+          action:
+            "submit_test",
+
+          test_id:
+            Number(
+              currentExam.test.id
+            ),
+
+          answers
         }
+      );
 
-        clearInterval(examTimer);
 
-        showLoader(automatic ? "Submitting automatically..." : "Submitting test...");
+    showResultScreen(
+      result
+    );
 
-        try {
-          const answers = Object.entries(examAnswers).map(([question_id, selected_option]) => ({
-            question_id: Number(question_id),
+  } catch (error) {
 
-            selected_option,
-          }));
+    showToast(
+      error.message,
+      "error"
+    );
 
-          const result = await callFunction("student-test-system", {
-            action: "submit_test",
+  } finally {
 
-            test_id: Number(currentExam.test.id),
+    hideLoader();
+  }
+}
 
-            answers,
-          });
 
-          showResultScreen(result);
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
-        }
-      }
-
-      /* =========================================================
+/* =========================================================
    RESULT SCREEN
 ========================================================= */
 
-      function showResultScreen(result) {
-        currentExam = null;
+function showResultScreen(result) {
 
-        const pct = percent(result.score, result.total_marks);
+  currentExam = null;
 
-        mainContent.innerHTML = `
+  const pct =
+    percent(
+      result.score,
+      result.total_marks
+    );
+
+
+  mainContent.innerHTML = `
 
     <div class="result-hero">
 
@@ -4476,23 +5563,33 @@
 
     </div>
   `;
-      }
+}
 
-      /* =========================================================
+
+/* =========================================================
    STUDENT RESULTS
 ========================================================= */
 
-      async function showStudentResults() {
-        showLoader("Loading result history...");
+async function showStudentResults() {
 
-        try {
-          const data = await callFunction("student-test-system", {
-            action: "get_results",
-          });
+  showLoader("Loading result history...");
 
-          const results = data.results || [];
+  try {
 
-          mainContent.innerHTML = `
+    const data =
+      await callFunction(
+        "student-test-system",
+        {
+          action:
+            "get_results"
+        }
+      );
+
+    const results =
+      data.results || [];
+
+
+    mainContent.innerHTML = `
 
       <h1 class="page-title">
         My Results
@@ -4525,22 +5622,30 @@
 
                   <tbody>
 
-                    ${results
-                      .map((result) => {
-                        const pct = percent(result.score, result.total_marks);
+                    ${results.map(result => {
 
-                        return `
+                      const pct =
+                        percent(
+                          result.score,
+                          result.total_marks
+                        );
+
+                      return `
 
                         <tr>
 
                           <td>
                             <strong>
-                              ${escapeHTML(result.tests?.title || "—")}
+                              ${escapeHTML(
+                                result.tests?.title || "—"
+                              )}
                             </strong>
                           </td>
 
                           <td>
-                            ${escapeHTML(result.tests?.subject || "—")}
+                            ${escapeHTML(
+                              result.tests?.subject || "—"
+                            )}
                           </td>
 
                           <td>
@@ -4549,14 +5654,20 @@
 
                           <td>
 
-                            <span class="badge ${pct >= 50 ? "badge-green" : "badge-red"}">
+                            <span class="badge ${
+                              pct >= 50
+                                ? "badge-green"
+                                : "badge-red"
+                            }">
                               ${pct}%
                             </span>
 
                           </td>
 
                         <td>
-  ${formatDate(result.submitted_at)}
+  ${formatDate(
+    result.submitted_at
+  )}
 </td>
 
 <td>
@@ -4570,8 +5681,7 @@
 
 </tr>
                       `;
-                      })
-                      .join("")}
+                    }).join("")}
 
                   </tbody>
 
@@ -4579,36 +5689,56 @@
 
               </div>
             `
-            : emptyState("No results yet.", "Your completed tests will appear here.")
+            : emptyState(
+                "No results yet.",
+                "Your completed tests will appear here."
+              )
         }
 
       </div>
     `;
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
-        }
-      }
 
-      /* =========================================================
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+/* =========================================================
    STUDENT RESULT DETAILS
 ========================================================= */
 
-      async function showStudentResultDetails(resultId) {
-        showLoader("Loading result review...");
+async function showStudentResultDetails(resultId) {
 
-        try {
-          const data = await callFunction("student-test-system", {
-            action: "get_result_details",
-            result_id: resultId,
-          });
+  showLoader("Loading result review...");
 
-          const result = data.result;
+  try {
 
-          const answers = data.answers || [];
+    const data =
+      await callFunction(
+        "student-test-system",
+        {
+          action:
+            "get_result_details",
+          result_id:
+            resultId
+        }
+      );
 
-          mainContent.innerHTML = `
+    const result =
+      data.result;
+
+    const answers =
+      data.answers || [];
+
+    mainContent.innerHTML = `
 
       <h1 class="page-title">
         Result Review
@@ -4639,29 +5769,48 @@
 
           ${
             answers.length
-              ? answers
-                  .map((answer, index) => {
-                    const q = answer.questions || {};
+              ? answers.map((answer, index) => {
 
-                    const options = {
-                      A: q.option_a,
-                      B: q.option_b,
-                      C: q.option_c,
-                      D: q.option_d,
-                    };
+                  const q =
+                    answer.questions || {};
 
-                    const selectedText = answer.selected_option
-                      ? `${answer.selected_option}. ${escapeHTML(options[answer.selected_option] || "")}`
+                  const options = {
+                    A: q.option_a,
+                    B: q.option_b,
+                    C: q.option_c,
+                    D: q.option_d
+                  };
+
+                  const selectedText =
+                    answer.selected_option
+                      ? `${answer.selected_option}. ${
+                          escapeHTML(
+                            options[
+                              answer.selected_option
+                            ] || ""
+                          )
+                        }`
                       : "Not Answered";
 
-                    const correctText = `${answer.correct_option}. ${escapeHTML(options[answer.correct_option] || "")}`;
+                  const correctText =
+                    `${answer.correct_option}. ${
+                      escapeHTML(
+                        options[
+                          answer.correct_option
+                        ] || ""
+                      )
+                    }`;
 
-                    return `
+                  return `
 
                     <div class="card"
                       style="
                         margin-bottom:15px;
-                        border-left:4px solid ${answer.is_correct ? "var(--success)" : "var(--danger)"};
+                        border-left:4px solid ${
+                          answer.is_correct
+                            ? "var(--success)"
+                            : "var(--danger)"
+                        };
                       "
                     >
 
@@ -4678,8 +5827,16 @@
                           Question ${index + 1}
                         </strong>
 
-                        <span class="badge ${answer.is_correct ? "badge-green" : "badge-red"}">
-                          ${answer.is_correct ? "Correct" : "Wrong"}
+                        <span class="badge ${
+                          answer.is_correct
+                            ? "badge-green"
+                            : "badge-red"
+                        }">
+                          ${
+                            answer.is_correct
+                              ? "Correct"
+                              : "Wrong"
+                          }
                         </span>
 
                       </div>
@@ -4691,7 +5848,9 @@
                           margin-bottom:14px;
                         "
                       >
-                        ${escapeHTML(q.question_text || "—")}
+                        ${escapeHTML(
+                          q.question_text || "—"
+                        )}
                       </div>
 
                       <div>
@@ -4720,101 +5879,151 @@
                     </div>
 
                   `;
-                  })
-                  .join("")
-              : emptyState("No question details found.", "Question-wise answer details are not available.")
+
+                }).join("")
+              : emptyState(
+                  "No question details found.",
+                  "Question-wise answer details are not available."
+                )
           }
 
         </div>
 
       </div>
     `;
-        } catch (error) {
-          showToast(error.message, "error");
-        } finally {
-          hideLoader();
-        }
-      }
 
-      /* =========================================================
+  } catch (error) {
+
+    showToast(
+      error.message,
+      "error"
+    );
+
+  } finally {
+
+    hideLoader();
+
+  }
+}
+  
+/* =========================================================
    LOGOUT
 ========================================================= */
 
-      document.getElementById("logoutBtn").addEventListener("click", async () => {
-        const confirmed = await confirmAction("Logout?", "Are you sure you want to sign out?", "Logout");
+document
+  .getElementById("logoutBtn")
+  .addEventListener(
+    "click",
+    async () => {
 
-        if (!confirmed) return;
+      const confirmed =
+        await confirmAction(
+          "Logout?",
+          "Are you sure you want to sign out?",
+          "Logout"
+        );
 
-        clearInterval(examTimer);
+      if (!confirmed) return;
 
-        await supabaseClient.auth.signOut();
+      clearInterval(examTimer);
 
-        currentUser = null;
-        currentProfile = null;
-        adminData = null;
-        teacherData = null;
-        studentData = null;
-        currentExam = null;
-        examAnswers = {};
+      await supabaseClient.auth.signOut();
 
-        app.classList.add("hidden");
-        loginScreen.classList.remove("hidden");
+      currentUser = null;
+      currentProfile = null;
+      adminData = null;
+      teacherData = null;
+      studentData = null;
+      currentExam = null;
+      examAnswers = {};
 
-        document.getElementById("loginUsername").value = "";
+      app.classList.add("hidden");
+      loginScreen.classList.remove("hidden");
 
-        document.getElementById("loginPassword").value = "";
+      document
+        .getElementById("loginUsername")
+        .value = "";
 
-        clearLoginError();
-      });
+      document
+        .getElementById("loginPassword")
+        .value = "";
 
-      /* =========================================================
+      clearLoginError();
+    }
+  );
+
+
+/* =========================================================
    SESSION CHECK
 ========================================================= */
 
-      async function checkExistingSession() {
-        try {
-          const {
-            data: { session },
-          } = await supabaseClient.auth.getSession();
+async function checkExistingSession() {
 
-          if (!session) return;
+  try {
 
-          showLoader("Restoring session...");
-
-          currentUser = session.user;
-
-          await determineRole();
-
-          loginScreen.classList.add("hidden");
-          app.classList.remove("hidden");
-
-          topUser.textContent =
-            currentProfile?.name ||
-            currentProfile?.Name ||
-            currentProfile?.username ||
-            currentProfile?.Username ||
-            "User";
-
-          buildNavigation();
-
-          if (currentRole === "admin") await showAdminDashboard();
-          else if (currentRole === "teacher") await showTeacherDashboard();
-          else await showStudentDashboard();
-        } catch (error) {
-          console.error("Session restore:", error);
-
-          await supabaseClient.auth.signOut();
-        } finally {
-          hideLoader();
-        }
+    const {
+      data: {
+        session
       }
+    } =
+      await supabaseClient.auth.getSession();
 
-      /* =========================================================
+    if (!session) return;
+
+    showLoader("Restoring session...");
+
+    currentUser =
+      session.user;
+
+    await determineRole();
+
+    loginScreen.classList.add("hidden");
+    app.classList.remove("hidden");
+
+    topUser.textContent =
+      currentProfile?.name ||
+      currentProfile?.Name ||
+      currentProfile?.username ||
+      currentProfile?.Username ||
+      "User";
+
+    buildNavigation();
+
+    if (currentRole === "admin")
+      await showAdminDashboard();
+
+    else if (currentRole === "teacher")
+      await showTeacherDashboard();
+
+    else
+      await showStudentDashboard();
+
+  } catch (error) {
+
+    console.error(
+      "Session restore:",
+      error
+    );
+
+    await supabaseClient.auth.signOut();
+
+  } finally {
+
+    hideLoader();
+  }
+}
+
+
+/* =========================================================
    UTILITY
 ========================================================= */
 
-      function emptyState(title, message = "") {
-        return `
+function emptyState(
+  title,
+  message = ""
+) {
+
+  return `
 
     <div class="empty">
 
@@ -4822,64 +6031,79 @@
         ${escapeHTML(title)}
       </strong>
 
-      ${message ? `<span>${escapeHTML(message)}</span>` : ""}
+      ${
+        message
+          ? `<span>${escapeHTML(message)}</span>`
+          : ""
+      }
 
     </div>
 
   `;
-      }
+}
 
-      /*
+
+/*
   Used only for values inserted into onclick attributes.
 */
-      function escapeAttr(value) {
-        return String(value ?? "")
-          .replace(/\\/g, "\\\\")
-          .replace(/'/g, "\\'")
-          .replace(/\r/g, "\\r")
-          .replace(/\n/g, "\\n");
-      }
+function escapeAttr(value) {
 
-      /* =========================================================
+  return String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, "\\r")
+    .replace(/\n/g, "\\n");
+}
+
+
+/* =========================================================
    AUTH STATE
 ========================================================= */
 
-      supabaseClient.auth.onAuthStateChange((event, session) => {
-        if (event === "SIGNED_OUT") {
-          clearInterval(examTimer);
+supabaseClient.auth.onAuthStateChange(
+  (event, session) => {
 
-          app.classList.add("hidden");
-          loginScreen.classList.remove("hidden");
+    if (event === "SIGNED_OUT") {
 
-          currentUser = null;
-          currentProfile = null;
-        }
-      });
+      clearInterval(examTimer);
 
-      /* =========================================================
+      app.classList.add("hidden");
+      loginScreen.classList.remove("hidden");
+
+      currentUser = null;
+      currentProfile = null;
+    }
+  }
+);
+
+
+/* =========================================================
    START
 ========================================================= */
 
-      checkExistingSession();
+checkExistingSession();
+  
+function togglePassword(inputOrId, button) {
+  const input =
+    typeof inputOrId === "string"
+      ? document.getElementById(inputOrId)
+      : inputOrId;
 
-      function togglePassword(inputOrId, button) {
-        const input = typeof inputOrId === "string" ? document.getElementById(inputOrId) : inputOrId;
+  if (!input) return;
 
-        if (!input) return;
+  if (input.type === "password") {
+    input.type = "text";
+    button.textContent = "🙈";
+  } else {
+    input.type = "password";
+    button.textContent = "👁";
+  }
+}
+  function showPasswordPrompt(message) {
+  return new Promise(resolve => {
+    const overlay = document.createElement("div");
 
-        if (input.type === "password") {
-          input.type = "text";
-          button.textContent = "🙈";
-        } else {
-          input.type = "password";
-          button.textContent = "👁";
-        }
-      }
-      function showPasswordPrompt(message) {
-        return new Promise((resolve) => {
-          const overlay = document.createElement("div");
-
-          overlay.style.cssText = `
+    overlay.style.cssText = `
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,.45);
@@ -4890,7 +6114,7 @@
       padding: 20px;
     `;
 
-          overlay.innerHTML = `
+    overlay.innerHTML = `
       <div style="
         width:100%;
         max-width:400px;
@@ -4946,121 +6170,125 @@
       </div>
     `;
 
-          document.body.appendChild(overlay);
+    document.body.appendChild(overlay);
 
-          const input = overlay.querySelector("#customPasswordInput");
-          const toggle = overlay.querySelector("#customPasswordToggle");
-          const cancel = overlay.querySelector("#customPasswordCancel");
-          const ok = overlay.querySelector("#customPasswordOk");
+    const input = overlay.querySelector("#customPasswordInput");
+    const toggle = overlay.querySelector("#customPasswordToggle");
+    const cancel = overlay.querySelector("#customPasswordCancel");
+    const ok = overlay.querySelector("#customPasswordOk");
 
-          toggle.addEventListener("click", () => {
-            togglePassword(input, toggle);
-          });
+    toggle.addEventListener("click", () => {
+      togglePassword(input, toggle);
+    });
 
-          cancel.addEventListener("click", () => {
-            overlay.remove();
-            resolve(null);
-          });
+    cancel.addEventListener("click", () => {
+      overlay.remove();
+      resolve(null);
+    });
 
-          ok.addEventListener("click", () => {
-            const password = input.value.trim();
+    ok.addEventListener("click", () => {
+      const password = input.value.trim();
 
-            if (password.length < 6) {
-              alert("Password must be at least 6 characters.");
-              input.focus();
-              return;
-            }
-
-            overlay.remove();
-            resolve(password);
-          });
-
-          input.focus();
-        });
+      if (password.length < 6) {
+        alert("Password must be at least 6 characters.");
+        input.focus();
+        return;
       }
 
-      function setupPasswordToggles(root = document) {
-        root.querySelectorAll('input[type="password"]').forEach((input) => {
-          if (input.closest(".password-wrapper")) return;
+      overlay.remove();
+      resolve(password);
+    });
 
-          const wrapper = document.createElement("div");
-          wrapper.className = "password-wrapper";
+    input.focus();
+  });
+}
+  
+  function setupPasswordToggles(root = document) {
+  root.querySelectorAll('input[type="password"]').forEach(input => {
+    if (input.closest(".password-wrapper")) return;
 
-          input.parentNode.insertBefore(wrapper, input);
-          wrapper.appendChild(input);
+    const wrapper = document.createElement("div");
+    wrapper.className = "password-wrapper";
 
-          const button = document.createElement("button");
-          button.type = "button";
-          button.className = "toggle-password";
-          button.textContent = "👁";
-          button.setAttribute("aria-label", "Show password");
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
 
-          button.addEventListener("click", () => {
-            togglePassword(input, button);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "toggle-password";
+    button.textContent = "👁";
+    button.setAttribute("aria-label", "Show password");
 
-            button.setAttribute("aria-label", input.type === "password" ? "Show password" : "Hide password");
-          });
+    button.addEventListener("click", () => {
+      togglePassword(input, button);
 
-          wrapper.appendChild(button);
-        });
+      button.setAttribute(
+        "aria-label",
+        input.type === "password" ? "Show password" : "Hide password"
+      );
+    });
+
+    wrapper.appendChild(button);
+  });
+}
+
+setupPasswordToggles();
+  const passwordObserver = new MutationObserver(mutations => {
+  mutations.forEach(mutation => {
+    mutation.addedNodes.forEach(node => {
+      if (node.nodeType === 1) {
+        setupPasswordToggles(node);
       }
+    });
+  });
+});
 
-      setupPasswordToggles();
-      const passwordObserver = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          mutation.addedNodes.forEach((node) => {
-            if (node.nodeType === 1) {
-              setupPasswordToggles(node);
-            }
-          });
-        });
-      });
+passwordObserver.observe(document.body, {
+  childList: true,
+  subtree: true
+});
+function formatQuestion(command) {
+  document.execCommand(command, false, null);
+}
 
-      passwordObserver.observe(document.body, {
-        childList: true,
-        subtree: true,
-      });
-      function formatQuestion(command) {
-        document.execCommand(command, false, null);
-      }
+function insertQuestionMath(button) {
+  const editor = button.closest(".question-editor").querySelector(".question-text");
 
-      function insertQuestionMath(button) {
-        const editor = button.closest(".question-editor").querySelector(".question-text");
+  editor.focus();
 
-        editor.focus();
+  const mathField = document.createElement("math-field");
+  mathField.setAttribute("readonly", "");
+mathField.setAttribute("contenteditable", "false");
 
-        const mathField = document.createElement("math-field");
-        mathField.setAttribute("readonly", "");
-        mathField.setAttribute("contenteditable", "false");
+  mathField.setAttribute("virtual-keyboard-mode", "manual");
+  mathField.setAttribute("smart-mode", "on");
 
-        mathField.setAttribute("virtual-keyboard-mode", "manual");
-        mathField.setAttribute("smart-mode", "on");
+  mathField.style.display = "inline-block";
+  mathField.style.minWidth = "120px";
+  mathField.style.margin = "0 4px";
 
-        mathField.style.display = "inline-block";
-        mathField.style.minWidth = "120px";
-        mathField.style.margin = "0 4px";
+  const selection = window.getSelection();
 
-        const selection = window.getSelection();
+  if (selection && selection.rangeCount > 0) {
+    const range = selection.getRangeAt(0);
 
-        if (selection && selection.rangeCount > 0) {
-          const range = selection.getRangeAt(0);
+    if (editor.contains(range.commonAncestorContainer)) {
+      range.deleteContents();
+      range.insertNode(mathField);
+      range.setStartAfter(mathField);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    } else {
+      editor.appendChild(mathField);
+    }
+  } else {
+    editor.appendChild(mathField);
+  }
 
-          if (editor.contains(range.commonAncestorContainer)) {
-            range.deleteContents();
-            range.insertNode(mathField);
-            range.setStartAfter(mathField);
-            range.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(range);
-          } else {
-            editor.appendChild(mathField);
-          }
-        } else {
-          editor.appendChild(mathField);
-        }
+  mathField.focus();
+}  
+</script>
 
-        mathField.focus();
-      }
-    </script>
-  </body>
+</body>
 </html>
