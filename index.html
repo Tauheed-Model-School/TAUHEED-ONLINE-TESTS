@@ -5216,12 +5216,9 @@ function renderExam() {
                 mark${Number(question.marks) === 1 ? "" : "s"}
               </div>
 
-              <div class="exam-q-text">
-                ${escapeHTML(
-                  question.question_text
-                )}
-              </div>
-
+             <div class="exam-q-text">
+  ${question.question_text}
+</div>
 
               ${renderAnswerOption(
                 question,
@@ -5373,9 +5370,9 @@ function renderAnswerOption(
         ${letter}.
       </strong>
 
-      <span>
-        ${escapeHTML(text)}
-      </span>
+     <span>
+  ${text}
+</span>
 
     </label>
 
