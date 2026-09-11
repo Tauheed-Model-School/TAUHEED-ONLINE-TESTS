@@ -917,6 +917,71 @@
       border: none;
       cursor: default;
     }
+    /* =========================================
+       QUESTION & OPTION RICH EDITORS
+    ========================================= */
+    .question-editor {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #ffffff;
+      overflow: hidden;
+      margin-top: 6px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .question-editor:focus-within {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(11, 107, 79, 0.08);
+    }
+
+    .question-toolbar {
+      display: flex;
+      gap: 6px;
+      background: #f4f7f5;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .question-toolbar button {
+      background: white;
+      border: 1px solid #d9e2dc;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .question-toolbar button:hover {
+      background: #eaf2ed;
+      border-color: var(--green);
+      color: var(--green-dark);
+    }
+
+    .question-text {
+      min-height: 75px;
+      padding: 12px 14px;
+      outline: none;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text);
+      cursor: text;
+    }
+
+    .option-editor .question-text {
+      min-height: 48px;
+      padding: 10px 12px;
+    }
+
+    /* Placeholder text jab box khali ho */
+    .question-text:empty::before {
+      content: attr(data-placeholder);
+      color: #a0aca4;
+      pointer-events: none;
+      display: block;
+    }
   </style>
 </head>
 
@@ -6321,36 +6386,51 @@ function insertQuestionMath(button) {
   editor.focus();
 
   const mathField = document.createElement("math-field");
-  
-  // Teacher create krte waqt type kr sake (NO readonly here!)
   mathField.setAttribute("virtual-keyboard-mode", "manual");
   mathField.setAttribute("smart-mode", "on");
-  
-  // Default placeholder formula taake box khali aur invisible na lage
-  mathField.setValue("x=\\frac{-b\\pm\\sqrt{b^2-4ac}}{2a}");
+  mathField.setValue("x^2"); // simple initial placeholder
+
+  // Formula ke baad ek normal space node add karenge taake cursor aage type kar sake
+  const trailingSpace = document.createTextNode("\u00A0"); 
 
   const selection = window.getSelection();
   if (selection && selection.rangeCount > 0) {
     const range = selection.getRangeAt(0);
+
     if (editor.contains(range.commonAncestorContainer)) {
       range.deleteContents();
       range.insertNode(mathField);
-      range.setStartAfter(mathField);
-      range.collapse(true);
+      
+      // Math field ke foran baad space lagayein
+      mathField.after(trailingSpace);
+
+      // Cursor ko space ke theek aage set karein taake teacher foran English/Urdu type kar sake
+      const newRange = document.createRange();
+      newRange.setStartAfter(trailingSpace);
+      newRange.collapse(true);
       selection.removeAllRanges();
-      selection.addRange(range);
+      selection.addRange(newRange);
     } else {
       editor.appendChild(mathField);
+      editor.appendChild(trailingSpace);
     }
   } else {
     editor.appendChild(mathField);
+    editor.appendChild(trailingSpace);
   }
 
-  setTimeout(() => {
-    mathField.focus();
-  }, 50);
-}
-  
+  // Box ke bahar click karke normal typing resume karne ka event
+  mathField.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight" && mathField.selectionIsAtEnd) {
+      const sel = window.getSelection();
+      const r = document.createRange();
+      r.setStartAfter(trailingSpace);
+      r.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+  });
+}  
 </script>
 
 </body>
