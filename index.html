@@ -898,6 +898,25 @@
         min-width: 80px;
       }
     }
+/* MathLive Formula Styling */
+    math-field {
+      display: inline-block;
+      min-width: 80px;
+      padding: 4px 8px;
+      margin: 0 4px;
+      background: #f8faf9;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1.1em;
+      vertical-align: middle;
+    }
+
+    /* Jab student ya admin dekh raha ho to border hat jaye */
+    math-field[readonly] {
+      background: transparent;
+      border: none;
+      cursor: default;
+    }
   </style>
 </head>
 
@@ -1232,7 +1251,19 @@ function escapeHTML(value) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-
+function renderMathContent(html) {
+  if (!html) return "—";
+  // Convert math-fields to readonly so students/admins cannot edit them
+  const temp = document.createElement("div");
+  temp.innerHTML = html;
+  
+  temp.querySelectorAll("math-field").forEach(mf => {
+    mf.setAttribute("readonly", "true");
+    mf.removeAttribute("virtual-keyboard-mode");
+  });
+  
+  return temp.innerHTML;
+}
 function showToast(message, type = "normal") {
 
   toast.textContent = message;
@@ -3117,26 +3148,22 @@ async function showAdminTests() {
                   Question ${index + 1}
                 </strong>
 
-                <p>
-                  ${escapeHTML(
-                    question.question_text ||
-                    question.question ||
-                    ""
-                  )}
-                </p>
-
+            <div>
+               ${renderMathContent(question.question_text || question.question || "")}
+             </div>
+             
                 ${
                   question.option_a ||
                   question.option_b ||
                   question.option_c ||
                   question.option_d
                     ? `
-                      <div>
-                        <p>A. ${escapeHTML(question.option_a || "")}</p>
-                        <p>B. ${escapeHTML(question.option_b || "")}</p>
-                        <p>C. ${escapeHTML(question.option_c || "")}</p>
-                        <p>D. ${escapeHTML(question.option_d || "")}</p>
-                      </div>
+                   <div>
+                     <p>A. ${renderMathContent(question.option_a || "")}</p>
+                     <p>B. ${renderMathContent(question.option_b || "")}</p>
+                     <p>C. ${renderMathContent(question.option_c || "")}</p>
+                     <p>D. ${renderMathContent(question.option_d || "")}</p>
+                   </div>
                     `
                     : ""
                 }
@@ -5406,10 +5433,8 @@ function renderAnswerOption(
         ${letter}.
       </strong>
 
-     <span>
-  ${text}
-</span>
-
+ <span>${renderMathContent(text)}</span>
+ 
     </label>
 
   `;
@@ -6293,25 +6318,20 @@ function formatQuestion(command) {
 
 function insertQuestionMath(button) {
   const editor = button.closest(".question-editor").querySelector(".question-text");
-
   editor.focus();
 
   const mathField = document.createElement("math-field");
-  mathField.setAttribute("readonly", "");
-mathField.setAttribute("contenteditable", "false");
-
+  
+  // Teacher create krte waqt type kr sake (NO readonly here!)
   mathField.setAttribute("virtual-keyboard-mode", "manual");
   mathField.setAttribute("smart-mode", "on");
-
-  mathField.style.display = "inline-block";
-  mathField.style.minWidth = "120px";
-  mathField.style.margin = "0 4px";
+  
+  // Default placeholder formula taake box khali aur invisible na lage
+  mathField.setValue("x=\\frac{-b\\pm\\sqrt{b^2-4ac}}{2a}");
 
   const selection = window.getSelection();
-
   if (selection && selection.rangeCount > 0) {
     const range = selection.getRangeAt(0);
-
     if (editor.contains(range.commonAncestorContainer)) {
       range.deleteContents();
       range.insertNode(mathField);
@@ -6326,8 +6346,11 @@ mathField.setAttribute("contenteditable", "false");
     editor.appendChild(mathField);
   }
 
-  mathField.focus();
-}  
+  setTimeout(() => {
+    mathField.focus();
+  }, 50);
+}
+  
 </script>
 
 </body>
