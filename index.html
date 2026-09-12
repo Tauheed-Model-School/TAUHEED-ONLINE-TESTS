@@ -1534,107 +1534,76 @@ document
 
 
 /* =========================================================
-   LOGIN
+   LOGIN (STABLE & DIRECT)
 ========================================================= */
 
 document
   .getElementById("loginForm")
-  .addEventListener(
-    "submit",
-    async event => {
+  .addEventListener("submit", async event => {
+    event.preventDefault();
+    clearLoginError();
 
-      event.preventDefault();
+    const username = document.getElementById("loginUsername").value.trim();
+    const password = document.getElementById("loginPassword").value;
 
-      clearLoginError();
-
-      const username =
-        document
-          .getElementById("loginUsername")
-          .value
-          .trim();
-
-      const password =
-        document
-          .getElementById("loginPassword")
-          .value;
-
-      if (!username || !password) {
-        showLoginError(
-          "Username and password are required."
-        );
-        return;
-      }
-
-      showLoader("Signing in...");
-
-      try {
-
-        const {
-          data,
-          error
-        } =
-          await supabaseClient.auth.signInWithPassword({
-            email:
-              authEmail(username),
-
-            password
-          });
-
-        if (error) {
-          throw error;
-        }
-
-        currentUser =
-          data.user;
-
-        await determineRole();
-
-        loginScreen.classList.add("hidden");
-        app.classList.remove("hidden");
-
-        topUser.textContent =
-          currentProfile?.name ||
-          currentProfile?.Name ||
-          currentProfile?.username ||
-          currentProfile?.Username ||
-          username;
-
-        buildNavigation();
-
-        if (currentRole === "admin") {
-          await showAdminDashboard();
-        }
-        else if (currentRole === "teacher") {
-          await showTeacherDashboard();
-        }
-        else {
-          await showStudentDashboard();
-        }
-
-        showToast(
-          "Signed in successfully.",
-          "success"
-        );
-
-      } catch (error) {
-
-        console.error(error);
-
-        showLoginError(
-          error.message ||
-          "Unable to sign in."
-        );
-
-        await supabaseClient.auth.signOut();
-
-      } finally {
-
-        hideLoader();
-      }
+    if (!username || !password) {
+      showLoginError("Username and password are required.");
+      return;
     }
-  );
 
+    showLoader("Signing in...");
 
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: authEmail(username),
+        password: password
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      currentUser = data.user;
+
+      // Small delay to ensure Supabase sets tokens in localStorage
+      await new Promise(res => setTimeout(res, 150));
+
+      // Role identify karein
+      await determineRole();
+
+      loginScreen.classList.add("hidden");
+      app.classList.remove("hidden");
+
+      topUser.textContent =
+        currentProfile?.name ||
+        currentProfile?.Name ||
+        currentProfile?.username ||
+        currentProfile?.Username ||
+        username;
+
+      buildNavigation();
+
+      if (currentRole === "admin") {
+        await showAdminDashboard();
+      } else if (currentRole === "teacher") {
+        await showTeacherDashboard();
+      } else {
+        await showStudentDashboard();
+      }
+
+      showToast("Signed in successfully.", "success");
+
+    } catch (error) {
+      console.error("Login Process Error:", error);
+      showLoginError(error.message || "Invalid credentials or server error.");
+      // Force signOut tab hi karein agar backend se invalid profile aayi ho
+      if (error.message && error.message.includes("linked to it")) {
+        await supabaseClient.auth.signOut();
+      }
+    } finally {
+      hideLoader();
+    }
+  });
 /* =========================================================
    DETERMINE ROLE
 ========================================================= */
