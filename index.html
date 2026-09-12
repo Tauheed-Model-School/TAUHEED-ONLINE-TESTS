@@ -1311,38 +1311,35 @@
 
       <div id="loginError" class="error-box hidden"></div>
 
-      <form id="loginForm">
-
-        <div class="form-group">
-          <label>Username</label>
-          <input
-            id="loginUsername"
-            class="input"
-            autocomplete="username"
-            placeholder="Enter username"
-            required
-          >
+<div class="form-group">
+          <label>Password</label>
+          <div class="password-wrapper">
+            <input 
+              id="loginPassword" 
+              class="input" 
+              type="password" 
+              autocomplete="current-password" 
+              placeholder="Enter password" 
+              required 
+            >
+            <button type="button" class="toggle-password" onclick="togglePassword('loginPassword', this)">👁️</button>
+          </div> 
         </div>
 
-        <div class="form-group">
-          <label>Password</label>
-        <div class="password-wrapper">
-  <input 
-    id="loginPassword" 
-    class="input" 
-    type="password" 
-    autocomplete="current-password" 
-    placeholder="Enter password" 
-    required 
-  >
-  <button type="button" class="toggle-password" onclick="togglePassword('loginPassword', this)">👁</button>
-</div> 
+        <!-- YEH NAYA LINK HAI -->
+        <div style="text-align: right; margin-top: -6px; margin-bottom: 16px;">
+          <a 
+            href="#" 
+            onclick="handleForgotPassword(event)" 
+            style="font-size: 12.5px; color: var(--green); text-decoration: none; font-weight: 700;"
+          >
+            Forgot Password?
+          </a>
         </div>
 
         <button class="btn btn-primary full" type="submit">
           Sign In
         </button>
-
       </form>
 
     </div>
@@ -2400,10 +2397,8 @@ async function showAdminStudents() {
                         }
                       </td>
 
-                      <td>
-
+                    <td>
                         <div style="display:flex;gap:6px;flex-wrap:wrap">
-
                           ${
                             !student.auth_user_id
                               ? `
@@ -2414,7 +2409,14 @@ async function showAdminStudents() {
                                   Activate
                                 </button>
                               `
-                              : ""
+                              : `
+                                <button
+                                  class="btn btn-secondary btn-small"
+                                  onclick="resetUserPassword(${student.id}, '${escapeAttr(student.name)}', 'student')"
+                                >
+                                  Reset Pass
+                                </button>
+                              `
                           }
 
                           <button
@@ -2423,11 +2425,9 @@ async function showAdminStudents() {
                           >
                             Delete
                           </button>
-
                         </div>
-
                       </td>
-
+                      
                     </tr>
 
                   `).join("")
@@ -2812,10 +2812,8 @@ async function showAdminTeachers() {
                         }
                       </td>
 
-                      <td>
-
-                        <div style="display:flex;gap:6px">
-
+                    <td>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap">
                           ${
                             !teacher.auth_user_id
                               ? `
@@ -2826,7 +2824,14 @@ async function showAdminTeachers() {
                                   Activate
                                 </button>
                               `
-                              : ""
+                              : `
+                                <button
+                                  class="btn btn-secondary btn-small"
+                                  onclick="resetUserPassword(${teacher.id}, '${escapeAttr(teacher.Name)}', 'teacher')"
+                                >
+                                  Reset Pass
+                                </button>
+                              `
                           }
 
                           <button
@@ -2835,11 +2840,9 @@ async function showAdminTeachers() {
                           >
                             Delete
                           </button>
-
                         </div>
-
                       </td>
-
+                      
                     </tr>
 
                   `).join("")
@@ -6391,6 +6394,62 @@ function insertQuestionMath(button) {
   }, 100);
 }
   }
+  /* =========================================================
+   FORGOT & ADMIN RESET PASSWORD HANDLERS
+========================================================= */
+
+function handleForgotPassword(event) {
+  event.preventDefault();
+  const role = currentRole || "student";
+  
+  if (role === "student") {
+    alert(
+      "Forgot Password?\n\nApna password reset karwane ke liye School Administration ya Class Teacher se rabta karein.\n\nAdmin panel se aapka account foran naye password par update kar diya jayega."
+    );
+  } else {
+    alert(
+      "Forgot Password?\n\nTeacher accounts ka password reset karne ke liye School Main Administrator se contact karein."
+    );
+  }
+}
+
+async function resetUserPassword(id, name, role) {
+  const newPassword = await showPasswordPrompt(
+    `Set a new password for ${name} (min 6 characters):`
+  );
+
+  if (!newPassword) return;
+
+  if (newPassword.length < 6) {
+    showToast("Password must be at least 6 characters.", "error");
+    return;
+  }
+
+  showLoader(`Updating password for ${name}...`);
+
+  try {
+    const actionName = role === "student" ? "activate_student" : "activate_teacher";
+
+    await callFunction("admin-manage-user", {
+      action: actionName,
+      id: id,
+      password: newPassword
+    });
+
+    showToast(`Password for ${name} has been reset successfully!`, "success");
+
+    if (role === "student") {
+      await showAdminStudents();
+    } else {
+      await showAdminTeachers();
+    }
+  } catch (error) {
+    console.error("Admin Reset Password Error:", error);
+    showToast(error.message || "Failed to reset password.", "error");
+  } finally {
+    hideLoader();
+  }
+}
 </script>
 
 </body>
