@@ -6346,14 +6346,16 @@ function formatQuestion(command) {
   document.execCommand(command, false, null);
 }
 function insertQuestionMath(button) {
-  // Yeh line ab question aur charon options dono me kaam karegi
   const editor = button.closest(".question-editor").querySelector(".question-text, .option-a, .option-b, .option-c, .option-d");
   if (!editor) return;
   editor.focus();
 
   const mathField = document.createElement("math-field");
+  
+  // Mobile par keyboard configuration
   mathField.setAttribute("virtual-keyboard-mode", "manual");
   mathField.setAttribute("smart-mode", "on");
+  mathField.mathVirtualKeyboardPolicy = "manual";
   mathField.setValue("x^2");
 
   const trailingSpace = document.createTextNode("\u00A0");
@@ -6379,7 +6381,16 @@ function insertQuestionMath(button) {
     editor.appendChild(mathField);
     editor.appendChild(trailingSpace);
   }
+
+  // Focus & Open Virtual Keyboard cleanly
+  setTimeout(() => {
+    mathField.focus();
+    if (window.mathVirtualKeyboard) {
+      window.mathVirtualKeyboard.show();
+    }
+  }, 100);
 }
+  }
 </script>
 
 </body>
