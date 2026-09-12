@@ -8,6 +8,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- MathLive: Mathematical Formula Editor -->
 <script src="https://unpkg.com/mathlive"></script>
+  <!-- KaTeX for 100% Guaranteed Math Equations -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -1320,32 +1323,44 @@ function escapeHTML(value) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-function renderMathContent(html) {
-  if (!html) return "—";
-  // Convert math-fields to readonly so students/admins cannot edit them
-  const temp = document.createElement("div");
-  temp.innerHTML = html;
-  
-  temp.querySelectorAll("math-field").forEach(mf => {
-    mf.setAttribute("readonly", "true");
-    mf.removeAttribute("virtual-keyboard-mode");
-  });
-  
-  return temp.innerHTML;
-}
-  // 2. $$ formula $$ ko visual Math symbols me convert karein
-  clean = clean.replace(/\$\$(.*?)\$\$/g, (match, formula) => {
-    const expr = formula.trim();
-    if (window.MathfieldElement && typeof window.MathfieldElement.toMarkup === "function") {
-      return `<span class="static-math" style="display:inline-block; margin:0 4px; vertical-align:middle;">${window.MathfieldElement.toMarkup(expr)}</span>`;
+/* =========================================================
+   MATH CONTENT RENDERER (CLEAN & SYNTAX FIXED)
+========================================================= */
+
+function renderMathContent(content) {
+  if (!content) return "—";
+
+  const renderFormula = (expr) => {
+    if (!expr || !expr.trim()) return "";
+    try {
+      if (window.katex) {
+        return window.katex.renderToString(expr.trim(), { throwOnError: false, displayMode: false });
+      }
+      return expr;
+    } catch (e) {
+      return expr;
     }
-    return `<b>${expr}</b>`;
+  };
+
+  let str = String(content);
+
+  // 1. $$ formula $$ parse karein
+  str = str.replace(/\$\$([\s\S]*?)\$\$/g, (m, latex) => {
+    return `<span class="inline-math" style="display:inline-block; margin:0 3px; vertical-align:middle;">${renderFormula(latex)}</span>`;
   });
 
-  return clean;
-}  
-  return temp.innerHTML;
+  // 2. <math-field> tags parse karein
+  str = str.replace(/<math-field[^>]*>([\s\S]*?)<\/math-field>/gi, (m, inner) => {
+    const d = document.createElement("div");
+    d.innerHTML = m;
+    const mf = d.querySelector("math-field");
+    const latex = mf ? (mf.getAttribute("value") || mf.textContent || inner) : inner;
+    return `<span class="inline-math" style="display:inline-block; margin:0 3px; vertical-align:middle;">${renderFormula(latex)}</span>`;
+  });
+
+  return str;
 }
+  
 function showToast(message, type = "normal") {
 
   toast.textContent = message;
@@ -1606,10 +1621,6 @@ document
     }
   });
   
-/* =========================================================
-   DETERMINE ROLE (FAIL-SAFE)
-========================================================= */
-
 async function determineRole() {
   try {
     const data = await callFunction("portal-data", {
@@ -1622,10 +1633,10 @@ async function determineRole() {
       return;
     }
   } catch (error) {
-    console.warn("portal-data fetch failed, falling back to selected tab:", error);
+    console.warn("portal-data warning, using active role tab:", error);
   }
 
-  // Fallback: Agar Edge function fail ho to UI tab ko authority dein
+  // Fallback role from selected UI tab
   const activeTab = document.querySelector(".role-tab.active");
   currentRole = activeTab ? activeTab.dataset.role : (currentRole || "student");
   currentProfile = {
@@ -1633,74 +1644,7 @@ async function determineRole() {
     username: currentUser?.email?.split("@")[0] || "User"
   };
 }
-    /* =====================================================
-       ADMIN
-    ===================================================== */
-
-    if (
-      data.role === "admin"
-    ) {
-
-      currentRole = "admin";
-
-      currentProfile =
-        data.profile;
-
-      return;
-    }
-
-
-    /* =====================================================
-       TEACHER
-    ===================================================== */
-
-    if (
-      data.role === "teacher"
-    ) {
-
-      currentRole = "teacher";
-
-      currentProfile =
-        data.profile;
-
-      return;
-    }
-
-
-    /* =====================================================
-       STUDENT
-    ===================================================== */
-
-    if (
-      data.role === "student"
-    ) {
-
-      currentRole = "student";
-
-      currentProfile =
-        data.profile;
-
-      return;
-    }
-
-
-    throw new Error(
-      "Invalid account role."
-    );
-
-  } catch (error) {
-
-    console.error(
-      "Role detection error:",
-      error
-    );
-
-    throw new Error(
-      error.message ||
-      "Unable to determine account role."
-    );
-  }
-}
+  
 /* =========================================================
    NAVIGATION
 ========================================================= */
