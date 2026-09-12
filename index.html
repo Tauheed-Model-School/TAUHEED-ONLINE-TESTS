@@ -2312,37 +2312,66 @@ async function showAdminDashboard() {
 
 
 /* =========================================================
-   ADMIN STUDENTS
+   ADMIN STUDENTS (CLASS-WISE FILTER & GROUPED)
 ========================================================= */
 
-async function showAdminStudents() {
+let selectedAdminClassFilter = "all";
 
+async function showAdminStudents() {
   showLoader("Loading students...");
 
   try {
-
     await refreshAdminData();
 
-    const students =
-      adminData.students || [];
+    const allStudents = adminData.students || [];
+
+    // 1. Unique classes nikaalein dropdown ke liye
+    const classList = Array.from(
+      new Set(allStudents.map(s => (s.class_name || "Unassigned").trim()))
+    ).sort();
+
+    // 2. Selected class ke hisaab se filter karein
+    const filteredStudents = selectedAdminClassFilter === "all"
+      ? allStudents
+      : allStudents.filter(s => (s.class_name || "Unassigned").trim() === selectedAdminClassFilter);
+
+    // 3. Class aur Roll Number ke hisaab se sort karein
+    filteredStudents.sort((a, b) => {
+      const classCompare = (a.class_name || "").localeCompare(b.class_name || "");
+      if (classCompare !== 0) return classCompare;
+      return (Number(a.roll_number) || 0) - (Number(b.roll_number) || 0);
+    });
 
     mainContent.innerHTML = `
-
       <h1 class="page-title">
         Student Management
       </h1>
 
       <p class="page-subtitle">
-        Create, activate and remove student accounts.
+        Class-wise organization, activation and management of student accounts.
       </p>
 
-
       <div class="card">
+        <div class="card-header" style="flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div class="card-title">
+              Students (${filteredStudents.length})
+            </div>
 
-        <div class="card-header">
-
-          <div class="card-title">
-            Students
+            <!-- Class Filter Dropdown -->
+            <select 
+              id="adminClassFilter" 
+              class="select" 
+              style="width:auto; min-width:140px; padding:6px 12px; font-weight:700;"
+              onchange="changeAdminClassFilter(this.value)"
+            >
+              <option value="all" ${selectedAdminClassFilter === "all" ? "selected" : ""}>All Classes</option>
+              ${classList.map(cls => `
+                <option value="${escapeAttr(cls)}" ${selectedAdminClassFilter === cls ? "selected" : ""}>
+                  Class: ${escapeHTML(cls)}
+                </option>
+              `).join("")}
+            </select>
           </div>
 
           <button
@@ -2351,35 +2380,37 @@ async function showAdminStudents() {
           >
             + New Student
           </button>
-
         </div>
-
 
         <div id="studentFormContainer"></div>
 
-
         <div class="table-wrap">
-
           <table>
-
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Username</th>
                 <th>Class</th>
                 <th>Roll No.</th>
+                <th>Name</th>
+                <th>Username</th>
                 <th>Account</th>
                 <th>Actions</th>
               </tr>
             </thead>
 
             <tbody>
-
               ${
-                students.length
-                  ? students.map(student => `
-
+                filteredStudents.length
+                  ? filteredStudents.map(student => `
                     <tr>
+                      <td>
+                        <span class="badge badge-gray" style="font-weight:800;">
+                          ${escapeHTML(student.class_name || "Unassigned")}
+                        </span>
+                      </td>
+
+                      <td>
+                        <strong>${escapeHTML(student.roll_number || "—")}</strong>
+                      </td>
 
                       <td>
                         <strong>
@@ -2392,14 +2423,6 @@ async function showAdminStudents() {
                       </td>
 
                       <td>
-                        ${escapeHTML(student.class_name || "—")}
-                      </td>
-
-                      <td>
-                        ${escapeHTML(student.roll_number || "—")}
-                      </td>
-
-                      <td>
                         ${
                           student.auth_user_id
                             ? `<span class="badge badge-green">Active</span>`
@@ -2407,7 +2430,7 @@ async function showAdminStudents() {
                         }
                       </td>
 
-                    <td>
+                      <td>
                         <div style="display:flex;gap:6px;flex-wrap:wrap">
                           ${
                             !student.auth_user_id
@@ -2437,43 +2460,35 @@ async function showAdminStudents() {
                           </button>
                         </div>
                       </td>
-                      
                     </tr>
-
                   `).join("")
                   : `
                     <tr>
                       <td colspan="6">
-                        ${emptyState("No students found.")}
+                        ${emptyState("No students found for this class.")}
                       </td>
                     </tr>
                   `
               }
-
             </tbody>
-
           </table>
-
         </div>
-
       </div>
     `;
 
-
     document
       .getElementById("newStudentBtn")
-      .addEventListener(
-        "click",
-        renderNewStudentForm
-      );
+      .addEventListener("click", renderNewStudentForm);
 
   } finally {
-
     hideLoader();
   }
 }
 
-
+function changeAdminClassFilter(className) {
+  selectedAdminClassFilter = className;
+  showAdminStudents();
+}
 function renderNewStudentForm() {
 
   const container =
