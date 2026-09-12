@@ -3818,19 +3818,13 @@ function showTeacherCreate() {
             >
           </div>
 
-          <div class="form-group">
+<div class="form-group">
             <label>Class</label>
-            <input
-              id="testClass"
-              class="input"
-              value="${escapeHTML(
-                teacherData?.teacher?.class_name || ""
-              )}"
-              placeholder="e.g. 9th"
-              required
-            >
+            <select id="testClass" class="select" required>
+              <option value="">-- Select Class --</option>
+            </select>
           </div>
-
+          
           <div class="form-group">
             <label>Subject</label>
             <input
@@ -3916,7 +3910,7 @@ function showTeacherCreate() {
       () => addQuestion()
     );
 
-  document
+ document
     .getElementById("testBuilderForm")
     .addEventListener(
       "submit",
@@ -3924,8 +3918,41 @@ function showTeacherCreate() {
     );
 
   addQuestion();
+  populateClassDropdown();
 }
 
+async function populateClassDropdown() {
+  const classSelect = document.getElementById("testClass");
+  if (!classSelect) return;
+
+  try {
+    // Teacher ke pehle se banaye gaye tests ya assigned class se list nikaalein
+    let availableClasses = new Set();
+
+    if (teacherData?.teacher?.class_name) {
+      availableClasses.add(teacherData.teacher.class_name.trim());
+    }
+
+    if (teacherData?.tests && Array.isArray(teacherData.tests)) {
+      teacherData.tests.forEach(t => {
+        if (t.class_name) availableClasses.add(t.class_name.trim());
+      });
+    }
+
+    // Default standard school classes agar list khali ho
+    const defaultClasses = ["6th", "7th", "8th", "9th", "10th", "1st Year", "2nd Year"];
+    defaultClasses.forEach(c => availableClasses.add(c));
+
+    classSelect.innerHTML = `<option value="">-- Select Class --</option>` +
+      Array.from(availableClasses)
+        .sort()
+        .map(cls => `<option value="${escapeAttr(cls)}" ${cls === teacherData?.teacher?.class_name ? "selected" : ""}>${escapeHTML(cls)}</option>`)
+        .join("");
+
+  } catch (err) {
+    console.error("Failed to populate classes:", err);
+  }
+}
 
 function addQuestion() {
 
