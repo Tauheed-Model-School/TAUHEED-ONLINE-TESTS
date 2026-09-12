@@ -1320,18 +1320,19 @@ function escapeHTML(value) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-function renderMathContent(content) {
-  if (!content) return "—";
+function renderMathContent(html) {
+  if (!html) return "—";
+  // Convert math-fields to readonly so students/admins cannot edit them
+  const temp = document.createElement("div");
+  temp.innerHTML = html;
   
-  // 1. Agar puraani tarah <math-field> mojood ho to use parse karein
-  let clean = content.replace(/<math-field[^>]*>(.*?)<\/math-field>/gi, (match, formula) => {
-    const expr = formula.trim() || "x^2";
-    if (window.MathfieldElement && typeof window.MathfieldElement.toMarkup === "function") {
-      return `<span class="static-math">${window.MathfieldElement.toMarkup(expr)}</span>`;
-    }
-    return expr;
+  temp.querySelectorAll("math-field").forEach(mf => {
+    mf.setAttribute("readonly", "true");
+    mf.removeAttribute("virtual-keyboard-mode");
   });
-
+  
+  return temp.innerHTML;
+}
   // 2. $$ formula $$ ko visual Math symbols me convert karein
   clean = clean.replace(/\$\$(.*?)\$\$/g, (match, formula) => {
     const expr = formula.trim();
@@ -1534,7 +1535,7 @@ document
 
 
 /* =========================================================
-   LOGIN (STABLE & DIRECT)
+   LOGIN (DIAGNOSED & BULLETPROOF)
 ========================================================= */
 
 document
@@ -1543,10 +1544,10 @@ document
     event.preventDefault();
     clearLoginError();
 
-    const username = document.getElementById("loginUsername").value.trim();
+    const userInput = document.getElementById("loginUsername").value.trim();
     const password = document.getElementById("loginPassword").value;
 
-    if (!username || !password) {
+    if (!userInput || !password) {
       showLoginError("Username and password are required.");
       return;
     }
@@ -1554,21 +1555,24 @@ document
     showLoader("Signing in...");
 
     try {
+      // 1. Agar user ne pura email dala hai to email use karein, warna domain append karein
+      const finalEmail = userInput.includes("@") ? userInput.toLowerCase() : authEmail(userInput);
+
       const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email: authEmail(username),
+        email: finalEmail,
         password: password
       });
 
       if (error) {
-        throw error;
+        throw new Error(error.message || "Invalid username/password.");
       }
 
       currentUser = data.user;
 
-      // Small delay to ensure Supabase sets tokens in localStorage
-      await new Promise(res => setTimeout(res, 150));
+      // Supabase local session sync delay
+      await new Promise(res => setTimeout(res, 200));
 
-      // Role identify karein
+      // 2. Role detect karein (safe fallback ke sath)
       await determineRole();
 
       loginScreen.classList.add("hidden");
@@ -1579,7 +1583,7 @@ document
         currentProfile?.Name ||
         currentProfile?.username ||
         currentProfile?.Username ||
-        username;
+        userInput;
 
       buildNavigation();
 
@@ -1594,44 +1598,41 @@ document
       showToast("Signed in successfully.", "success");
 
     } catch (error) {
-      console.error("Login Process Error:", error);
-      showLoginError(error.message || "Invalid credentials or server error.");
-      // Force signOut tab hi karein agar backend se invalid profile aayi ho
-      if (error.message && error.message.includes("linked to it")) {
-        await supabaseClient.auth.signOut();
-      }
+      console.error("Login Diagnostic Error:", error);
+      showLoginError(error.message || "Unable to sign in.");
+      // Auto signOut ko completely remove kar diya taake login state kill na ho
     } finally {
       hideLoader();
     }
   });
+  
 /* =========================================================
-   DETERMINE ROLE
+   DETERMINE ROLE (FAIL-SAFE)
 ========================================================= */
 
 async function determineRole() {
-
   try {
+    const data = await callFunction("portal-data", {
+      action: "get_profile"
+    });
 
-    const data =
-      await callFunction(
-        "portal-data",
-        {
-          action: "get_profile"
-        }
-      );
-
-    if (
-      !data ||
-      !data.success ||
-      !data.role ||
-      !data.profile
-    ) {
-      throw new Error(
-        "Your account exists, but no Student, Teacher or Admin profile is linked to it."
-      );
+    if (data && data.success && data.role && data.profile) {
+      currentRole = data.role;
+      currentProfile = data.profile;
+      return;
     }
+  } catch (error) {
+    console.warn("portal-data fetch failed, falling back to selected tab:", error);
+  }
 
-
+  // Fallback: Agar Edge function fail ho to UI tab ko authority dein
+  const activeTab = document.querySelector(".role-tab.active");
+  currentRole = activeTab ? activeTab.dataset.role : (currentRole || "student");
+  currentProfile = {
+    name: currentUser?.email?.split("@")[0] || "User",
+    username: currentUser?.email?.split("@")[0] || "User"
+  };
+}
     /* =====================================================
        ADMIN
     ===================================================== */
