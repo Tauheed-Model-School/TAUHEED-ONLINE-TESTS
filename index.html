@@ -1045,7 +1045,101 @@
         vertical-align: middle;
         padding: 2px 0;
       }
-    }
+   /* =========================================
+         TEACHER TEST BUILDER (MOBILE OPTIMIZED)
+      ========================================= */
+
+      /* Test info & form inputs */
+      #testBuilderForm .grid-2 {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .question-builder {
+        padding: 14px 12px;
+        border-radius: 14px;
+        margin-bottom: 16px;
+      }
+
+      .question-top {
+        margin-bottom: 10px;
+      }
+
+      /* Big Finger-Friendly Toolbar Buttons */
+      .question-toolbar {
+        padding: 8px;
+        gap: 6px;
+        flex-wrap: wrap;
+        background: #f1f5f2;
+      }
+
+      .question-toolbar button {
+        padding: 6px 12px;
+        font-size: 13px;
+        border-radius: 8px;
+        min-height: 32px;
+        touch-action: manipulation;
+      }
+
+      .question-text {
+        font-size: 15px;
+        padding: 12px;
+        min-height: 80px;
+      }
+
+      /* Options layout on mobile */
+      .options-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+      }
+
+      .option-row .option-label {
+        left: 8px;
+        top: 10px;
+        font-size: 13px;
+      }
+
+      .option-editor .question-text {
+        min-height: 52px;
+        padding: 10px 12px;
+      }
+
+      /* Correct Option & Marks Row */
+      .marks-row {
+        flex-wrap: wrap;
+        gap: 10px 14px;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px dashed var(--border);
+      }
+
+      .marks-row label {
+        font-size: 13px;
+      }
+
+      .marks-row .select,
+      .marks-row .marks-input {
+        height: 40px;
+        font-size: 14px;
+      }
+
+      /* Add Question & Action Buttons full width */
+      #addQuestionBtn {
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+
+      #testBuilderForm button[type="submit"] {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        border-radius: 14px;
+      }
+
+      .remove-question {
+        padding: 6px 10px;
+        font-size: 11px;
+      } }
 /* MathLive Formula Styling */
    math-field {
       display: inline-block !important;
