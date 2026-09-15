@@ -2675,13 +2675,22 @@ async function showAdminStudents() {
                             onclick="deleteStudent(${student.id}, '${escapeAttr(student.name)}')"
                           >
                            <button
-  class="btn btn-secondary btn-small"
-  onclick="editStudentClass(${student.id}, '${escapeAttr(student.name)}', '${escapeAttr(student.class_name || '')}', '${escapeAttr(student.roll_number || '')}')"
->
-  Edit Class
-</button>
+                             Delete
+                          </button>
+                          <button
+                            class="btn btn-secondary btn-small"
+                            onclick="editStudentClass(${student.id}, '${escapeAttr(student.name)}', '${escapeAttr(student.class_name || '')}', '${escapeAttr(student.roll_number || '')}')"
+                          >
+                            Edit Class
+                          </button>
+
+                          <button
+                            class="btn btn-danger btn-small"
+                            onclick="deleteStudent(${student.id}, '${escapeAttr(student.name)}')"
+                          >
                             Delete
                           </button>
+                        </div>
                         </div>
                       </td>
                     </tr>
