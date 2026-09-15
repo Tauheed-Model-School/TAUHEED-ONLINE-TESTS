@@ -1546,82 +1546,89 @@ if (document.readyState === "loading") {
 } else {
   checkMathKeyboardState();
 }
-  /* =========================================================
-   TEACHER EXAM CREATION AUTO-SAVE & RESTORE
+/* =========================================================
+   TEACHER EXAM CREATION AUTO-SAVE & RESTORE (EXACT TMS IDS)
 ========================================================= */
 
-// Data ko localStorage mein save karne ka function
 function saveTeacherDraft() {
-  const container = document.getElementById("questionsContainer") || document.getElementById("questionsList");
-  const questionCards = container ? container.querySelectorAll(".question-card, .border, [data-question-idx]") : [];
+  const container = document.getElementById("questionsContainer");
+  if (!container) return;
 
+  const questionCards = container.querySelectorAll(".question-builder");
   const questionsData = [];
+
   questionCards.forEach(card => {
-    // Sawal ka text ya math input
-    const qText = card.querySelector("input[type='text'], textarea, math-field")?.value || "";
-    
-    // Options
-    const options = [];
-    card.querySelectorAll(".option-input, input[placeholder*='Option']").forEach(opt => {
-      options.push(opt.value || "");
+    const qEl = card.querySelector(".question-text:not(.option-a):not(.option-b):not(.option-c):not(.option-d)");
+    const optA = card.querySelector(".option-a");
+    const optB = card.querySelector(".option-b");
+    const optC = card.querySelector(".option-c");
+    const optD = card.querySelector(".option-d");
+    const correctOpt = card.querySelector(".correct-option")?.value || "A";
+    const marks = card.querySelector(".question-marks")?.value || "1";
+
+    questionsData.push({
+      qHtml: qEl ? qEl.innerHTML : "",
+      aHtml: optA ? optA.innerHTML : "",
+      bHtml: optB ? optB.innerHTML : "",
+      cHtml: optC ? optC.innerHTML : "",
+      dHtml: optD ? optD.innerHTML : "",
+      correctOpt,
+      marks
     });
-
-    // Sahi jawab (Correct answer)
-    const correctAns = card.querySelector("select, input[type='radio']:checked")?.value || "";
-
-    questionsData.push({ qText, options, correctAns });
   });
 
   const draft = {
-    title: document.getElementById("examTitle")?.value || "",
-    classGrade: document.getElementById("examClass")?.value || document.getElementById("examGrade")?.value || "",
-    subject: document.getElementById("examSubject")?.value || "",
-    duration: document.getElementById("examDuration")?.value || "",
-    totalMarks: document.getElementById("examMarks")?.value || "",
-    questions: questionsData,
-    lastSaved: new Date().toLocaleTimeString()
+    title: document.getElementById("testTitle")?.value || "",
+    classGrade: document.getElementById("testClass")?.value || "",
+    subject: document.getElementById("testSubject")?.value || "",
+    chapter: document.getElementById("testChapter")?.value || "",
+    duration: document.getElementById("testDuration")?.value || "20",
+    questions: questionsData
   };
 
   localStorage.setItem("tms_teacher_exam_draft", JSON.stringify(draft));
 }
 
-// Page refresh par draft wapis laane ka function
 function restoreTeacherDraft() {
   const saved = localStorage.getItem("tms_teacher_exam_draft");
   if (!saved) return;
 
   try {
     const draft = JSON.parse(saved);
-    if (!draft.title && (!draft.questions || draft.questions.length === 0)) return;
+    const hasData = draft.title || (draft.questions && draft.questions.length > 0 && draft.questions[0].qHtml);
+    if (!hasData) return;
 
     if (confirm("Aapka pichla na-mukammal test draft mojood hai. Kya aap usay restore karna chahte hain?")) {
-      // Basic Fields restore karein
-      if (document.getElementById("examTitle")) document.getElementById("examTitle").value = draft.title || "";
-      if (document.getElementById("examClass")) document.getElementById("examClass").value = draft.classGrade || "";
-      if (document.getElementById("examGrade")) document.getElementById("examGrade").value = draft.classGrade || "";
-      if (document.getElementById("examSubject")) document.getElementById("examSubject").value = draft.subject || "";
-      if (document.getElementById("examDuration")) document.getElementById("examDuration").value = draft.duration || "";
-      if (document.getElementById("examMarks")) document.getElementById("examMarks").value = draft.totalMarks || "";
+      if (document.getElementById("testTitle")) document.getElementById("testTitle").value = draft.title || "";
+      if (document.getElementById("testClass")) document.getElementById("testClass").value = draft.classGrade || "";
+      if (document.getElementById("testSubject")) document.getElementById("testSubject").value = draft.subject || "";
+      if (document.getElementById("testChapter")) document.getElementById("testChapter").value = draft.chapter || "";
+      if (document.getElementById("testDuration")) document.getElementById("testDuration").value = draft.duration || "20";
 
-      // Sawalat recreate karein
-      if (draft.questions && draft.questions.length > 0 && typeof addQuestion === "function") {
-        const container = document.getElementById("questionsContainer") || document.getElementById("questionsList");
-        if (container) container.innerHTML = ""; // Pehle purana empty structure saaf karein
+      if (draft.questions && draft.questions.length > 0) {
+        const container = document.getElementById("questionsContainer");
+        if (container) container.innerHTML = "";
+        questionCount = 0;
 
         draft.questions.forEach(q => {
-          addQuestion(); // Aapka purana function naya card banayega
-          const lastCard = (document.getElementById("questionsContainer") || document.getElementById("questionsList"))?.lastElementChild;
+          addQuestion();
+          const lastCard = document.getElementById("questionsContainer")?.lastElementChild;
           if (lastCard) {
-            const qInput = lastCard.querySelector("input[type='text'], textarea, math-field");
-            if (qInput) qInput.value = q.qText;
+            const qEl = lastCard.querySelector(".question-text:not(.option-a):not(.option-b):not(.option-c):not(.option-d)");
+            const optA = lastCard.querySelector(".option-a");
+            const optB = lastCard.querySelector(".option-b");
+            const optC = lastCard.querySelector(".option-c");
+            const optD = lastCard.querySelector(".option-d");
+            const correctSel = lastCard.querySelector(".correct-option");
+            const marksInp = lastCard.querySelector(".question-marks");
 
-            const optInputs = lastCard.querySelectorAll(".option-input, input[placeholder*='Option']");
-            optInputs.forEach((optInp, idx) => {
-              if (q.options[idx] !== undefined) optInp.value = q.options[idx];
-            });
-
-            const sel = lastCard.querySelector("select");
-            if (sel && q.correctAns) sel.value = q.correctAns;
+            if (qEl) qEl.innerHTML = q.qHtml || "";
+            if (optA) optA.innerHTML = q.aHtml || "";
+            if (optB) optB.innerHTML = q.bHtml || "";
+            if (optC) optC.innerHTML = q.cHtml || "";
+            if (optD) optD.innerHTML = q.dHtml || "";
+            if (correctSel) correctSel.value = q.correctOpt || "A";
+            if (marksInp) marksInp.value = q.marks || "1";
           }
         });
       }
@@ -1632,20 +1639,7 @@ function restoreTeacherDraft() {
     console.error("Draft restore error:", err);
   }
 }
-  // Kisi bhi input ya mathfield par likhte hi auto-save ho jaye
-document.addEventListener("input", (e) => {
-  if (e.target.closest("#createExamModal, #examForm, .exam-creator-section")) {
-    saveTeacherDraft();
-  }
-});
-
-// Selection badalne par (jaise dropdown ya correct answer)
-document.addEventListener("change", (e) => {
-  if (e.target.closest("#createExamModal, #examForm, .exam-creator-section")) {
-    saveTeacherDraft();
-  }
-});
-/* =========================================================
+  /* =========================================================
    SECURITY & ANTI-CHEATING
 ========================================================= */
 let tabSwitchWarnings = 0;
