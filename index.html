@@ -2978,7 +2978,7 @@ async function deleteStudent(
   }
 }
 /* =========================================================
-   ADMIN: UPDATE / PROMOTE STUDENT CLASS & ROLL NUMBER
+   ADMIN: UPDATE / PROMOTE STUDENT CLASS & ROLL NUMBER (SAFEST WAY)
 ========================================================= */
 async function editStudentClass(id, name, currentClass, currentRoll) {
   const newClass = prompt(`Update class for ${name}:\n(e.g., 9th, 10th, 1st Year)`, currentClass);
@@ -2995,26 +2995,18 @@ async function editStudentClass(id, name, currentClass, currentRoll) {
   showLoader(`Updating ${name}'s class...`);
 
   try {
-    const { data, error } = await supabaseClient
-      .from("students")
-      .update({
-        class_name: newClass.trim(),
-        roll_number: newRoll ? newRoll.trim() : null
-      })
-      .eq("id", id)
-      .select();
-
-    if (error) {
-      throw error;
-    }
-
-    if (!data || data.length === 0) {
-      throw new Error("Update blocked by database permission.");
-    }
+    // Secure Edge Function call with admin bearer token
+    await callFunction("admin-manage-user", {
+      action: "update_student",
+      id: id,
+      class_name: newClass.trim(),
+      roll_number: newRoll.trim() ? newRoll.trim() : null
+    });
 
     showToast(`${name} promoted to Class ${newClass.trim()} successfully!`, "success");
     
-    // List refresh
+    // Refresh student list and memory
+    await refreshAdminData();
     await showAdminStudents();
 
   } catch (error) {
