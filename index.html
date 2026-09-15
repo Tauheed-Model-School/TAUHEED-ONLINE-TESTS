@@ -2978,7 +2978,7 @@ async function deleteStudent(
   }
 }
 /* =========================================================
-   ADMIN: UPDATE / PROMOTE STUDENT CLASS & ROLL NUMBER
+   ADMIN: UPDATE STUDENT CLASS (DIRECT RPC - GUARANTEED)
 ========================================================= */
 async function editStudentClass(id, name, currentClass, currentRoll) {
   const newClass = prompt(`Update class for ${name}:\n(e.g., 9th, 10th, 1st Year)`, currentClass);
@@ -2995,20 +2995,22 @@ async function editStudentClass(id, name, currentClass, currentRoll) {
   showLoader(`Updating ${name}'s class...`);
 
   try {
-    const { error } = await supabaseClient
-      .from("students")
-      .update({
-        class_name: newClass.trim(),
-        roll_number: newRoll.trim() ? newRoll.trim() : null
-      })
-      .eq("id", id);
+    // Direct RPC Call to our database function
+    const { data, error } = await supabaseClient.rpc("admin_update_student_class", {
+      target_student_id: Number(id),
+      new_class: newClass.trim(),
+      new_roll: newRoll ? newRoll.trim() : ""
+    });
 
     if (error) throw error;
 
+    if (data && data.success === false) {
+      throw new Error(data.message || "Update fail ho gaya.");
+    }
+
     showToast(`${name} promoted to Class ${newClass.trim()} successfully!`, "success");
     
-    // Refresh student list and memory
-    await refreshAdminData();
+    // Summary cache ko bypass karke fresh data mangwayein
     await showAdminStudents();
 
   } catch (error) {
