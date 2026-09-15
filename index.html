@@ -2978,11 +2978,11 @@ async function deleteStudent(
   }
 }
 /* =========================================================
-   ADMIN: UPDATE / PROMOTE STUDENT CLASS & ROLL NUMBER (SYNCED)
+   ADMIN: UPDATE / PROMOTE STUDENT CLASS & ROLL NUMBER
 ========================================================= */
 async function editStudentClass(id, name, currentClass, currentRoll) {
   const newClass = prompt(`Update class for ${name}:\n(e.g., 9th, 10th, 1st Year)`, currentClass);
-  if (newClass === null) return; // Cancelled
+  if (newClass === null) return;
   
   if (!newClass.trim()) {
     showToast("Class name cannot be empty.", "error");
@@ -2990,41 +2990,36 @@ async function editStudentClass(id, name, currentClass, currentRoll) {
   }
 
   const newRoll = prompt(`Update Roll Number for ${name} (Optional):`, currentRoll);
-  if (newRoll === null) return; // Cancelled
+  if (newRoll === null) return;
 
   showLoader(`Updating ${name}'s class...`);
 
   try {
-    // 1. Pehle Edge Function ke zariye try karein (agar backend action mojood hai)
-    try {
-      await callFunction("admin-manage-user", {
-        action: "update_student",
-        id: id,
+    const { data, error } = await supabaseClient
+      .from("students")
+      .update({
         class_name: newClass.trim(),
-        roll_number: newRoll ? newRoll.trim() : ""
-      });
-    } catch (edgeErr) {
-      // 2. Agar Edge Function mein 'update_student' action na ho to direct database update karein
-      const { error: dbError } = await supabaseClient
-        .from("students")
-        .update({
-          class_name: newClass.trim(),
-          roll_number: newRoll ? newRoll.trim() : ""
-        })
-        .eq("id", id);
+        roll_number: newRoll ? newRoll.trim() : null
+      })
+      .eq("id", id)
+      .select();
 
-      if (dbError) throw dbError;
+    if (error) {
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
+      throw new Error("Update blocked by database permission.");
     }
 
     showToast(`${name} promoted to Class ${newClass.trim()} successfully!`, "success");
     
-    // Cache refresh aur screen update
-    await refreshAdminData();
+    // List refresh
     await showAdminStudents();
 
   } catch (error) {
     console.error("Failed to update student class:", error);
-    showToast(error.message || "Failed to update class in database.", "error");
+    alert("Update Error: " + (error.message || "Failed to update class."));
   } finally {
     hideLoader();
   }
