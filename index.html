@@ -2674,6 +2674,12 @@ async function showAdminStudents() {
                             class="btn btn-danger btn-small"
                             onclick="deleteStudent(${student.id}, '${escapeAttr(student.name)}')"
                           >
+                           <button
+  class="btn btn-secondary btn-small"
+  onclick="editStudentClass(${student.id}, '${escapeAttr(student.name)}', '${escapeAttr(student.class_name || '')}', '${escapeAttr(student.roll_number || '')}')"
+>
+  Edit Class
+</button>
                             Delete
                           </button>
                         </div>
@@ -2962,7 +2968,44 @@ async function deleteStudent(
     hideLoader();
   }
 }
+/* =========================================================
+   ADMIN: UPDATE / PROMOTE STUDENT CLASS & ROLL NUMBER
+========================================================= */
+async function editStudentClass(id, name, currentClass, currentRoll) {
+  const newClass = prompt(`Update class for ${name}:\n(e.g., 9th, 10th, 1st Year)`, currentClass);
+  if (newClass === null) return; // User canceled
+  
+  if (!newClass.trim()) {
+    showToast("Class name cannot be empty.", "error");
+    return;
+  }
 
+  const newRoll = prompt(`Update Roll Number for ${name} (Optional):`, currentRoll);
+  if (newRoll === null) return; // User canceled
+
+  showLoader(`Updating ${name}'s class...`);
+
+  try {
+    // Supabase table 'students' mein direct update
+    const { error } = await supabaseClient
+      .from("students")
+      .update({
+        class_name: newClass.trim(),
+        roll_number: newRoll.trim()
+      })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    showToast(`${name} promoted to Class ${newClass.trim()} successfully!`, "success");
+    await showAdminStudents(); // Table refresh
+  } catch (error) {
+    console.error("Failed to update student class:", error);
+    showToast(error.message || "Failed to update class.", "error");
+  } finally {
+    hideLoader();
+  }
+}
 
 /* =========================================================
    ADMIN TEACHERS
