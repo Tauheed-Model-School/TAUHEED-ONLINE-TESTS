@@ -1725,7 +1725,56 @@ function cleanExamStorage() {
   localStorage.removeItem("active_exam_answers");
   removeAntiCheating();
 }
+/* =========================================================
+   STUDENT EXAM RECOVERY & AUTO-RESUME
+========================================================= */
+function checkExamRecovery() {
+  const savedData = localStorage.getItem("active_exam_data");
+  const savedEndTime = localStorage.getItem("active_exam_end_time");
+  const savedAnswers = localStorage.getItem("active_exam_answers");
 
+  if (!savedData || !savedEndTime) return false;
+
+  const targetEnd = Number(savedEndTime);
+  const remaining = Math.round((targetEnd - Date.now()) / 1000);
+
+  // Agar waqt khatam ho chuka hai to storage saaf karein
+  if (remaining <= 0) {
+    cleanExamStorage();
+    return false;
+  }
+
+  try {
+    currentExam = JSON.parse(savedData);
+    examAnswers = savedAnswers ? JSON.parse(savedAnswers) : {};
+
+    // Exam screen render karein
+    renderExam();
+
+    // Marked answers wapis select karein
+    Object.entries(examAnswers).forEach(([qId, val]) => {
+      const radio = document.querySelector(`input[name="question_${qId}"][value="${val}"]`);
+      if (radio) {
+        radio.checked = true;
+        radio.closest(".answer-option")?.classList.add("selected");
+      }
+    });
+
+    // Bacha hua timer dobara start karein
+    startExamTimer(remaining);
+
+    if (typeof initAntiCheating === "function") {
+      initAntiCheating();
+    }
+
+    showToast("Exam session restored successfully.", "success");
+    return true;
+  } catch (e) {
+    console.error("Exam recovery failed:", e);
+    cleanExamStorage();
+    return false;
+  }
+}
 /* =========================================================
    DOM
 ========================================================= */
