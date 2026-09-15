@@ -4098,10 +4098,14 @@ function showTeacherCreate() {
       createTest
     );
 
-  addQuestion();
+addQuestion();
   populateClassDropdown();
-}
 
+  // STEP 4: Agar pichla draft mojood ho to popup puch kar restore karein
+  setTimeout(() => {
+    restoreTeacherDraft();
+  }, 100);
+}
 async function populateClassDropdown() {
   const classSelect = document.getElementById("testClass");
   if (!classSelect) return;
@@ -4465,13 +4469,15 @@ const extractContent = (el) => {
       );
 
 
-    showToast(
+  showToast(
       `Test created successfully. Total marks: ${result.total_marks}`,
       "success"
     );
 
-    await showTeacherTests();
+    // STEP 3: Test publish ho gaya, purana draft localStorage se delete karein
+    localStorage.removeItem("tms_teacher_exam_draft");
 
+    await showTeacherTests();
   } catch (error) {
 
     showToast(
