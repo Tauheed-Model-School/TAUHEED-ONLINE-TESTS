@@ -4204,8 +4204,9 @@ function addQuestion() {
     <button type="button" onclick="formatQuestion('bold')"><b>B</b></button>
     <button type="button" onclick="formatQuestion('italic')"><i>I</i></button>
     <button type="button" onclick="formatQuestion('underline')"><u>U</u></button>
-    <button type="button" onclick="formatQuestion('justifyRight')">RTL</button>
-    <button type="button" onclick="insertQuestionMath(this)">∑ Math</button>
+    <button type="button" onclick="setQuestionDirection(this, 'ltr')">LTR</button>
+<button type="button" onclick="setQuestionDirection(this, 'rtl')">RTL</button>
+        <button type="button" onclick="insertQuestionMath(this)">∑ Math</button>
   </div>
 
   <div
@@ -4227,8 +4228,9 @@ function addQuestion() {
       <button type="button" onclick="formatQuestion('bold')"><b>B</b></button>
       <button type="button" onclick="formatQuestion('italic')"><i>I</i></button>
       <button type="button" onclick="formatQuestion('underline')"><u>U</u></button>
-      <button type="button" onclick="formatQuestion('justifyRight')">RTL</button>
-      <button type="button" onclick="insertQuestionMath(this)">∑ Math</button>
+      <button type="button" onclick="setQuestionDirection(this, 'ltr')">LTR</button>
+<button type="button" onclick="setQuestionDirection(this, 'rtl')">RTL</button>
+            <button type="button" onclick="insertQuestionMath(this)">∑ Math</button>
     </div>
 
     <div
@@ -4248,8 +4250,9 @@ function addQuestion() {
       <button type="button" onclick="formatQuestion('bold')"><b>B</b></button>
       <button type="button" onclick="formatQuestion('italic')"><i>I</i></button>
       <button type="button" onclick="formatQuestion('underline')"><u>U</u></button>
-      <button type="button" onclick="formatQuestion('justifyRight')">RTL</button>
-      <button type="button" onclick="insertQuestionMath(this)">∑ Math</button>
+     <button type="button" onclick="setQuestionDirection(this, 'ltr')">LTR</button>
+<button type="button" onclick="setQuestionDirection(this, 'rtl')">RTL</button>
+           <button type="button" onclick="insertQuestionMath(this)">∑ Math</button>
     </div>
 
     <div
@@ -4268,8 +4271,9 @@ function addQuestion() {
       <button type="button" onclick="formatQuestion('bold')"><b>B</b></button>
       <button type="button" onclick="formatQuestion('italic')"><i>I</i></button>
       <button type="button" onclick="formatQuestion('underline')"><u>U</u></button>
-      <button type="button" onclick="formatQuestion('justifyRight')">RTL</button>
-      <button type="button" onclick="insertQuestionMath(this)">∑ Math</button>
+    <button type="button" onclick="setQuestionDirection(this, 'ltr')">LTR</button>
+<button type="button" onclick="setQuestionDirection(this, 'rtl')">RTL</button>
+          <button type="button" onclick="insertQuestionMath(this)">∑ Math</button>
     </div>
 
     <div
@@ -4288,7 +4292,8 @@ function addQuestion() {
       <button type="button" onclick="formatQuestion('bold')"><b>B</b></button>
       <button type="button" onclick="formatQuestion('italic')"><i>I</i></button>
       <button type="button" onclick="formatQuestion('underline')"><u>U</u></button>
-      <button type="button" onclick="formatQuestion('justifyRight')">RTL</button>
+     <button type="button" onclick="setQuestionDirection(this, 'ltr')">LTR</button>
+<button type="button" onclick="setQuestionDirection(this, 'rtl')">RTL</button>
       <button type="button" onclick="insertQuestionMath(this)">∑ Math</button>
     </div>
 
@@ -6597,7 +6602,19 @@ passwordObserver.observe(document.body, {
 function formatQuestion(command) {
   document.execCommand(command, false, null);
 }
-function insertQuestionMath(button) {
+
+function setQuestionDirection(button, direction) {
+  const editor = button.closest(".question-editor")?.querySelector(".question-text");
+  if (!editor) return;
+  
+  editor.focus();
+  editor.setAttribute("dir", direction);
+  editor.style.textAlign = direction === "rtl" ? "right" : "left";
+  
+  // Document level command for cursor alignment
+  document.execCommand(direction === "rtl" ? "justifyRight" : "justifyLeft", false, null);
+}
+  function insertQuestionMath(button) {
   const editor = button.closest(".question-editor").querySelector(".question-text, .option-a, .option-b, .option-c, .option-d");
   if (!editor) return;
   editor.focus();
