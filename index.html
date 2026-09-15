@@ -1478,6 +1478,173 @@ let examTimer = null;
 let examSecondsRemaining = 0;
 
 let modalResolve = null;
+  /* =========================================================
+   MATHLIVE KEYBOARD AUTO-DISMISS & CLOSE HANDLER
+========================================================= */
+document.addEventListener("pointerdown", (e) => {
+  // Check karein ke user ne math field ya keyboard ke andar click kiya hai ya bahar
+  const insideMathField = e.target.closest("math-field");
+  const insideKeyboard = e.target.closest(".ML__keyboard") || 
+                         e.target.closest("math-virtual-keyboard") || 
+                         e.target.closest("#mathCloseFloatingBtn");
+
+  if (!insideMathField && !insideKeyboard) {
+    if (window.mathVirtualKeyboard && window.mathVirtualKeyboard.visible) {
+      window.mathVirtualKeyboard.hide();
+      const closeBtn = document.getElementById("mathCloseFloatingBtn");
+      if (closeBtn) closeBtn.style.display = "none";
+    }
+  }
+});
+
+// Floating Close Button manage karne ka function
+function checkMathKeyboardState() {
+  let closeBtn = document.getElementById("mathCloseFloatingBtn");
+  if (!closeBtn) {
+    closeBtn = document.createElement("button");
+    closeBtn.id = "mathCloseFloatingBtn";
+    closeBtn.innerHTML = "✕ Done / Close Keyboard";
+    closeBtn.style.cssText = `
+      position: fixed;
+      bottom: 290px;
+      right: 15px;
+      z-index: 100000;
+      background: #0f766e;
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      cursor: pointer;
+      display: none;
+    `;
+    closeBtn.onclick = () => {
+      if (window.mathVirtualKeyboard) {
+        window.mathVirtualKeyboard.hide();
+      }
+      closeBtn.style.display = "none";
+    };
+    document.body.appendChild(closeBtn);
+  }
+
+  if (window.mathVirtualKeyboard) {
+    window.mathVirtualKeyboard.addEventListener("geometrychange", () => {
+      if (window.mathVirtualKeyboard.visible) {
+        closeBtn.style.display = "block";
+      } else {
+        closeBtn.style.display = "none";
+      }
+    });
+  }
+}
+
+// Page load hone par activate karein
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", checkMathKeyboardState);
+} else {
+  checkMathKeyboardState();
+}
+  /* =========================================================
+   TEACHER EXAM CREATION AUTO-SAVE & RESTORE
+========================================================= */
+
+// Data ko localStorage mein save karne ka function
+function saveTeacherDraft() {
+  const container = document.getElementById("questionsContainer") || document.getElementById("questionsList");
+  const questionCards = container ? container.querySelectorAll(".question-card, .border, [data-question-idx]") : [];
+
+  const questionsData = [];
+  questionCards.forEach(card => {
+    // Sawal ka text ya math input
+    const qText = card.querySelector("input[type='text'], textarea, math-field")?.value || "";
+    
+    // Options
+    const options = [];
+    card.querySelectorAll(".option-input, input[placeholder*='Option']").forEach(opt => {
+      options.push(opt.value || "");
+    });
+
+    // Sahi jawab (Correct answer)
+    const correctAns = card.querySelector("select, input[type='radio']:checked")?.value || "";
+
+    questionsData.push({ qText, options, correctAns });
+  });
+
+  const draft = {
+    title: document.getElementById("examTitle")?.value || "",
+    classGrade: document.getElementById("examClass")?.value || document.getElementById("examGrade")?.value || "",
+    subject: document.getElementById("examSubject")?.value || "",
+    duration: document.getElementById("examDuration")?.value || "",
+    totalMarks: document.getElementById("examMarks")?.value || "",
+    questions: questionsData,
+    lastSaved: new Date().toLocaleTimeString()
+  };
+
+  localStorage.setItem("tms_teacher_exam_draft", JSON.stringify(draft));
+}
+
+// Page refresh par draft wapis laane ka function
+function restoreTeacherDraft() {
+  const saved = localStorage.getItem("tms_teacher_exam_draft");
+  if (!saved) return;
+
+  try {
+    const draft = JSON.parse(saved);
+    if (!draft.title && (!draft.questions || draft.questions.length === 0)) return;
+
+    if (confirm("Aapka pichla na-mukammal test draft mojood hai. Kya aap usay restore karna chahte hain?")) {
+      // Basic Fields restore karein
+      if (document.getElementById("examTitle")) document.getElementById("examTitle").value = draft.title || "";
+      if (document.getElementById("examClass")) document.getElementById("examClass").value = draft.classGrade || "";
+      if (document.getElementById("examGrade")) document.getElementById("examGrade").value = draft.classGrade || "";
+      if (document.getElementById("examSubject")) document.getElementById("examSubject").value = draft.subject || "";
+      if (document.getElementById("examDuration")) document.getElementById("examDuration").value = draft.duration || "";
+      if (document.getElementById("examMarks")) document.getElementById("examMarks").value = draft.totalMarks || "";
+
+      // Sawalat recreate karein
+      if (draft.questions && draft.questions.length > 0 && typeof addQuestion === "function") {
+        const container = document.getElementById("questionsContainer") || document.getElementById("questionsList");
+        if (container) container.innerHTML = ""; // Pehle purana empty structure saaf karein
+
+        draft.questions.forEach(q => {
+          addQuestion(); // Aapka purana function naya card banayega
+          const lastCard = (document.getElementById("questionsContainer") || document.getElementById("questionsList"))?.lastElementChild;
+          if (lastCard) {
+            const qInput = lastCard.querySelector("input[type='text'], textarea, math-field");
+            if (qInput) qInput.value = q.qText;
+
+            const optInputs = lastCard.querySelectorAll(".option-input, input[placeholder*='Option']");
+            optInputs.forEach((optInp, idx) => {
+              if (q.options[idx] !== undefined) optInp.value = q.options[idx];
+            });
+
+            const sel = lastCard.querySelector("select");
+            if (sel && q.correctAns) sel.value = q.correctAns;
+          }
+        });
+      }
+    } else {
+      localStorage.removeItem("tms_teacher_exam_draft");
+    }
+  } catch (err) {
+    console.error("Draft restore error:", err);
+  }
+}
+  // Kisi bhi input ya mathfield par likhte hi auto-save ho jaye
+document.addEventListener("input", (e) => {
+  if (e.target.closest("#createExamModal, #examForm, .exam-creator-section")) {
+    saveTeacherDraft();
+  }
+});
+
+// Selection badalne par (jaise dropdown ya correct answer)
+document.addEventListener("change", (e) => {
+  if (e.target.closest("#createExamModal, #examForm, .exam-creator-section")) {
+    saveTeacherDraft();
+  }
+});
 /* =========================================================
    SECURITY & ANTI-CHEATING
 ========================================================= */
@@ -4173,7 +4340,18 @@ function addQuestion() {
   }
 }
 
-
+const mathFields = document.querySelectorAll("math-field");
+  mathFields.forEach(mf => {
+    mf.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") {
+        if (window.mathVirtualKeyboard) window.mathVirtualKeyboard.hide();
+        const closeBtn = document.getElementById("mathCloseFloatingBtn");
+        if (closeBtn) closeBtn.style.display = "none";
+        mf.blur();
+      }
+    });
+  });
+  saveTeacherDraft();
 function renumberQuestions() {
 
   document
