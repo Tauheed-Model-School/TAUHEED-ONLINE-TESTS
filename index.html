@@ -1598,47 +1598,56 @@ function restoreTeacherDraft() {
     const hasData = draft.title || (draft.questions && draft.questions.length > 0 && draft.questions[0].qHtml);
     if (!hasData) return;
 
-    if (confirm("Aapka pichla na-mukammal test draft mojood hai. Kya aap usay restore karna chahte hain?")) {
-      if (document.getElementById("testTitle")) document.getElementById("testTitle").value = draft.title || "";
-      if (document.getElementById("testClass")) document.getElementById("testClass").value = draft.classGrade || "";
-      if (document.getElementById("testSubject")) document.getElementById("testSubject").value = draft.subject || "";
-      if (document.getElementById("testChapter")) document.getElementById("testChapter").value = draft.chapter || "";
-      if (document.getElementById("testDuration")) document.getElementById("testDuration").value = draft.duration || "20";
+    if (document.getElementById("testTitle")) document.getElementById("testTitle").value = draft.title || "";
+    if (document.getElementById("testClass")) document.getElementById("testClass").value = draft.classGrade || "";
+    if (document.getElementById("testSubject")) document.getElementById("testSubject").value = draft.subject || "";
+    if (document.getElementById("testChapter")) document.getElementById("testChapter").value = draft.chapter || "";
+    if (document.getElementById("testDuration")) document.getElementById("testDuration").value = draft.duration || "20";
 
-      if (draft.questions && draft.questions.length > 0) {
-        const container = document.getElementById("questionsContainer");
-        if (container) container.innerHTML = "";
-        questionCount = 0;
+    if (draft.questions && draft.questions.length > 0) {
+      const container = document.getElementById("questionsContainer");
+      if (container) container.innerHTML = "";
+      questionCount = 0;
 
-        draft.questions.forEach(q => {
-          addQuestion();
-          const lastCard = document.getElementById("questionsContainer")?.lastElementChild;
-          if (lastCard) {
-            const qEl = lastCard.querySelector(".question-text:not(.option-a):not(.option-b):not(.option-c):not(.option-d)");
-            const optA = lastCard.querySelector(".option-a");
-            const optB = lastCard.querySelector(".option-b");
-            const optC = lastCard.querySelector(".option-c");
-            const optD = lastCard.querySelector(".option-d");
-            const correctSel = lastCard.querySelector(".correct-option");
-            const marksInp = lastCard.querySelector(".question-marks");
+      draft.questions.forEach(q => {
+        addQuestion();
+        const lastCard = document.getElementById("questionsContainer")?.lastElementChild;
+        if (lastCard) {
+          const qEl = lastCard.querySelector(".question-text:not(.option-a):not(.option-b):not(.option-c):not(.option-d)");
+          const optA = lastCard.querySelector(".option-a");
+          const optB = lastCard.querySelector(".option-b");
+          const optC = lastCard.querySelector(".option-c");
+          const optD = lastCard.querySelector(".option-d");
+          const correctSel = lastCard.querySelector(".correct-option");
+          const marksInp = lastCard.querySelector(".question-marks");
 
-            if (qEl) qEl.innerHTML = q.qHtml || "";
-            if (optA) optA.innerHTML = q.aHtml || "";
-            if (optB) optB.innerHTML = q.bHtml || "";
-            if (optC) optC.innerHTML = q.cHtml || "";
-            if (optD) optD.innerHTML = q.dHtml || "";
-            if (correctSel) correctSel.value = q.correctOpt || "A";
-            if (marksInp) marksInp.value = q.marks || "1";
-          }
-        });
-      }
-    } else {
-      localStorage.removeItem("tms_teacher_exam_draft");
+          if (qEl) qEl.innerHTML = q.qHtml || "";
+          if (optA) optA.innerHTML = q.aHtml || "";
+          if (optB) optB.innerHTML = q.bHtml || "";
+          if (optC) optC.innerHTML = q.cHtml || "";
+          if (optD) optD.innerHTML = q.dHtml || "";
+          if (correctSel) correctSel.value = q.correctOpt || "A";
+          if (marksInp) marksInp.value = q.marks || "1";
+        }
+      });
     }
   } catch (err) {
     console.error("Draft restore error:", err);
   }
 }
+
+// Global auto-save listeners (typing or changing values)
+document.addEventListener("input", (e) => {
+  if (e.target.closest("#testBuilderForm, .question-builder")) {
+    saveTeacherDraft();
+  }
+});
+
+document.addEventListener("change", (e) => {
+  if (e.target.closest("#testBuilderForm, .question-builder")) {
+    saveTeacherDraft();
+  }
+});
   /* =========================================================
    SECURITY & ANTI-CHEATING
 ========================================================= */
@@ -3939,15 +3948,27 @@ async function showTeacherDashboard() {
                 "Create your first examination."
               )
         }
-
-      </div>
+</div>
     `;
+
+    // Teacher page reload hone par draft check karein
+    const savedDraft = localStorage.getItem("tms_teacher_exam_draft");
+    if (savedDraft) {
+      setTimeout(() => {
+        if (confirm("Aapka ek pichla na-mukammal test draft mojood hai. Kya aap usay poora karna chahte hain?")) {
+          showTeacherCreate();
+        } else {
+          localStorage.removeItem("tms_teacher_exam_draft");
+        }
+      }, 300);
+    }
 
   } finally {
 
     hideLoader();
   }
 }
+  
 
 
 /* =========================================================
@@ -4093,14 +4114,13 @@ function showTeacherCreate() {
     );
 
 addQuestion();
-  populateClassDropdown();
+  await populateClassDropdown();
 
-  // STEP 4: Agar pichla draft mojood ho to popup puch kar restore karein
   setTimeout(() => {
     restoreTeacherDraft();
-  }, 100);
+  }, 150);
 }
-async function populateClassDropdown() {
+  async function populateClassDropdown() {
   const classSelect = document.getElementById("testClass");
   if (!classSelect) return;
 
