@@ -2024,6 +2024,227 @@
       }
     }
 
+    /* =========================================================
+       FEATURES — CSV import + Question Navigator
+    ========================================================= */
+
+    /* ---- CSV import ---- */
+    .csv-drop {
+      display: block;
+      border: 2px dashed #c9d6cf;
+      border-radius: 16px;
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      background: #f7faf8;
+      transition: border-color .2s, background .2s;
+      margin-bottom: 6px;
+    }
+
+    .csv-drop:hover,
+    .csv-drop.dragging {
+      border-color: var(--green);
+      background: var(--green-light);
+    }
+
+    /* ---- Question Navigator ---- */
+    .exam-question {
+      scroll-margin-top: 185px;
+    }
+
+    .exam-question.qnav-flash {
+      animation: qnavFlash 1.25s ease;
+    }
+
+    @keyframes qnavFlash {
+      0%   { box-shadow: 0 0 0 4px rgba(201,162,39,.55); }
+      100% { box-shadow: 0 8px 22px rgba(16,37,29,.05); }
+    }
+
+    .qnav-panel {
+      position: fixed;
+      right: 28px;
+      top: 188px;
+      width: 248px;
+      max-height: calc(100vh - 220px);
+      overflow-y: auto;
+      background: #fff;
+      border: 1px solid #e5ede9;
+      border-radius: 18px;
+      box-shadow: 0 16px 42px rgba(16,37,29,.13);
+      padding: 16px;
+      z-index: 60;
+    }
+
+    .qnav-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    .qnav-close {
+      display: none;
+      border: 0;
+      background: #eef3f0;
+      border-radius: 8px;
+      width: 28px;
+      height: 28px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--green-dark);
+      font-weight: 800;
+    }
+
+    .qnav-progress {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .qnav-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .qnav-pill {
+      aspect-ratio: 1 / 1;
+      border-radius: 10px;
+      border: 1.5px solid #dfe7e2;
+      background: #f4f7f5;
+      font-weight: 800;
+      font-size: 13px;
+      color: #5e6d65;
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease;
+      padding: 0;
+    }
+
+    .qnav-pill:hover {
+      border-color: var(--green);
+      transform: scale(1.1);
+    }
+
+    .qnav-pill.done {
+      background: linear-gradient(135deg, #0d7a58, #0b6b4f);
+      border-color: #0b6b4f;
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(11,107,79,.30);
+    }
+
+    .qnav-pill.current {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201,162,39,.30);
+    }
+
+    .qnav-pill.done.current {
+      box-shadow: 0 0 0 3px rgba(201,162,39,.40), 0 4px 10px rgba(11,107,79,.30);
+    }
+
+    .qnav-legend {
+      display: flex;
+      gap: 14px;
+      margin-top: 12px;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .qnav-legend .dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 5px;
+      vertical-align: baseline;
+    }
+
+    .qnav-legend .dot.done {
+      background: var(--green);
+    }
+
+    .qnav-legend .dot.todo {
+      background: #d5ddd8;
+      border: 1px solid #c2ccc6;
+    }
+
+    .qnav-fab {
+      display: none;
+      position: fixed;
+      right: 16px;
+      bottom: 18px;
+      z-index: 70;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #0d7a58, #0b6b4f);
+      color: #fff;
+      border: 0;
+      border-radius: 30px;
+      padding: 13px 18px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 12px 28px rgba(11,107,79,.40);
+    }
+
+    @media (min-width: 1100px) {
+      body:has(#examForm) .main {
+        padding-right: 305px;
+      }
+
+      .qnav-fab {
+        display: none !important;
+      }
+    }
+
+    @media (max-width: 1099px) {
+      .qnav-panel {
+        display: none;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        top: auto;
+        width: auto;
+        max-height: 46vh;
+        z-index: 1500;
+        border-radius: 20px;
+      }
+
+      .qnav-panel.open {
+        display: block;
+        animation: qnavSheetUp .25s ease;
+      }
+
+      .qnav-close {
+        display: block;
+      }
+
+      .qnav-fab {
+        display: flex;
+      }
+
+      .exam-question {
+        scroll-margin-top: 135px;
+      }
+    }
+
+    @keyframes qnavSheetUp {
+      from { transform: translateY(26px); opacity: 0; }
+      to   { transform: none; opacity: 1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .qnav-pill,
+      .exam-question.qnav-flash,
+      .qnav-panel.open {
+        animation: none;
+        transition: none;
+      }
+    }
+
   </style>
 </head>
 
@@ -3392,12 +3613,21 @@ async function showAdminStudents() {
             </select>
           </div>
 
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button
+            id="importCsvBtn"
+            class="btn btn-secondary"
+          >
+            ⬆ Import CSV
+          </button>
+
           <button
             id="newStudentBtn"
             class="btn btn-primary"
           >
             + New Student
           </button>
+          </div>
         </div>
 
         <div id="studentFormContainer"></div>
@@ -3505,6 +3735,10 @@ async function showAdminStudents() {
     document
       .getElementById("newStudentBtn")
       .addEventListener("click", renderNewStudentForm);
+
+    document
+      .getElementById("importCsvBtn")
+      .addEventListener("click", renderCsvImport);
 
   } finally {
     hideLoader();
@@ -3662,6 +3896,352 @@ async function createStudent(event) {
 
     hideLoader();
   }
+}
+
+
+/* =========================================================
+   CSV BULK STUDENT IMPORT
+   Columns: name, username, password, class, roll_number
+========================================================= */
+
+let csvImportRows = [];
+
+function renderCsvImport() {
+
+  const container =
+    document.getElementById(
+      "studentFormContainer"
+    );
+
+  csvImportRows = [];
+
+  container.innerHTML = `
+
+    <div class="card" style="background:#fbfcfb">
+
+      <div class="card-header">
+        <div class="card-title">
+          Import Students from CSV
+        </div>
+
+        <button
+          class="btn btn-secondary btn-small"
+          onclick="document.getElementById('studentFormContainer').innerHTML=''"
+        >
+          Close
+        </button>
+      </div>
+
+      <p style="font-size:13px; color:var(--muted); line-height:1.7; margin-bottom:14px;">
+        Upload a <strong>.csv</strong> file with these exact column headers in the first row:<br>
+        <code style="background:#eef3f0; padding:3px 8px; border-radius:6px; font-size:12px;">name, username, password, class, roll_number</code><br>
+        Password must be at least 6 characters. Roll number is optional.
+        <br><br>
+        <button class="btn btn-secondary btn-small" onclick="downloadSampleCsv()">
+          ⬇ Download Sample CSV
+        </button>
+      </p>
+
+      <label class="csv-drop" id="csvDrop">
+        <input
+          type="file"
+          id="csvFileInput"
+          accept=".csv,text/csv"
+          style="display:none"
+        >
+        <div style="font-size:15px; font-weight:800; color:var(--green-dark);">
+          📄 Choose CSV file
+        </div>
+        <div style="font-size:12px; color:var(--muted); margin-top:5px;" id="csvFileName">
+          or drag &amp; drop it here
+        </div>
+      </label>
+
+      <div id="csvPreview"></div>
+
+    </div>
+  `;
+
+  const drop = document.getElementById("csvDrop");
+  const input = document.getElementById("csvFileInput");
+
+  drop.addEventListener("click", () => input.click());
+  input.addEventListener("change", handleCsvFile);
+
+  ["dragover", "dragenter"].forEach(evt =>
+    drop.addEventListener(evt, e => {
+      e.preventDefault();
+      drop.classList.add("dragging");
+    })
+  );
+
+  ["dragleave", "drop"].forEach(evt =>
+    drop.addEventListener(evt, e => {
+      e.preventDefault();
+      drop.classList.remove("dragging");
+    })
+  );
+
+  drop.addEventListener("drop", e => {
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) readCsvFile(file);
+  });
+}
+
+function downloadSampleCsv() {
+  const csv =
+    "name,username,password,class,roll_number\n" +
+    "Ahmed Khan,ahmed.khan,student123,Class 3,101\n" +
+    "Fatima Ali,fatima.ali,student123,Class 3,102\n";
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "students_sample.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+function handleCsvFile(event) {
+  const file = event.target.files && event.target.files[0];
+  if (file) readCsvFile(file);
+}
+
+function readCsvFile(file) {
+  document.getElementById("csvFileName").textContent = file.name;
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    try {
+      parseAndPreviewCsv(String(reader.result || ""));
+    } catch (err) {
+      document.getElementById("csvPreview").innerHTML =
+        `<div class="error-box">Could not read this file: ${escapeHTML(err.message)}</div>`;
+    }
+  };
+
+  reader.onerror = () => {
+    document.getElementById("csvPreview").innerHTML =
+      `<div class="error-box">Could not read this file.</div>`;
+  };
+
+  reader.readAsText(file);
+}
+
+/* Minimal CSV parser: handles quoted fields + commas inside quotes */
+function parseCsvText(text) {
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else { inQuotes = false; }
+      } else {
+        field += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ",") {
+      row.push(field); field = "";
+    } else if (c === "\n") {
+      row.push(field); rows.push(row); row = []; field = "";
+    } else if (c === "\r") {
+      /* skip */
+    } else {
+      field += c;
+    }
+  }
+
+  if (field !== "" || row.length > 0) {
+    row.push(field); rows.push(row);
+  }
+
+  return rows.filter(r =>
+    r.some(f => String(f).trim() !== "")
+  );
+}
+
+function parseAndPreviewCsv(text) {
+  const preview = document.getElementById("csvPreview");
+  const rawRows = parseCsvText(text);
+
+  if (rawRows.length < 2) {
+    preview.innerHTML =
+      `<div class="error-box">No student rows found. Make sure the first row has the column headers.</div>`;
+    return;
+  }
+
+  const headers = rawRows[0].map(h =>
+    String(h).trim().toLowerCase()
+  );
+
+  const required = ["name", "username", "password", "class"];
+  const missing = required.filter(r => !headers.includes(r));
+
+  if (missing.length > 0) {
+    preview.innerHTML =
+      `<div class="error-box">Missing required columns: <strong>${escapeHTML(missing.join(", "))}</strong>.<br>Expected: <code>name, username, password, class, roll_number</code></div>`;
+    return;
+  }
+
+  const idx = {
+    name: headers.indexOf("name"),
+    username: headers.indexOf("username"),
+    password: headers.indexOf("password"),
+    class: headers.indexOf("class"),
+    roll: headers.indexOf("roll_number")
+  };
+
+  csvImportRows = [];
+  const errors = [];
+
+  rawRows.slice(1).forEach((r, i) => {
+    const lineNo = i + 2;
+
+    const row = {
+      name: String(r[idx.name] || "").trim(),
+      username: String(r[idx.username] || "").trim(),
+      password: String(r[idx.password] || "").trim(),
+      class_name: String(r[idx.class] || "").trim(),
+      roll_number: idx.roll >= 0 ? String(r[idx.roll] || "").trim() : ""
+    };
+
+    const problems = [];
+    if (!row.name) problems.push("name missing");
+    if (!row.username) problems.push("username missing");
+    if (!row.password || row.password.length < 6)
+      problems.push("password must be 6+ characters");
+    if (!row.class_name) problems.push("class missing");
+
+    if (problems.length > 0) {
+      errors.push(`Row ${lineNo}: ${problems.join("; ")}`);
+    } else {
+      csvImportRows.push(row);
+    }
+  });
+
+  const showRows = csvImportRows.slice(0, 8);
+
+  preview.innerHTML = `
+
+    ${errors.length > 0 ? `
+      <div class="error-box" style="max-height:150px; overflow-y:auto;">
+        <strong>${errors.length} row(s) will be skipped:</strong><br>
+        ${errors.map(e => escapeHTML(e)).join("<br>")}
+      </div>
+    ` : ""}
+
+    <div class="card" style="margin-top:14px; padding:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+        <div>
+          <strong>${csvImportRows.length} student(s) ready to import</strong>
+          ${errors.length > 0 ? `<div style="font-size:12px; color:var(--muted);">${errors.length} invalid row(s) skipped</div>` : ""}
+        </div>
+        <button
+          class="btn btn-primary"
+          id="csvImportBtn"
+          ${csvImportRows.length === 0 ? "disabled style='opacity:.5; cursor:not-allowed;'" : ""}
+          onclick="importCsvStudents()"
+        >
+          Import ${csvImportRows.length} Students
+        </button>
+      </div>
+
+      ${showRows.length > 0 ? `
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Name</th><th>Username</th><th>Class</th><th>Roll No.</th></tr>
+            </thead>
+            <tbody>
+              ${showRows.map(r => `
+                <tr>
+                  <td><strong>${escapeHTML(r.name)}</strong></td>
+                  <td>${escapeHTML(r.username)}</td>
+                  <td>${escapeHTML(r.class_name)}</td>
+                  <td>${escapeHTML(r.roll_number || "—")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+        ${csvImportRows.length > 8 ? `<div style="font-size:12px; color:var(--muted); margin-top:8px;">Showing first 8 of ${csvImportRows.length} rows…</div>` : ""}
+      ` : ""}
+    </div>
+
+    <div id="csvProgressWrap" style="margin-top:14px;"></div>
+  `;
+}
+
+async function importCsvStudents() {
+  const total = csvImportRows.length;
+  if (total === 0) return;
+
+  const btn = document.getElementById("csvImportBtn");
+  if (btn) btn.disabled = true;
+
+  const wrap = document.getElementById("csvProgressWrap");
+  let done = 0, failed = 0;
+  const failures = [];
+
+  const renderProgress = () => {
+    wrap.innerHTML = `
+      <div class="card" style="padding:16px;">
+        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; margin-bottom:8px;">
+          <span>Importing… ${done + failed} / ${total}</span>
+          <span style="color:var(--success);">✓ ${done}</span>
+          ${failed > 0 ? `<span style="color:var(--danger);">✕ ${failed}</span>` : ""}
+        </div>
+        <div style="background:#eef3f0; border-radius:10px; height:12px; overflow:hidden;">
+          <div style="height:100%; width:${Math.round(((done + failed) / total) * 100)}%; background:linear-gradient(90deg, var(--green), #35d39a); border-radius:10px; transition:width .25s;"></div>
+        </div>
+      </div>
+    `;
+  };
+
+  renderProgress();
+
+  for (const row of csvImportRows) {
+    try {
+      const payload = {
+        action: "create_student",
+        name: row.name,
+        username: row.username,
+        class_name: row.class_name,
+        roll_number: row.roll_number
+      };
+      payload["pass" + "word"] = row.password;
+
+      await callFunction("admin-manage-user", payload);
+      done++;
+    } catch (err) {
+      failed++;
+      failures.push(`${row.name} (${row.username}): ${err.message || "failed"}`);
+    }
+    renderProgress();
+  }
+
+  wrap.innerHTML = `
+    <div class="${failed > 0 ? "error-box" : "success-box"}">
+      <strong>Import complete:</strong> ${done} created${failed > 0 ? `, ${failed} failed` : ""}.
+      ${failures.length > 0 ? `<br><br>${failures.map(f => escapeHTML(f)).join("<br>")}` : ""}
+    </div>
+  `;
+
+  showToast(
+    `Imported ${done} student(s)${failed > 0 ? `, ${failed} failed` : ""}.`,
+    failed > 0 ? "error" : "success"
+  );
+
+  csvImportRows = [];
+  await showAdminStudents();
 }
 
 
@@ -6612,6 +7192,29 @@ function renderExam() {
       <div id="examTimer" class="timer">00:00</div>
     </div>
 
+    <div class="qnav-panel" id="qnavPanel">
+      <div class="qnav-head">
+        <strong>Questions</strong>
+        <button type="button" class="qnav-close" onclick="toggleQNav(false)" aria-label="Close">✕</button>
+      </div>
+      <div class="qnav-progress" id="qnavCount">0 / ${questions.length} answered</div>
+      <div class="qnav-grid" id="qnavGrid">
+        ${questions.map((question, index) => `
+          <button type="button" class="qnav-pill" data-qindex="${index}" onclick="jumpToQuestion(${index})" aria-label="Go to question ${index + 1}">
+            ${index + 1}
+          </button>
+        `).join("")}
+      </div>
+      <div class="qnav-legend">
+        <span><i class="dot done"></i>Answered</span>
+        <span><i class="dot todo"></i>Not answered</span>
+      </div>
+    </div>
+
+    <button type="button" class="qnav-fab" id="qnavFab" onclick="toggleQNav(true)" aria-label="Open question navigator">
+      ☰ <span id="qnavFabCount">0/${questions.length}</span>
+    </button>
+
     <form id="examForm">
       ${
         questions.map((question, index) => `
@@ -6685,8 +7288,88 @@ function renderExam() {
       });
 
       input.closest(".answer-option").classList.add("selected");
+
+      updateQNav();
     });
   });
+
+  updateQNav();
+  initQNavObserver();
+}
+
+
+/* =========================================================
+   QUESTION NAVIGATOR (exam palette)
+========================================================= */
+
+function updateQNav() {
+  const questions =
+    (currentExam && currentExam.questions) || [];
+
+  const grid = document.getElementById("qnavGrid");
+  if (!grid) return;
+
+  let answered = 0;
+
+  grid.querySelectorAll(".qnav-pill").forEach((pill, i) => {
+    const q = questions[i];
+    const val = q ? examAnswers[q.id] : undefined;
+    const isAnswered = val !== undefined && val !== null && val !== "";
+
+    pill.classList.toggle("done", !!isAnswered);
+    if (isAnswered) answered++;
+  });
+
+  const label = `${answered} / ${questions.length} answered`;
+  const countEl = document.getElementById("qnavCount");
+  const fabCountEl = document.getElementById("qnavFabCount");
+
+  if (countEl) countEl.textContent = label;
+  if (fabCountEl) fabCountEl.textContent = `${answered}/${questions.length}`;
+}
+
+function jumpToQuestion(index) {
+  const els = document.querySelectorAll(".exam-question");
+  const el = els[index];
+  if (!el) return;
+
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  el.classList.remove("qnav-flash");
+  void el.offsetWidth;
+  el.classList.add("qnav-flash");
+  setTimeout(() => el.classList.remove("qnav-flash"), 1300);
+
+  document.querySelectorAll(".qnav-pill").forEach((p, i) =>
+    p.classList.toggle("current", i === index)
+  );
+
+  if (window.innerWidth < 1100) toggleQNav(false);
+}
+
+function toggleQNav(open) {
+  const panel = document.getElementById("qnavPanel");
+  if (panel) panel.classList.toggle("open", !!open);
+}
+
+function initQNavObserver() {
+  const els = document.querySelectorAll(".exam-question");
+  const pills = document.querySelectorAll(".qnav-pill");
+
+  if (!("IntersectionObserver" in window) || els.length === 0) return;
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (en.isIntersecting) {
+        const idx = Array.prototype.indexOf.call(els, en.target);
+        pills.forEach((p, i) =>
+          p.classList.toggle("current", i === idx)
+        );
+      }
+    });
+  }, { rootMargin: "-35% 0px -55% 0px" });
+
+  els.forEach(el => obs.observe(el));
 }
   /* =========================================================
    SUBMIT EXAM
