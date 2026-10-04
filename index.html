@@ -3114,11 +3114,11 @@ document
 
       currentUser = data.user;
 
-      // Supabase local session sync delay
-      await new Promise(res => setTimeout(res, 200));
+      // Role + dashboard data parallel mein load karein (tez login)
+      // currentRole mein is waqt selected tab ka role hai (guess)
+      showLoader("Loading dashboard...");
 
-      // 2. Role detect karein (safe fallback ke sath)
-      await determineRole();
+      await loadRoleAndDashboard(currentRole);
 
       loginScreen.classList.add("hidden");
       app.classList.remove("hidden");
@@ -3133,11 +3133,11 @@ document
       buildNavigation();
 
       if (currentRole === "admin") {
-        await showAdminDashboard();
+        await showAdminDashboard(true);
       } else if (currentRole === "teacher") {
-        await showTeacherDashboard();
+        await showTeacherDashboard(true);
       } else {
-        await showStudentDashboard();
+        await showStudentDashboard(true);
       }
 
       showToast("Signed in successfully.", "success");
@@ -3151,28 +3151,81 @@ document
     }
   });
   
-async function determineRole() {
-  try {
-    const data = await callFunction("portal-data", {
-      action: "get_profile"
-    });
+/* =========================================================
+   FAST LOGIN: role + dashboard data parallel mein load karein.
+   roleGuess = tab selection ya last saved role (sirf guess hai).
+   get_profile server se asal role confirm karta hai.
+========================================================= */
+async function loadRoleAndDashboard(roleGuess) {
 
-    if (data && data.success && data.role && data.profile) {
-      currentRole = data.role;
-      currentProfile = data.profile;
-      return;
+  const dashActions = {
+    admin: "admin_dashboard_summary",
+    teacher: "teacher_dashboard",
+    student: "student_dashboard"
+  };
+
+  const guess =
+    dashActions[roleGuess] ? roleGuess : "student";
+
+  // Dono calls ek sath: role verify + dashboard data
+  const [profileRes, dashRes] = await Promise.allSettled([
+    callFunction("portal-data", { action: "get_profile" }),
+    callFunction("portal-data", { action: dashActions[guess] })
+  ]);
+
+  // get_profile asal role batata hai (server authoritative hai)
+  if (profileRes.status === "fulfilled") {
+    const pd = profileRes.value;
+
+    if (pd && pd.success && pd.role && pd.profile) {
+      currentRole = pd.role;
+      currentProfile = pd.profile;
+    } else {
+      currentRole = guess;
     }
-  } catch (error) {
-    console.warn("portal-data warning, using active role tab:", error);
+  } else {
+    console.warn(
+      "get_profile failed, using guessed role:",
+      profileRes.reason
+    );
+    currentRole = guess;
   }
 
-  // Fallback role from selected UI tab
-  const activeTab = document.querySelector(".role-tab.active");
-  currentRole = activeTab ? activeTab.dataset.role : (currentRole || "student");
-  currentProfile = {
-    name: currentUser?.email?.split("@")[0] || "User",
-    username: currentUser?.email?.split("@")[0] || "User"
-  };
+  let dashData = null;
+
+  if (dashRes.status === "fulfilled" && currentRole === guess) {
+    // Guess sahi tha: parallel result use karein, dobara call nahi
+    dashData = dashRes.value;
+  } else {
+    // Tab ghalat tha ya optimistic call fail hui: sahi dashboard load karein
+    dashData =
+      await callFunction(
+        "portal-data",
+        { action: dashActions[currentRole] }
+      );
+  }
+
+  if (currentRole === "admin") {
+    adminData = dashData;
+    if (adminData && adminData.admin) {
+      currentProfile = adminData.admin;
+    }
+  } else if (currentRole === "teacher") {
+    teacherData = dashData;
+    if (teacherData && teacherData.teacher) {
+      currentProfile = teacherData.teacher;
+    }
+  } else {
+    currentRole = "student";
+    studentData = dashData;
+    if (studentData && studentData.student) {
+      currentProfile = studentData.student;
+    }
+  }
+
+  try {
+    localStorage.setItem("tms_last_role", currentRole);
+  } catch {}
 }
   
 /* =========================================================
@@ -3357,13 +3410,19 @@ async function refreshAdminData() {
    ADMIN DASHBOARD
 ========================================================= */
 
-async function showAdminDashboard() {
+async function showAdminDashboard(usePrefetched = false) {
 
   showLoader("Loading dashboard...");
 
   try {
 
-    await refreshAdminData();
+    if (usePrefetched && adminData) {
+      if (adminData.admin) {
+        currentProfile = adminData.admin;
+      }
+    } else {
+      await refreshAdminData();
+    }
 
     const students =
       adminData.students || [];
@@ -5287,13 +5346,19 @@ async function refreshTeacherData() {
 }
 
 
-async function showTeacherDashboard() {
+async function showTeacherDashboard(usePrefetched = false) {
 
   showLoader("Loading teacher dashboard...");
 
   try {
 
-    await refreshTeacherData();
+    if (usePrefetched && teacherData) {
+      if (teacherData.teacher) {
+        currentProfile = teacherData.teacher;
+      }
+    } else {
+      await refreshTeacherData();
+    }
 
     const tests =
       teacherData.tests || [];
@@ -6732,13 +6797,19 @@ async function refreshStudentData() {
    STUDENT DASHBOARD
 ========================================================= */
 
-async function showStudentDashboard() {
+async function showStudentDashboard(usePrefetched = false) {
 
   showLoader("Loading student dashboard...");
 
   try {
 
-    await refreshStudentData();
+    if (usePrefetched && studentData) {
+      if (studentData.student) {
+        currentProfile = studentData.student;
+      }
+    } else {
+      await refreshStudentData();
+    }
 
     const tests =
       studentData.tests || [];
@@ -7913,7 +7984,12 @@ async function checkExistingSession() {
     currentUser =
       session.user;
 
-    await determineRole();
+    let lastRole = "student";
+    try {
+      lastRole = localStorage.getItem("tms_last_role") || "student";
+    } catch {}
+
+    await loadRoleAndDashboard(lastRole);
 
     loginScreen.classList.add("hidden");
     app.classList.remove("hidden");
@@ -7928,13 +8004,13 @@ async function checkExistingSession() {
     buildNavigation();
 
     if (currentRole === "admin") {
-      await showAdminDashboard();
+      await showAdminDashboard(true);
     } else if (currentRole === "teacher") {
-      await showTeacherDashboard();
+      await showTeacherDashboard(true);
     } else {
       const isExamRestored = checkExamRecovery();
       if (!isExamRestored) {
-        await showStudentDashboard();
+        await showStudentDashboard(true);
       }
     }
     
