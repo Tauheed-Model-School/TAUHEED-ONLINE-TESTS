@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tauheed Model School — Online Portal</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- MathLive: Mathematical Formula Editor -->
-<script src="https://unpkg.com/mathlive"></script>
-  <!-- KaTeX for 100% Guaranteed Math Equations -->
+  <!-- Preconnect: external CDNs resolve faster -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://ykvegtlzgzyfwmlvmpti.supabase.co" crossorigin>
+
+  <!-- KaTeX CSS (needed for math rendering) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -2456,6 +2456,13 @@
 
   <div id="toast" class="toast hidden"></div>
 
+  <!-- Vendor scripts moved to end of body so the page paints first.
+       Order preserved: supabase must load before the app script below. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- MathLive: Mathematical Formula Editor (pinned version, no redirect) -->
+  <script src="https://cdn.jsdelivr.net/npm/mathlive@0.111.0/mathlive.min.js"></script>
+  <!-- KaTeX for 100% Guaranteed Math Equations -->
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 
 <script>
 /* =========================================================
