@@ -1945,6 +1945,7 @@ let currentExam = null;
 let examAnswers = {};
 let examTimer = null;
 let examSecondsRemaining = 0;
+let examSubmitting = false;
 
 let modalResolve = null;
   /* =========================================================
@@ -2122,6 +2123,7 @@ document.addEventListener("change", (e) => {
 ========================================================= */
 let tabSwitchWarnings = 0;
 const MAX_WARNINGS = 3;
+let antiCheatActive = false;
 
 function sanitizeRichContent(rawHtml) {
   if (!rawHtml) return "";
@@ -2144,6 +2146,8 @@ function sanitizeRichContent(rawHtml) {
 }
 
 function initAntiCheating() {
+  if (antiCheatActive) return;
+  antiCheatActive = true;
   tabSwitchWarnings = 0;
   window.addEventListener("contextmenu", preventInspect);
   window.addEventListener("copy", preventAction);
@@ -2153,6 +2157,7 @@ function initAntiCheating() {
 }
 
 function removeAntiCheating() {
+  antiCheatActive = false;
   window.removeEventListener("contextmenu", preventInspect);
   window.removeEventListener("copy", preventAction);
   window.removeEventListener("cut", preventAction);
@@ -2207,10 +2212,18 @@ function checkExamRecovery() {
   const targetEnd = Number(savedEndTime);
   const remaining = Math.round((targetEnd - Date.now()) / 1000);
 
-  // Agar waqt khatam ho chuka hai to storage saaf karein
+  // Agar waqt khatam ho chuka hai to saved answers submit karein (discard nahi)
   if (remaining <= 0) {
-    cleanExamStorage();
-    return false;
+    try {
+      currentExam = JSON.parse(savedData);
+      examAnswers = savedAnswers ? JSON.parse(savedAnswers) : {};
+      showToast("Time had expired — submitting your saved answers.", "error");
+      submitExam(true);
+    } catch (e) {
+      console.error("Exam recovery failed:", e);
+      cleanExamStorage();
+    }
+    return true;
   }
 
   try {
@@ -2313,7 +2326,7 @@ function renderMathContent(content) {
     }
   };
 
-  let str = String(content);
+  let str = String(sanitizeRichContent(content));
 
   // 1. $$ formula $$ parse karein
   str = str.replace(/\$\$([\s\S]*?)\$\$/g, (m, latex) => {
@@ -6390,6 +6403,9 @@ async function submitExam(
   automatic = false
 ) {
 
+  if (examSubmitting) return;
+  examSubmitting = true;
+
   if (!automatic) {
 
     const confirmed =
@@ -6399,7 +6415,7 @@ async function submitExam(
         "Submit Test"
       );
 
-    if (!confirmed) return;
+    if (!confirmed) { examSubmitting = false; return; }
   }
 
 
@@ -6444,11 +6460,7 @@ async function submitExam(
       );
 
 cleanExamStorage();
-showResultScreen(result);
-    
-    showResultScreen(
-      result
-    );
+    showResultScreen(result);
 
   } catch (error) {
 
@@ -6459,6 +6471,7 @@ showResultScreen(result);
 
   } finally {
 
+    examSubmitting = false;
     hideLoader();
   }
 }
