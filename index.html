@@ -7366,6 +7366,7 @@ let perfSubTab = 'rankings';
 let perfBiseTab = '10th';
 let perfShowTeacherForm = false;
 let perfShowBiseForm = false;
+let perfNeedsMigration = false; // true when perf_class_subjects table is missing
 let perfTermSel = '1st';
 
 function perf$(id) { return document.getElementById(id); }
@@ -7449,23 +7450,33 @@ function perfTeacherById(id) {
 async function perfLoadAll() {
   showLoader('Loading performance data...');
   try {
-    const [tRes, trRes, aRes, bRes, sRes] = await Promise.all([
+    const [tRes, trRes, aRes, bRes] = await Promise.all([
       supabaseClient.from('perf_teachers').select('*').eq('active', true).order('name'),
       supabaseClient.from('perf_term_results').select('*').eq('academic_year', perfYear),
       supabaseClient.from('perf_attendance').select('*').eq('academic_year', perfYear),
       supabaseClient.from('perf_bise_results').select('*').eq('academic_year', perfYear),
-      supabaseClient.from('perf_class_subjects').select('*').order('class_assigned').order('subject'),
     ]);
     if (tRes.error) throw tRes.error;
     if (trRes.error) throw trRes.error;
     if (aRes.error) throw aRes.error;
     if (bRes.error) throw bRes.error;
-    if (sRes.error) throw sRes.error;
     perfTeachers = tRes.data || [];
     perfTermResults = trRes.data || [];
     perfAttendance = aRes.data || [];
     perfBise = bRes.data || [];
-    perfClassSubjects = sRes.data || [];
+    // subjects table exists only after migration 003 — keep the tab
+    // usable even before the migration is run
+    perfNeedsMigration = false;
+    try {
+      const sRes = await supabaseClient.from('perf_class_subjects')
+        .select('*').order('class_assigned').order('subject');
+      if (sRes.error) throw sRes.error;
+      perfClassSubjects = sRes.data || [];
+    } catch (subErr) {
+      console.warn('perf_class_subjects unavailable:', subErr);
+      perfClassSubjects = [];
+      perfNeedsMigration = true;
+    }
     perfRender();
   } catch (err) {
     console.error(err);
@@ -7747,8 +7758,15 @@ function perfRenderSubjects(body) {
   const classes = perfDistinctClasses();
   if (!perfSubjClass && classes.length) perfSubjClass = classes[0];
   let html = '<div class="perf-card"><h3>Class Subjects</h3>' +
-    '<p class="perf-sub">Define which subjects each class has. A teacher with subject "all" (class teacher) automatically covers every subject of their class.</p>' +
-    '<div class="perf-topbar"><div class="perf-yearbox"><label>Class</label>' +
+    '<p class="perf-sub">Define which subjects each class has. A teacher with subject "all" (class teacher) automatically covers every subject of their class.</p>';
+  if (perfNeedsMigration) {
+    html += '<p class="perf-empty" style="border:1px solid #b91c1c;border-radius:8px;padding:10px">' +
+      '<b>Database update needed:</b> please run migration 003 in the Supabase SQL Editor first — ' +
+      'the Subjects tab will not work until then.</p>';
+    body.innerHTML = html + '</div>';
+    return;
+  }
+  html += '<div class="perf-topbar"><div class="perf-yearbox"><label>Class</label>' +
     '<select id="perfSubjClassSel" class="perf-input" style="width:auto;min-width:140px" onchange="perfSubjClassChanged()">' +
     classes.map(c => '<option value="' + escapeHTML(c) + '"' + (perfSubjClass === c ? ' selected' : '') + '>' +
       escapeHTML(c) + '</option>').join('') +
@@ -7830,8 +7848,15 @@ let perfEntryPaper = {};    // {subject: total}
 
 function perfRenderTerms(body) {
   let html = '<div class="perf-card"><h3>Term Results Entry</h3>' +
-    '<p class="perf-sub">Select class and term, then enter every student\'s marks subject-wise — averages calculate automatically.</p>' +
-    '<div class="perf-topbar">' +
+    '<p class="perf-sub">Select class and term, then enter every student\'s marks subject-wise — averages calculate automatically.</p>';
+  if (perfNeedsMigration) {
+    html += '<p class="perf-empty" style="border:1px solid #b91c1c;border-radius:8px;padding:10px">' +
+      '<b>Database update needed:</b> please run migration 003 in the Supabase SQL Editor first — ' +
+      'Term Results will not save correctly until then.</p>';
+    body.innerHTML = html + '</div>';
+    return;
+  }
+  html += '<div class="perf-topbar">' +
     '<div class="perf-yearbox"><label>Term</label>' +
     '<select id="perfTermSelect" class="perf-input" style="width:auto" onchange="perfEntryTermChanged()">' +
     ['1st', '2nd', 'final'].map(t =>
