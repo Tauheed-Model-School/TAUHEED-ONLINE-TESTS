@@ -7722,7 +7722,7 @@ function perfRenderTerms(body) {
   const byTeacher = {};
   perfTermResults.filter(r => r.term === perfTermSel).forEach(r => { byTeacher[r.teacher_id] = r; });
   let html = '<div class="perf-card"><h3>Term Results Entry</h3>' +
-    '<p class="perf-sub">Enter each teacher\'s class average (percentage) for the selected term. Saving overwrites the previous value.</p>' +
+    '<p class="perf-sub">Enter the class\'s obtained and total marks for the selected term — the average % is calculated automatically. Saving overwrites the previous value.</p>' +
     '<div class="perf-topbar"><div class="perf-yearbox"><label>Term</label>' +
     '<select id="perfTermSelect" class="perf-input" style="width:auto" onchange="perfTermChanged()">' +
     ['1st', '2nd', 'final'].map(t =>
@@ -7735,14 +7735,18 @@ function perfRenderTerms(body) {
     html += '<p class="perf-empty">Add teachers first.</p>';
   } else {
     html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
-      '<th>Teacher</th><th>Class</th><th>Class avg %</th><th>Students appeared</th></tr></thead><tbody>';
+      '<th>Teacher</th><th>Class</th><th>Obtained</th><th>Total</th><th>Avg %</th><th>Students</th></tr></thead><tbody>';
     perfTeachers.forEach(t => {
       const r = byTeacher[t.id] || {};
       html += '<tr data-teacher="' + t.id + '">' +
         '<td><b>' + escapeHTML(t.name) + '</b><br><span class="perf-sub">' + escapeHTML(t.subject) + '</span></td>' +
         '<td>' + escapeHTML(t.class_assigned) + '</td>' +
-        '<td><input type="number" min="0" max="100" step="0.01" class="perf-input perf-num" data-f="avg" value="' +
-        (r.class_avg != null ? r.class_avg : '') + '" placeholder="—"></td>' +
+        '<td><input type="number" min="0" step="0.01" class="perf-input perf-num" data-f="obtained" value="' +
+        (r.obtained_marks != null ? r.obtained_marks : '') + '" placeholder="—" oninput="perfAvgPreview(this)"></td>' +
+        '<td><input type="number" min="0" step="0.01" class="perf-input perf-num" data-f="total" value="' +
+        (r.total_marks != null ? r.total_marks : '') + '" placeholder="—" oninput="perfAvgPreview(this)"></td>' +
+        '<td><span class="perf-score" data-f="avgprev">' +
+        (r.class_avg != null ? Number(r.class_avg).toFixed(2) + '%' : '—') + '</span></td>' +
         '<td><input type="number" min="0" step="1" class="perf-input perf-num" data-f="appeared" value="' +
         (r.students_appeared != null ? r.students_appeared : '') + '" placeholder="—"></td></tr>';
     });
@@ -7756,27 +7760,47 @@ function perfTermChanged() {
   perfRender();
 }
 
+function perfAvgPreview(el) {
+  const tr = el.closest('tr');
+  if (!tr) return;
+  const o = parseFloat(tr.querySelector('[data-f=obtained]').value);
+  const t = parseFloat(tr.querySelector('[data-f=total]').value);
+  const prev = tr.querySelector('[data-f=avgprev]');
+  if (isFinite(o) && isFinite(t) && t > 0 && o >= 0 && o <= t) {
+    prev.textContent = (o / t * 100).toFixed(2) + '%';
+  } else {
+    prev.textContent = '—';
+  }
+}
+
 async function perfSaveTerms() {
   const rows = [];
   let bad = 0;
   document.querySelectorAll('#perfBody tr[data-teacher]').forEach(tr => {
-    const avgEl = tr.querySelector('[data-f=avg]');
+    const oEl = tr.querySelector('[data-f=obtained]');
+    const tEl = tr.querySelector('[data-f=total]');
     const appEl = tr.querySelector('[data-f=appeared]');
-    const avgRaw = avgEl.value.trim();
-    if (avgRaw === '') return;
-    const avg = Number(avgRaw);
-    if (!isFinite(avg) || avg < 0 || avg > 100) { bad++; avgEl.style.borderColor = '#b91c1c'; return; }
-    avgEl.style.borderColor = '';
+    const oRaw = oEl.value.trim(), tRaw = tEl.value.trim();
+    if (oRaw === '' && tRaw === '') return; // skip empty rows
+    const o = Number(oRaw), t = Number(tRaw);
+    if (!isFinite(o) || !isFinite(t) || o < 0 || t <= 0 || o > t) {
+      bad++;
+      oEl.style.borderColor = '#b91c1c'; tEl.style.borderColor = '#b91c1c';
+      return;
+    }
+    oEl.style.borderColor = ''; tEl.style.borderColor = '';
     rows.push({
       teacher_id: tr.getAttribute('data-teacher'),
       academic_year: perfYear,
       term: perfTermSel,
-      class_avg: avg,
+      class_avg: Math.round((o / t * 100) * 100) / 100,
+      obtained_marks: o,
+      total_marks: t,
       students_appeared: appEl.value.trim() === '' ? null : parseInt(appEl.value, 10),
     });
   });
-  if (bad) { showToast(bad + ' row(s) have an invalid average (0–100).', 'error'); return; }
-  if (!rows.length) { showToast('Nothing to save — fill at least one average.', 'error'); return; }
+  if (bad) { showToast(bad + ' row(s) invalid — obtained cannot exceed total.', 'error'); return; }
+  if (!rows.length) { showToast('Nothing to save — fill at least one row.', 'error'); return; }
   showLoader('Saving term results...');
   try {
     const { error } = await supabaseClient.from('perf_term_results')
