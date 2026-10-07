@@ -7829,6 +7829,12 @@ async function perfDelSubject(id) {
 }
 
 /* responsible teacher for a class+subject ('all' = class teacher covers it) */
+function perfDistinctClasses() {
+  const seen = {};
+  perfTeachers.forEach(t => { if (t.class_assigned) seen[t.class_assigned] = true; });
+  return Object.keys(seen).sort();
+}
+
 function perfTeacherFor(classAssigned, subject) {
   const ts = perfTeachers.filter(t => t.class_assigned === classAssigned);
   const sl = (subject || '').trim().toLowerCase();
