@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tauheed Model School — Online Portal</title>
 
-  <!-- Preconnect: external CDNs resolve faster -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="preconnect" href="https://ykvegtlzgzyfwmlvmpti.supabase.co" crossorigin>
-
-  <!-- KaTeX CSS (needed for math rendering) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- MathLive: Mathematical Formula Editor -->
+<script src="https://unpkg.com/mathlive"></script>
+  <!-- KaTeX for 100% Guaranteed Math Equations -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -1661,591 +1661,45 @@
       }
     }
 
-    /* =========================================================
-       PREMIUM REDESIGN PART 2 — Dashboards (2026-10-03)
-       Pure CSS overrides. No JS or HTML changes: every
-       function keeps working exactly as before.
-    ========================================================= */
-
-    /* ---- Topbar ---- */
-    .topbar {
-      background: linear-gradient(180deg, #ffffff 0%, #fafdfb 100%);
-      box-shadow: 0 3px 16px rgba(11,107,79,.08);
-      border-bottom: 1px solid #e0e9e4;
-    }
-
-    .brand-icon {
-      background: linear-gradient(135deg, #0d7a58, #0b6b4f);
-      border: 1.5px solid rgba(201,162,39,.55);
-      box-shadow: 0 6px 14px rgba(11,107,79,.28);
-    }
-
-    .brand {
-      letter-spacing: -.3px;
-    }
-
-    .user-pill {
-      background: linear-gradient(135deg, #0d7a58, #0b6b4f);
-      color: #fff;
-      box-shadow: 0 4px 12px rgba(11,107,79,.25);
-      border: 1px solid rgba(255,255,255,.25);
-    }
-
-    /* ---- Sidebar navigation ---- */
-    .sidebar {
-      background: linear-gradient(180deg, #ffffff 0%, #f6faf8 100%);
-    }
-
-    .nav-btn {
-      position: relative;
-      border: 1px solid transparent;
-      transition: background .22s ease, color .22s ease, transform .22s ease, box-shadow .22s ease;
-    }
-
-    .nav-btn:hover {
-      background: #edf4f0;
-      color: var(--green-dark);
-      transform: translateX(3px);
-    }
-
-    .nav-btn.active {
-      background: linear-gradient(135deg, #0d7a58, #0b6b4f 70%);
-      color: #fff;
-      box-shadow: 0 8px 18px rgba(11,107,79,.30);
-    }
-
-    .nav-btn.active::before {
-      content: "";
-      position: absolute;
-      left: -15px;
-      top: 9px;
-      bottom: 9px;
-      width: 4px;
-      border-radius: 4px;
-      background: linear-gradient(180deg, var(--gold), #e8cf7a);
-    }
-
-    /* ---- Page headings ---- */
-    .page-title {
-      letter-spacing: -.5px;
-      font-weight: 850;
-    }
-
-    .page-subtitle {
-      margin-bottom: 26px;
-    }
-
-    /* ---- Stat cards ---- */
-    .stat-card {
-      position: relative;
-      overflow: hidden;
-      border: 1px solid #e5ede9;
-      box-shadow: 0 8px 24px rgba(16,37,29,.06);
-      transition: transform .22s ease, box-shadow .22s ease;
-    }
-
-    .stat-card::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, var(--green), #35d39a);
-    }
-
-    .stat-card:nth-child(2)::before {
-      background: linear-gradient(90deg, var(--gold), #e8cf7a);
-    }
-
-    .stat-card:nth-child(3)::before {
-      background: linear-gradient(90deg, #0e8a64, #0b6b4f);
-    }
-
-    .stat-card:nth-child(4)::before {
-      background: linear-gradient(90deg, #b8912a, var(--gold));
-    }
-
-    .stat-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 14px 34px rgba(16,37,29,.10);
-    }
-
-    .stat-label {
-      text-transform: uppercase;
-      letter-spacing: .07em;
-      font-size: 11px;
-    }
-
-    /* ---- Generic cards ---- */
-    .card {
-      border: 1px solid #e5ede9;
-      border-radius: 20px;
-      box-shadow: 0 10px 28px rgba(16,37,29,.06);
-    }
-
-    .card-title {
-      letter-spacing: -.3px;
-    }
-
-    /* ---- Tables ---- */
-    .table-wrap {
-      border: 1px solid #e7eeea;
-      border-radius: 14px;
-      overflow-x: auto;
-    }
-
-    th {
-      background: #f1f6f3;
-      color: #5c6f65;
-      padding: 12px;
-      border-bottom: 1px solid #dfe8e3;
-      white-space: nowrap;
-    }
-
-    td {
-      padding: 14px 12px;
-    }
-
-    tbody tr {
-      transition: background .15s ease;
-    }
-
-    tbody tr:hover td {
-      background: #f5faf7;
-    }
-
-    .badge {
-      padding: 6px 11px;
-      letter-spacing: .02em;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,.03);
-    }
-
-    /* ---- Test cards ---- */
-    .test-card {
-      position: relative;
-      overflow: hidden;
-      border: 1px solid #e5ede9;
-      box-shadow: 0 8px 22px rgba(16,37,29,.05);
-      transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
-    }
-
-    .test-card::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--green), #35d39a, var(--gold));
-      opacity: 0;
-      transition: opacity .22s ease;
-    }
-
-    .test-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 18px 42px rgba(11,107,79,.14);
-      border-color: rgba(11,107,79,.35);
-    }
-
-    .test-card:hover::before {
-      opacity: 1;
-    }
-
-    .test-subject {
-      display: inline-block;
-      background: var(--green-light);
-      color: var(--green-dark);
-      padding: 4px 11px;
-      border-radius: 20px;
-      margin-bottom: 10px;
-    }
-
-    /* ---- Exam screen ---- */
-    .exam-header {
-      border: 1px solid #e5ede9;
-      box-shadow: 0 10px 28px rgba(16,37,29,.08);
-    }
-
-    .timer {
-      background: linear-gradient(135deg, #fff6e0, #ffedb6);
-      border: 1px solid #eed9a8;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.65), 0 4px 12px rgba(155,101,0,.12);
-    }
-
-    .timer.danger {
-      background: linear-gradient(135deg, #ffe9e6, #ffd7d2);
-      border-color: #f0aca4;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 4px 12px rgba(192,57,43,.14);
-    }
-
-    .exam-question {
-      border: 1px solid #e5ede9;
-      box-shadow: 0 8px 22px rgba(16,37,29,.05);
-    }
-
-    .answer-option {
-      border-width: 1.5px;
-      transition: border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease;
-    }
-
-    .answer-option:hover {
-      border-color: var(--green);
-      background: #f1faf5;
-      transform: translateX(3px);
-    }
-
-    .answer-option.selected {
-      border-color: var(--green);
-      background: linear-gradient(135deg, #eaf7f1, #dcf1e7);
-      box-shadow: 0 6px 16px rgba(11,107,79,.16);
-    }
-
-    /* ---- Result hero ---- */
-    .result-hero {
-      position: relative;
-      overflow: hidden;
-      background:
-        radial-gradient(480px 220px at 18% 0%, rgba(201,162,39,.28), transparent 60%),
-        linear-gradient(135deg, #07402e, #0b6b4f 60%, #0e8a64);
-      box-shadow: 0 22px 55px rgba(11,107,79,.32);
-      border: 1px solid rgba(201,162,39,.30);
-    }
-
-    .result-hero::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-image: radial-gradient(rgba(255,255,255,.12) 1.2px, transparent 1.2px);
-      background-size: 20px 20px;
-      pointer-events: none;
-    }
-
-    .result-score {
-      text-shadow: 0 4px 20px rgba(0,0,0,.28);
-      position: relative;
-      z-index: 1;
-    }
-
-    .result-hero > * {
-      position: relative;
-      z-index: 1;
-    }
-
-    /* ---- Secondary / danger buttons ---- */
-    .btn-secondary {
-      background: #edf3f0;
-      border: 1px solid #dde6e1;
-    }
-
-    .btn-secondary:hover {
-      background: #e0eae4;
-    }
-
-    .btn-danger {
-      background: #fdecea;
-      border: 1px solid #f4cfc9;
-    }
-
-    .btn-danger:hover {
-      background: #fad9d4;
-    }
-
-    /* ---- Question builder ---- */
-    .question-builder {
-      border: 1px solid #e5ede9;
-      box-shadow: 0 6px 18px rgba(16,37,29,.045);
-    }
-
-    /* ---- Empty states & loader ---- */
-    .empty {
-      background: #f8faf9;
-      border: 1.5px dashed #d5e0da;
-      border-radius: 16px;
-    }
-
-    .loader-box {
-      border-radius: 16px;
-      box-shadow: 0 22px 55px rgba(0,0,0,.20);
-      border: 1px solid #e7eeea;
-    }
-
-    /* ---- Mobile dashboard polish ---- */
-    @media (max-width: 650px) {
-      .topbar {
-        background: #ffffff;
-      }
-
-      .sidebar {
-        border-top: 1px solid #dfe8e3;
-        box-shadow: 0 -8px 22px rgba(11,107,79,.10);
-        padding-bottom: env(safe-area-inset-bottom, 0px);
-        height: calc(60px + env(safe-area-inset-bottom, 0px));
-      }
-
-      .nav-btn.active {
-        background: linear-gradient(135deg, #0d7a58, #0b6b4f);
-        color: #fff;
-        box-shadow: 0 6px 14px rgba(11,107,79,.30);
-      }
-
-      .nav-btn.active::before {
-        display: none;
-      }
-
-      .nav-btn:hover {
-        transform: none;
-      }
-
-      .stat-card::before {
-        height: 3px;
-      }
-
-      .table-wrap {
-        border-radius: 12px;
-      }
-
-      .answer-option:hover {
-        transform: none;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .nav-btn,
-      .stat-card,
-      .test-card,
-      .answer-option {
-        transition: none;
-      }
-
-      .stat-card:hover,
-      .test-card:hover {
-        transform: none;
-      }
-    }
-
-    /* =========================================================
-       FEATURES — CSV import + Question Navigator
-    ========================================================= */
-
-    /* ---- CSV import ---- */
-    .csv-drop {
-      display: block;
-      border: 2px dashed #c9d6cf;
-      border-radius: 16px;
-      padding: 28px 20px;
-      text-align: center;
-      cursor: pointer;
-      background: #f7faf8;
-      transition: border-color .2s, background .2s;
-      margin-bottom: 6px;
-    }
-
-    .csv-drop:hover,
-    .csv-drop.dragging {
-      border-color: var(--green);
-      background: var(--green-light);
-    }
-
-    /* ---- Question Navigator ---- */
-    .exam-question {
-      scroll-margin-top: 185px;
-    }
-
-    .exam-question.qnav-flash {
-      animation: qnavFlash 1.25s ease;
-    }
-
-    @keyframes qnavFlash {
-      0%   { box-shadow: 0 0 0 4px rgba(201,162,39,.55); }
-      100% { box-shadow: 0 8px 22px rgba(16,37,29,.05); }
-    }
-
-    .qnav-panel {
-      position: fixed;
-      right: 28px;
-      top: 188px;
-      width: 248px;
-      max-height: calc(100vh - 220px);
-      overflow-y: auto;
-      background: #fff;
-      border: 1px solid #e5ede9;
-      border-radius: 18px;
-      box-shadow: 0 16px 42px rgba(16,37,29,.13);
-      padding: 16px;
-      z-index: 60;
-    }
-
-    .qnav-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-      font-size: 14px;
-    }
-
-    .qnav-close {
-      display: none;
-      border: 0;
-      background: #eef3f0;
-      border-radius: 8px;
-      width: 28px;
-      height: 28px;
-      font-size: 13px;
-      cursor: pointer;
-      color: var(--green-dark);
-      font-weight: 800;
-    }
-
-    .qnav-progress {
-      font-size: 12px;
-      color: var(--muted);
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-
-    .qnav-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 8px;
-    }
-
-    .qnav-pill {
-      aspect-ratio: 1 / 1;
-      border-radius: 10px;
-      border: 1.5px solid #dfe7e2;
-      background: #f4f7f5;
-      font-weight: 800;
-      font-size: 13px;
-      color: #5e6d65;
-      cursor: pointer;
-      transition: transform .15s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease;
-      padding: 0;
-    }
-
-    .qnav-pill:hover {
-      border-color: var(--green);
-      transform: scale(1.1);
-    }
-
-    .qnav-pill.done {
-      background: linear-gradient(135deg, #0d7a58, #0b6b4f);
-      border-color: #0b6b4f;
-      color: #fff;
-      box-shadow: 0 4px 10px rgba(11,107,79,.30);
-    }
-
-    .qnav-pill.current {
-      border-color: var(--gold);
-      box-shadow: 0 0 0 3px rgba(201,162,39,.30);
-    }
-
-    .qnav-pill.done.current {
-      box-shadow: 0 0 0 3px rgba(201,162,39,.40), 0 4px 10px rgba(11,107,79,.30);
-    }
-
-    .qnav-legend {
-      display: flex;
-      gap: 14px;
-      margin-top: 12px;
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 600;
-    }
-
-    .qnav-legend .dot {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      margin-right: 5px;
-      vertical-align: baseline;
-    }
-
-    .qnav-legend .dot.done {
-      background: var(--green);
-    }
-
-    .qnav-legend .dot.todo {
-      background: #d5ddd8;
-      border: 1px solid #c2ccc6;
-    }
-
-    .qnav-fab {
-      display: none;
-      position: fixed;
-      right: 16px;
-      bottom: 18px;
-      z-index: 70;
-      align-items: center;
-      gap: 8px;
-      background: linear-gradient(135deg, #0d7a58, #0b6b4f);
-      color: #fff;
-      border: 0;
-      border-radius: 30px;
-      padding: 13px 18px;
-      font-weight: 800;
-      font-size: 14px;
-      cursor: pointer;
-      box-shadow: 0 12px 28px rgba(11,107,79,.40);
-    }
-
-    @media (min-width: 1100px) {
-      body:has(#examForm) .main {
-        padding-right: 305px;
-      }
-
-      .qnav-fab {
-        display: none !important;
-      }
-    }
-
-    @media (max-width: 1099px) {
-      .qnav-panel {
-        display: none;
-        left: 12px;
-        right: 12px;
-        bottom: 12px;
-        top: auto;
-        width: auto;
-        max-height: 46vh;
-        z-index: 1500;
-        border-radius: 20px;
-      }
-
-      .qnav-panel.open {
-        display: block;
-        animation: qnavSheetUp .25s ease;
-      }
-
-      .qnav-close {
-        display: block;
-      }
-
-      .qnav-fab {
-        display: flex;
-      }
-
-      .exam-question {
-        scroll-margin-top: 135px;
-      }
-    }
-
-    @keyframes qnavSheetUp {
-      from { transform: translateY(26px); opacity: 0; }
-      to   { transform: none; opacity: 1; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .qnav-pill,
-      .exam-question.qnav-flash,
-      .qnav-panel.open {
-        animation: none;
-        transition: none;
-      }
-    }
-
-  </style>
+  
+/* Teacher Performance section (admin only) */
+.perf-card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:18px; margin-bottom:18px; }
+.perf-card h3 { margin:0 0 6px; color:#075c33; font-size:1.05rem; display:flex; align-items:center; gap:8px; }
+.perf-dot { width:11px; height:11px; border-radius:50%; background:#c9a227; display:inline-block; }
+.perf-sub { color:#6b7280; font-size:.83rem; margin:0 0 12px; }
+.perf-topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+.perf-yearbox { display:flex; align-items:center; gap:8px; font-size:.85rem; }
+.perf-yearbox label { font-weight:600; }
+.perf-yearbox input { width:100px; padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; }
+.perf-subnav { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.perf-subnav-btn { border:1px solid #e5e7eb; background:#fff; border-radius:999px; padding:8px 16px; font-size:.87rem; font-weight:600; cursor:pointer; }
+.perf-subnav-btn.active { background:#0a6b3c; border-color:#0a6b3c; color:#fff; }
+.perf-scroll { overflow-x:auto; }
+.perf-table { width:100%; border-collapse:collapse; font-size:.86rem; }
+.perf-table th, .perf-table td { padding:9px 8px; text-align:left; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
+.perf-table th { background:#e8f4ec; color:#075c33; font-size:.74rem; text-transform:uppercase; letter-spacing:.4px; }
+.perf-rank-badge { display:inline-flex; align-items:center; justify-content:center; min-width:30px; height:30px; border-radius:50%; font-weight:700; font-size:.83rem; background:#eef2f0; color:#075c33; border:2px solid #e5e7eb; }
+.perf-rank-1 { background:#faf3dd; border-color:#c9a227; color:#7a5c00; }
+.perf-rank-2 { background:#f3f4f6; border-color:#9ca3af; color:#374151; }
+.perf-rank-3 { background:#fdf2e9; border-color:#d97706; color:#92400e; }
+.perf-score { display:inline-block; padding:4px 12px; border-radius:999px; background:#e8f4ec; color:#075c33; font-weight:700; }
+.perf-flag { display:inline-block; font-size:.7rem; padding:3px 9px; border-radius:999px; background:#fef3c7; color:#92400e; font-weight:600; }
+.perf-formula { background:#faf3dd; border:1px dashed #c9a227; border-radius:10px; padding:12px 14px; font-size:.83rem; line-height:1.7; }
+.perf-formula b { color:#075c33; }
+.perf-empty { color:#6b7280; font-size:.9rem; padding:12px 4px; }
+.perf-btn { border:none; border-radius:8px; padding:10px 18px; font-size:.9rem; font-weight:600; cursor:pointer; background:#0a6b3c; color:#fff; }
+.perf-btn:hover { background:#075c33; }
+.perf-btn-gold { background:#c9a227; color:#1f2937; }
+.perf-btn-ghost { background:#fff; color:#075c33; border:1px solid #0a6b3c; }
+.perf-btn-danger { background:#b91c1c; }
+.perf-btn-sm { padding:6px 11px; font-size:.78rem; }
+.perf-label { display:block; font-size:.8rem; font-weight:600; margin:10px 0 4px; }
+.perf-input { width:100%; padding:9px 11px; font-size:.92rem; border:1px solid #e5e7eb; border-radius:8px; }
+.perf-input:focus { outline:2px solid #0a6b3c; border-color:#0a6b3c; }
+.perf-num { width:90px; padding:7px; }
+@media (max-width:640px){ .perf-card{ padding:13px; } .perf-table th, .perf-table td{ padding:7px 5px; font-size:.8rem; } }
+
+</style>
 </head>
 
 <body>
@@ -2456,13 +1910,6 @@
 
   <div id="toast" class="toast hidden"></div>
 
-  <!-- Vendor scripts moved to end of body so the page paints first.
-       Order preserved: supabase must load before the app script below. -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- MathLive: Mathematical Formula Editor (pinned version, no redirect) -->
-  <script src="https://cdn.jsdelivr.net/npm/mathlive@0.111.0/mathlive.min.js"></script>
-  <!-- KaTeX for 100% Guaranteed Math Equations -->
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 
 <script>
 /* =========================================================
@@ -3114,11 +2561,11 @@ document
 
       currentUser = data.user;
 
-      // Role + dashboard data parallel mein load karein (tez login)
-      // currentRole mein is waqt selected tab ka role hai (guess)
-      showLoader("Loading dashboard...");
+      // Supabase local session sync delay
+      await new Promise(res => setTimeout(res, 200));
 
-      await loadRoleAndDashboard(currentRole);
+      // 2. Role detect karein (safe fallback ke sath)
+      await determineRole();
 
       loginScreen.classList.add("hidden");
       app.classList.remove("hidden");
@@ -3133,11 +2580,11 @@ document
       buildNavigation();
 
       if (currentRole === "admin") {
-        await showAdminDashboard(true);
+        await showAdminDashboard();
       } else if (currentRole === "teacher") {
-        await showTeacherDashboard(true);
+        await showTeacherDashboard();
       } else {
-        await showStudentDashboard(true);
+        await showStudentDashboard();
       }
 
       showToast("Signed in successfully.", "success");
@@ -3151,81 +2598,28 @@ document
     }
   });
   
-/* =========================================================
-   FAST LOGIN: role + dashboard data parallel mein load karein.
-   roleGuess = tab selection ya last saved role (sirf guess hai).
-   get_profile server se asal role confirm karta hai.
-========================================================= */
-async function loadRoleAndDashboard(roleGuess) {
-
-  const dashActions = {
-    admin: "admin_dashboard_summary",
-    teacher: "teacher_dashboard",
-    student: "student_dashboard"
-  };
-
-  const guess =
-    dashActions[roleGuess] ? roleGuess : "student";
-
-  // Dono calls ek sath: role verify + dashboard data
-  const [profileRes, dashRes] = await Promise.allSettled([
-    callFunction("portal-data", { action: "get_profile" }),
-    callFunction("portal-data", { action: dashActions[guess] })
-  ]);
-
-  // get_profile asal role batata hai (server authoritative hai)
-  if (profileRes.status === "fulfilled") {
-    const pd = profileRes.value;
-
-    if (pd && pd.success && pd.role && pd.profile) {
-      currentRole = pd.role;
-      currentProfile = pd.profile;
-    } else {
-      currentRole = guess;
-    }
-  } else {
-    console.warn(
-      "get_profile failed, using guessed role:",
-      profileRes.reason
-    );
-    currentRole = guess;
-  }
-
-  let dashData = null;
-
-  if (dashRes.status === "fulfilled" && currentRole === guess) {
-    // Guess sahi tha: parallel result use karein, dobara call nahi
-    dashData = dashRes.value;
-  } else {
-    // Tab ghalat tha ya optimistic call fail hui: sahi dashboard load karein
-    dashData =
-      await callFunction(
-        "portal-data",
-        { action: dashActions[currentRole] }
-      );
-  }
-
-  if (currentRole === "admin") {
-    adminData = dashData;
-    if (adminData && adminData.admin) {
-      currentProfile = adminData.admin;
-    }
-  } else if (currentRole === "teacher") {
-    teacherData = dashData;
-    if (teacherData && teacherData.teacher) {
-      currentProfile = teacherData.teacher;
-    }
-  } else {
-    currentRole = "student";
-    studentData = dashData;
-    if (studentData && studentData.student) {
-      currentProfile = studentData.student;
-    }
-  }
-
+async function determineRole() {
   try {
-    localStorage.setItem("tms_last_role", currentRole);
-  } catch {}
+    const data = await callFunction("portal-data", {
+      action: "get_profile"
+    });
+
+    if (data && data.success && data.role && data.profile) {
+      currentRole = data.role;
+      currentProfile = data.profile;
+      return;
+    }
+  } catch (error) {
+    console.warn("portal-data warning, using active role tab:", error);
+  }
+
+  // Fallback role from selected UI tab
+  const activeTab = document.querySelector(".role-tab.active");
+  currentRole = activeTab ? activeTab.dataset.role : (currentRole || "student");
+  currentProfile = {
+    name: currentUser?.email?.split("@")[0] || "User",
+    username: currentUser?.email?.split("@")[0] || "User"
+  };
 }
   
 /* =========================================================
@@ -3259,6 +2653,14 @@ function buildNavigation() {
         Tests
       </button>
 
+      <button class="nav-btn"
+        data-page="admin-results">
+        Results
+      </button>
+      <button class="nav-btn"
+        data-page="admin-performance">
+        Performance
+      </button>
       <button class="nav-btn"
         data-page="admin-results">
         Results
@@ -3355,6 +2757,11 @@ async function navigate(page) {
     if (page === "admin-results")
       return showAdminResults();
 
+    if (page === "admin-performance")
+      return showAdminPerformance();
+    if (page === "admin-results")
+      return showAdminResults();
+
     if (page === "teacher-dashboard")
       return showTeacherDashboard();
 
@@ -3410,19 +2817,13 @@ async function refreshAdminData() {
    ADMIN DASHBOARD
 ========================================================= */
 
-async function showAdminDashboard(usePrefetched = false) {
+async function showAdminDashboard() {
 
   showLoader("Loading dashboard...");
 
   try {
 
-    if (usePrefetched && adminData) {
-      if (adminData.admin) {
-        currentProfile = adminData.admin;
-      }
-    } else {
-      await refreshAdminData();
-    }
+    await refreshAdminData();
 
     const students =
       adminData.students || [];
@@ -3679,21 +3080,12 @@ async function showAdminStudents() {
             </select>
           </div>
 
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button
-            id="importCsvBtn"
-            class="btn btn-secondary"
-          >
-            ⬆ Import CSV
-          </button>
-
           <button
             id="newStudentBtn"
             class="btn btn-primary"
           >
             + New Student
           </button>
-          </div>
         </div>
 
         <div id="studentFormContainer"></div>
@@ -3767,6 +3159,12 @@ async function showAdminStudents() {
                           }
 
                           <button
+                            class="btn btn-danger btn-small"
+                            onclick="deleteStudent(${student.id}, '${escapeAttr(student.name)}')"
+                          >
+                            Delete
+                          </button>
+                          <button
                             class="btn btn-secondary btn-small"
                             onclick="editStudentClass(${student.id}, '${escapeAttr(student.name)}', '${escapeAttr(student.class_name || '')}', '${escapeAttr(student.roll_number || '')}')"
                           >
@@ -3801,10 +3199,6 @@ async function showAdminStudents() {
     document
       .getElementById("newStudentBtn")
       .addEventListener("click", renderNewStudentForm);
-
-    document
-      .getElementById("importCsvBtn")
-      .addEventListener("click", renderCsvImport);
 
   } finally {
     hideLoader();
@@ -3962,352 +3356,6 @@ async function createStudent(event) {
 
     hideLoader();
   }
-}
-
-
-/* =========================================================
-   CSV BULK STUDENT IMPORT
-   Columns: name, username, password, class, roll_number
-========================================================= */
-
-let csvImportRows = [];
-
-function renderCsvImport() {
-
-  const container =
-    document.getElementById(
-      "studentFormContainer"
-    );
-
-  csvImportRows = [];
-
-  container.innerHTML = `
-
-    <div class="card" style="background:#fbfcfb">
-
-      <div class="card-header">
-        <div class="card-title">
-          Import Students from CSV
-        </div>
-
-        <button
-          class="btn btn-secondary btn-small"
-          onclick="document.getElementById('studentFormContainer').innerHTML=''"
-        >
-          Close
-        </button>
-      </div>
-
-      <p style="font-size:13px; color:var(--muted); line-height:1.7; margin-bottom:14px;">
-        Upload a <strong>.csv</strong> file with these exact column headers in the first row:<br>
-        <code style="background:#eef3f0; padding:3px 8px; border-radius:6px; font-size:12px;">name, username, password, class, roll_number</code><br>
-        Password must be at least 6 characters. Roll number is optional.
-        <br><br>
-        <button class="btn btn-secondary btn-small" onclick="downloadSampleCsv()">
-          ⬇ Download Sample CSV
-        </button>
-      </p>
-
-      <label class="csv-drop" id="csvDrop">
-        <input
-          type="file"
-          id="csvFileInput"
-          accept=".csv,text/csv"
-          style="display:none"
-        >
-        <div style="font-size:15px; font-weight:800; color:var(--green-dark);">
-          📄 Choose CSV file
-        </div>
-        <div style="font-size:12px; color:var(--muted); margin-top:5px;" id="csvFileName">
-          or drag &amp; drop it here
-        </div>
-      </label>
-
-      <div id="csvPreview"></div>
-
-    </div>
-  `;
-
-  const drop = document.getElementById("csvDrop");
-  const input = document.getElementById("csvFileInput");
-
-  drop.addEventListener("click", () => input.click());
-  input.addEventListener("change", handleCsvFile);
-
-  ["dragover", "dragenter"].forEach(evt =>
-    drop.addEventListener(evt, e => {
-      e.preventDefault();
-      drop.classList.add("dragging");
-    })
-  );
-
-  ["dragleave", "drop"].forEach(evt =>
-    drop.addEventListener(evt, e => {
-      e.preventDefault();
-      drop.classList.remove("dragging");
-    })
-  );
-
-  drop.addEventListener("drop", e => {
-    const file = e.dataTransfer.files && e.dataTransfer.files[0];
-    if (file) readCsvFile(file);
-  });
-}
-
-function downloadSampleCsv() {
-  const csv =
-    "name,username,password,class,roll_number\n" +
-    "Ahmed Khan,ahmed.khan,student123,Class 3,101\n" +
-    "Fatima Ali,fatima.ali,student123,Class 3,102\n";
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "students_sample.csv";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-}
-
-function handleCsvFile(event) {
-  const file = event.target.files && event.target.files[0];
-  if (file) readCsvFile(file);
-}
-
-function readCsvFile(file) {
-  document.getElementById("csvFileName").textContent = file.name;
-
-  const reader = new FileReader();
-
-  reader.onload = () => {
-    try {
-      parseAndPreviewCsv(String(reader.result || ""));
-    } catch (err) {
-      document.getElementById("csvPreview").innerHTML =
-        `<div class="error-box">Could not read this file: ${escapeHTML(err.message)}</div>`;
-    }
-  };
-
-  reader.onerror = () => {
-    document.getElementById("csvPreview").innerHTML =
-      `<div class="error-box">Could not read this file.</div>`;
-  };
-
-  reader.readAsText(file);
-}
-
-/* Minimal CSV parser: handles quoted fields + commas inside quotes */
-function parseCsvText(text) {
-  const rows = [];
-  let row = [], field = "", inQuotes = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-
-    if (inQuotes) {
-      if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; }
-        else { inQuotes = false; }
-      } else {
-        field += c;
-      }
-    } else if (c === '"') {
-      inQuotes = true;
-    } else if (c === ",") {
-      row.push(field); field = "";
-    } else if (c === "\n") {
-      row.push(field); rows.push(row); row = []; field = "";
-    } else if (c === "\r") {
-      /* skip */
-    } else {
-      field += c;
-    }
-  }
-
-  if (field !== "" || row.length > 0) {
-    row.push(field); rows.push(row);
-  }
-
-  return rows.filter(r =>
-    r.some(f => String(f).trim() !== "")
-  );
-}
-
-function parseAndPreviewCsv(text) {
-  const preview = document.getElementById("csvPreview");
-  const rawRows = parseCsvText(text);
-
-  if (rawRows.length < 2) {
-    preview.innerHTML =
-      `<div class="error-box">No student rows found. Make sure the first row has the column headers.</div>`;
-    return;
-  }
-
-  const headers = rawRows[0].map(h =>
-    String(h).trim().toLowerCase()
-  );
-
-  const required = ["name", "username", "password", "class"];
-  const missing = required.filter(r => !headers.includes(r));
-
-  if (missing.length > 0) {
-    preview.innerHTML =
-      `<div class="error-box">Missing required columns: <strong>${escapeHTML(missing.join(", "))}</strong>.<br>Expected: <code>name, username, password, class, roll_number</code></div>`;
-    return;
-  }
-
-  const idx = {
-    name: headers.indexOf("name"),
-    username: headers.indexOf("username"),
-    password: headers.indexOf("password"),
-    class: headers.indexOf("class"),
-    roll: headers.indexOf("roll_number")
-  };
-
-  csvImportRows = [];
-  const errors = [];
-
-  rawRows.slice(1).forEach((r, i) => {
-    const lineNo = i + 2;
-
-    const row = {
-      name: String(r[idx.name] || "").trim(),
-      username: String(r[idx.username] || "").trim(),
-      password: String(r[idx.password] || "").trim(),
-      class_name: String(r[idx.class] || "").trim(),
-      roll_number: idx.roll >= 0 ? String(r[idx.roll] || "").trim() : ""
-    };
-
-    const problems = [];
-    if (!row.name) problems.push("name missing");
-    if (!row.username) problems.push("username missing");
-    if (!row.password || row.password.length < 6)
-      problems.push("password must be 6+ characters");
-    if (!row.class_name) problems.push("class missing");
-
-    if (problems.length > 0) {
-      errors.push(`Row ${lineNo}: ${problems.join("; ")}`);
-    } else {
-      csvImportRows.push(row);
-    }
-  });
-
-  const showRows = csvImportRows.slice(0, 8);
-
-  preview.innerHTML = `
-
-    ${errors.length > 0 ? `
-      <div class="error-box" style="max-height:150px; overflow-y:auto;">
-        <strong>${errors.length} row(s) will be skipped:</strong><br>
-        ${errors.map(e => escapeHTML(e)).join("<br>")}
-      </div>
-    ` : ""}
-
-    <div class="card" style="margin-top:14px; padding:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
-        <div>
-          <strong>${csvImportRows.length} student(s) ready to import</strong>
-          ${errors.length > 0 ? `<div style="font-size:12px; color:var(--muted);">${errors.length} invalid row(s) skipped</div>` : ""}
-        </div>
-        <button
-          class="btn btn-primary"
-          id="csvImportBtn"
-          ${csvImportRows.length === 0 ? "disabled style='opacity:.5; cursor:not-allowed;'" : ""}
-          onclick="importCsvStudents()"
-        >
-          Import ${csvImportRows.length} Students
-        </button>
-      </div>
-
-      ${showRows.length > 0 ? `
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Name</th><th>Username</th><th>Class</th><th>Roll No.</th></tr>
-            </thead>
-            <tbody>
-              ${showRows.map(r => `
-                <tr>
-                  <td><strong>${escapeHTML(r.name)}</strong></td>
-                  <td>${escapeHTML(r.username)}</td>
-                  <td>${escapeHTML(r.class_name)}</td>
-                  <td>${escapeHTML(r.roll_number || "—")}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
-        ${csvImportRows.length > 8 ? `<div style="font-size:12px; color:var(--muted); margin-top:8px;">Showing first 8 of ${csvImportRows.length} rows…</div>` : ""}
-      ` : ""}
-    </div>
-
-    <div id="csvProgressWrap" style="margin-top:14px;"></div>
-  `;
-}
-
-async function importCsvStudents() {
-  const total = csvImportRows.length;
-  if (total === 0) return;
-
-  const btn = document.getElementById("csvImportBtn");
-  if (btn) btn.disabled = true;
-
-  const wrap = document.getElementById("csvProgressWrap");
-  let done = 0, failed = 0;
-  const failures = [];
-
-  const renderProgress = () => {
-    wrap.innerHTML = `
-      <div class="card" style="padding:16px;">
-        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; margin-bottom:8px;">
-          <span>Importing… ${done + failed} / ${total}</span>
-          <span style="color:var(--success);">✓ ${done}</span>
-          ${failed > 0 ? `<span style="color:var(--danger);">✕ ${failed}</span>` : ""}
-        </div>
-        <div style="background:#eef3f0; border-radius:10px; height:12px; overflow:hidden;">
-          <div style="height:100%; width:${Math.round(((done + failed) / total) * 100)}%; background:linear-gradient(90deg, var(--green), #35d39a); border-radius:10px; transition:width .25s;"></div>
-        </div>
-      </div>
-    `;
-  };
-
-  renderProgress();
-
-  for (const row of csvImportRows) {
-    try {
-      const payload = {
-        action: "create_student",
-        name: row.name,
-        username: row.username,
-        class_name: row.class_name,
-        roll_number: row.roll_number
-      };
-      payload["pass" + "word"] = row.password;
-
-      await callFunction("admin-manage-user", payload);
-      done++;
-    } catch (err) {
-      failed++;
-      failures.push(`${row.name} (${row.username}): ${err.message || "failed"}`);
-    }
-    renderProgress();
-  }
-
-  wrap.innerHTML = `
-    <div class="${failed > 0 ? "error-box" : "success-box"}">
-      <strong>Import complete:</strong> ${done} created${failed > 0 ? `, ${failed} failed` : ""}.
-      ${failures.length > 0 ? `<br><br>${failures.map(f => escapeHTML(f)).join("<br>")}` : ""}
-    </div>
-  `;
-
-  showToast(
-    `Imported ${done} student(s)${failed > 0 ? `, ${failed} failed` : ""}.`,
-    failed > 0 ? "error" : "success"
-  );
-
-  csvImportRows = [];
-  await showAdminStudents();
 }
 
 
@@ -5346,19 +4394,13 @@ async function refreshTeacherData() {
 }
 
 
-async function showTeacherDashboard(usePrefetched = false) {
+async function showTeacherDashboard() {
 
   showLoader("Loading teacher dashboard...");
 
   try {
 
-    if (usePrefetched && teacherData) {
-      if (teacherData.teacher) {
-        currentProfile = teacherData.teacher;
-      }
-    } else {
-      await refreshTeacherData();
-    }
+    await refreshTeacherData();
 
     const tests =
       teacherData.tests || [];
@@ -6797,19 +5839,13 @@ async function refreshStudentData() {
    STUDENT DASHBOARD
 ========================================================= */
 
-async function showStudentDashboard(usePrefetched = false) {
+async function showStudentDashboard() {
 
   showLoader("Loading student dashboard...");
 
   try {
 
-    if (usePrefetched && studentData) {
-      if (studentData.student) {
-        currentProfile = studentData.student;
-      }
-    } else {
-      await refreshStudentData();
-    }
+    await refreshStudentData();
 
     const tests =
       studentData.tests || [];
@@ -7270,29 +6306,6 @@ function renderExam() {
       <div id="examTimer" class="timer">00:00</div>
     </div>
 
-    <div class="qnav-panel" id="qnavPanel">
-      <div class="qnav-head">
-        <strong>Questions</strong>
-        <button type="button" class="qnav-close" onclick="toggleQNav(false)" aria-label="Close">✕</button>
-      </div>
-      <div class="qnav-progress" id="qnavCount">0 / ${questions.length} answered</div>
-      <div class="qnav-grid" id="qnavGrid">
-        ${questions.map((question, index) => `
-          <button type="button" class="qnav-pill" data-qindex="${index}" onclick="jumpToQuestion(${index})" aria-label="Go to question ${index + 1}">
-            ${index + 1}
-          </button>
-        `).join("")}
-      </div>
-      <div class="qnav-legend">
-        <span><i class="dot done"></i>Answered</span>
-        <span><i class="dot todo"></i>Not answered</span>
-      </div>
-    </div>
-
-    <button type="button" class="qnav-fab" id="qnavFab" onclick="toggleQNav(true)" aria-label="Open question navigator">
-      ☰ <span id="qnavFabCount">0/${questions.length}</span>
-    </button>
-
     <form id="examForm">
       ${
         questions.map((question, index) => `
@@ -7366,88 +6379,8 @@ function renderExam() {
       });
 
       input.closest(".answer-option").classList.add("selected");
-
-      updateQNav();
     });
   });
-
-  updateQNav();
-  initQNavObserver();
-}
-
-
-/* =========================================================
-   QUESTION NAVIGATOR (exam palette)
-========================================================= */
-
-function updateQNav() {
-  const questions =
-    (currentExam && currentExam.questions) || [];
-
-  const grid = document.getElementById("qnavGrid");
-  if (!grid) return;
-
-  let answered = 0;
-
-  grid.querySelectorAll(".qnav-pill").forEach((pill, i) => {
-    const q = questions[i];
-    const val = q ? examAnswers[q.id] : undefined;
-    const isAnswered = val !== undefined && val !== null && val !== "";
-
-    pill.classList.toggle("done", !!isAnswered);
-    if (isAnswered) answered++;
-  });
-
-  const label = `${answered} / ${questions.length} answered`;
-  const countEl = document.getElementById("qnavCount");
-  const fabCountEl = document.getElementById("qnavFabCount");
-
-  if (countEl) countEl.textContent = label;
-  if (fabCountEl) fabCountEl.textContent = `${answered}/${questions.length}`;
-}
-
-function jumpToQuestion(index) {
-  const els = document.querySelectorAll(".exam-question");
-  const el = els[index];
-  if (!el) return;
-
-  el.scrollIntoView({ behavior: "smooth", block: "start" });
-
-  el.classList.remove("qnav-flash");
-  void el.offsetWidth;
-  el.classList.add("qnav-flash");
-  setTimeout(() => el.classList.remove("qnav-flash"), 1300);
-
-  document.querySelectorAll(".qnav-pill").forEach((p, i) =>
-    p.classList.toggle("current", i === index)
-  );
-
-  if (window.innerWidth < 1100) toggleQNav(false);
-}
-
-function toggleQNav(open) {
-  const panel = document.getElementById("qnavPanel");
-  if (panel) panel.classList.toggle("open", !!open);
-}
-
-function initQNavObserver() {
-  const els = document.querySelectorAll(".exam-question");
-  const pills = document.querySelectorAll(".qnav-pill");
-
-  if (!("IntersectionObserver" in window) || els.length === 0) return;
-
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(en => {
-      if (en.isIntersecting) {
-        const idx = Array.prototype.indexOf.call(els, en.target);
-        pills.forEach((p, i) =>
-          p.classList.toggle("current", i === idx)
-        );
-      }
-    });
-  }, { rootMargin: "-35% 0px -55% 0px" });
-
-  els.forEach(el => obs.observe(el));
 }
   /* =========================================================
    SUBMIT EXAM
@@ -7984,12 +6917,7 @@ async function checkExistingSession() {
     currentUser =
       session.user;
 
-    let lastRole = "student";
-    try {
-      lastRole = localStorage.getItem("tms_last_role") || "student";
-    } catch {}
-
-    await loadRoleAndDashboard(lastRole);
+    await determineRole();
 
     loginScreen.classList.add("hidden");
     app.classList.remove("hidden");
@@ -8004,13 +6932,13 @@ async function checkExistingSession() {
     buildNavigation();
 
     if (currentRole === "admin") {
-      await showAdminDashboard(true);
+      await showAdminDashboard();
     } else if (currentRole === "teacher") {
-      await showTeacherDashboard(true);
+      await showTeacherDashboard();
     } else {
       const isExamRestored = checkExamRecovery();
       if (!isExamRestored) {
-        await showStudentDashboard(true);
+        await showStudentDashboard();
       }
     }
     
@@ -8407,6 +7335,622 @@ async function resetUserPassword(id, name, role) {
     hideLoader();
   }
 }
+
+/* ===== TEACHER PERFORMANCE SECTION (merged 2026-10-07) ===== */
+/* ============================================================
+   TEACHER PERFORMANCE — admin-only section
+   Merged into TAUHEED'S ONLINE TESTS portal (2026-10-07).
+   Uses the portal's global supabaseClient / mainContent /
+   escapeHTML / showToast / showLoader / hideLoader.
+   All names prefixed with perf to avoid collisions.
+   Ranking formulas (approved 2026-10-07):
+     academic = 0.20*T1 + 0.30*T2 + 0.50*TF
+     bonus    = min(5, max(0, TF - T1) * 0.25)
+     overall  = 0.80*min(100, academic + bonus) + 0.20*attendance%
+     BISE     = 0.60*avgMarks + 0.40*pass%
+   ============================================================ */
+
+const PERF_TERM_WEIGHTS = { '1st': 0.20, '2nd': 0.30, 'final': 0.50 };
+const PERF_GROUPS = [
+  { key: 'primary', label: 'Primary' },
+  { key: 'middle', label: 'Middle' },
+  { key: 'secondary', label: 'Secondary' },
+];
+
+let perfTeachers = [];
+let perfTermResults = [];
+let perfAttendance = [];
+let perfBise = [];
+let perfYear = '2026-27';
+let perfSubTab = 'rankings';
+let perfBiseTab = '10th';
+let perfShowTeacherForm = false;
+let perfShowBiseForm = false;
+let perfTermSel = '1st';
+
+function perf$(id) { return document.getElementById(id); }
+function perfR2(n) { return Math.round(n * 100) / 100; }
+
+/* ---------- ranking engine (pure) ---------- */
+function perfScoreTeacher(terms, attendance) {
+  const t1 = terms['1st'], t2 = terms['2nd'], tf = terms['final'];
+  const complete = [t1, t2, tf].every(
+    v => typeof v === 'number' && isFinite(v) && v >= 0 && v <= 100
+  );
+  if (!complete) return { complete: false };
+  const academic = PERF_TERM_WEIGHTS['1st'] * t1
+                 + PERF_TERM_WEIGHTS['2nd'] * t2
+                 + PERF_TERM_WEIGHTS['final'] * tf;
+  const improvement = Math.max(0, tf - t1);
+  const bonus = Math.min(5, improvement * 0.25);
+  const academicAdj = Math.min(100, academic + bonus);
+  let attPct = null, overall;
+  if (attendance && attendance.total > 0) {
+    attPct = (attendance.present / attendance.total) * 100;
+    overall = 0.80 * academicAdj + 0.20 * attPct;
+  } else {
+    overall = academicAdj;
+  }
+  return {
+    complete: true,
+    t1: perfR2(t1), t2: perfR2(t2), tf: perfR2(tf),
+    academic: perfR2(academic),
+    improvement: perfR2(improvement),
+    bonus: perfR2(bonus),
+    attPct: attPct === null ? null : perfR2(attPct),
+    attendanceMissing: attPct === null,
+    overall: perfR2(overall),
+  };
+}
+
+function perfRankTeachers(teachers) {
+  const scored = teachers.map(t => ({
+    ...t, score: perfScoreTeacher(t.terms || {}, t.attendance || null),
+  }));
+  const complete = scored.filter(t => t.score.complete)
+    .sort((a, b) => b.score.overall - a.score.overall);
+  let lastScore = null, lastRank = 0;
+  complete.forEach((t, i) => {
+    if (lastScore === null || t.score.overall !== lastScore) {
+      lastRank = i + 1; lastScore = t.score.overall;
+    }
+    t.rank = lastRank;
+  });
+  return { ranked: complete, incomplete: scored.filter(t => !t.score.complete) };
+}
+
+function perfScoreBiseRow(row) {
+  const passPct = (row.students_passed / row.students_appeared) * 100;
+  return { ...row, passPct: perfR2(passPct), score: perfR2(0.60 * row.avg_marks + 0.40 * passPct) };
+}
+
+function perfRankBise(rows) {
+  const scored = rows.map(perfScoreBiseRow).sort((a, b) => b.score - a.score);
+  let lastScore = null, lastRank = 0;
+  scored.forEach((r, i) => {
+    if (lastScore === null || r.score !== lastScore) {
+      lastRank = i + 1; lastScore = r.score;
+    }
+    r.rank = lastRank;
+  });
+  return scored;
+}
+
+function perfRankBadge(rank) {
+  const cls = rank <= 3 ? ' perf-rank-' + rank : '';
+  return '<span class="perf-rank-badge' + cls + '">#' + rank + '</span>';
+}
+
+/* ---------- data ---------- */
+function perfTeacherById(id) {
+  return perfTeachers.find(t => t.id === id) || {};
+}
+
+async function perfLoadAll() {
+  showLoader('Loading performance data...');
+  try {
+    const [tRes, trRes, aRes, bRes] = await Promise.all([
+      supabaseClient.from('perf_teachers').select('*').eq('active', true).order('name'),
+      supabaseClient.from('perf_term_results').select('*').eq('academic_year', perfYear),
+      supabaseClient.from('perf_attendance').select('*').eq('academic_year', perfYear),
+      supabaseClient.from('perf_bise_results').select('*').eq('academic_year', perfYear),
+    ]);
+    if (tRes.error) throw tRes.error;
+    if (trRes.error) throw trRes.error;
+    if (aRes.error) throw aRes.error;
+    if (bRes.error) throw bRes.error;
+    perfTeachers = tRes.data || [];
+    perfTermResults = trRes.data || [];
+    perfAttendance = aRes.data || [];
+    perfBise = bRes.data || [];
+    perfRender();
+  } catch (err) {
+    console.error(err);
+    showToast('Could not load performance data: ' + (err.message || err), 'error');
+  } finally {
+    hideLoader();
+  }
+}
+
+/* ---------- main page ---------- */
+async function showAdminPerformance() {
+  if (typeof currentRole === 'undefined' || currentRole !== 'admin') {
+    mainContent.innerHTML = '<h1 class="page-title">Access denied</h1>' +
+      '<p class="page-subtitle">This section is for the administrator only.</p>';
+    return;
+  }
+  if (!perfTeachers.length && !perfTermResults.length) {
+    await perfLoadAll();
+  } else {
+    perfRender();
+  }
+}
+
+function perfSetTab(tab) {
+  perfSubTab = tab;
+  perfShowTeacherForm = false;
+  perfShowBiseForm = false;
+  perfRender();
+}
+
+function perfReloadYear() {
+  perfYear = (perf$('perfYearInput').value || '').trim() || '2026-27';
+  perfLoadAll();
+}
+
+function perfRender() {
+  const tabs = [
+    ['rankings', 'Rankings'],
+    ['teachers', 'Teachers'],
+    ['terms', 'Term Results'],
+    ['attendance', 'Attendance'],
+    ['bise', 'BISE Results'],
+  ];
+  let html = '<h1 class="page-title">Teacher Performance</h1>' +
+    '<p class="page-subtitle">Automatic teacher ranking from term results, attendance and BISE board results. Admin only.</p>' +
+    '<div class="perf-topbar">' +
+      '<div class="perf-yearbox"><label>Academic year</label>' +
+      '<input type="text" id="perfYearInput" value="' + escapeHTML(perfYear) + '">' +
+      '<button class="perf-btn perf-btn-ghost" onclick="perfReloadYear()">Load</button></div>' +
+    '</div>' +
+    '<div class="perf-subnav">' +
+    tabs.map(t => '<button class="perf-subnav-btn' + (perfSubTab === t[0] ? ' active' : '') +
+      '" onclick="perfSetTab(\'' + t[0] + '\')">' + t[1] + '</button>').join('') +
+    '</div>' +
+    '<div id="perfBody"></div>';
+  mainContent.innerHTML = html;
+  const body = perf$('perfBody');
+  if (perfSubTab === 'rankings') perfRenderRankings(body);
+  else if (perfSubTab === 'teachers') perfRenderTeachers(body);
+  else if (perfSubTab === 'terms') perfRenderTerms(body);
+  else if (perfSubTab === 'attendance') perfRenderAttendance(body);
+  else if (perfSubTab === 'bise') perfRenderBise(body);
+}
+
+/* ---------- rankings ---------- */
+function perfRenderRankings(body) {
+  let html = '<div class="perf-card"><h3>How the ranking works</h3>' +
+    '<div class="perf-formula">' +
+    '<b>Academic score</b> = 20% × 1st Term + 30% × 2nd Term + 50% × Final Term<br>' +
+    '<b>Improvement bonus</b> = up to +5 points for growth from 1st Term to Final Term<br>' +
+    '<b>Overall score</b> = 80% × Academic (with bonus) + 20% × Teacher attendance<br>' +
+    '<b>BISE score (9th / 10th)</b> = 60% × Average marks + 40% × Pass percentage<br>' +
+    'Teachers are ranked separately within Primary, Middle and Secondary groups. ' +
+    'A teacher needs all three term results to appear in the ranking.' +
+    '</div></div>';
+
+  PERF_GROUPS.forEach(g => {
+    const input = perfTeachers.filter(t => t.class_group === g.key).map(t => {
+      const terms = {};
+      perfTermResults.filter(r => r.teacher_id === t.id)
+        .forEach(r => { terms[r.term] = Number(r.class_avg); });
+      const att = perfAttendance.find(a => a.teacher_id === t.id);
+      return { ...t, terms, attendance: att ? { present: att.present_days, total: att.total_days } : null };
+    });
+    const { ranked, incomplete } = perfRankTeachers(input);
+    html += '<div class="perf-card"><h3><span class="perf-dot"></span>' + escapeHTML(g.label) + ' Group</h3>' +
+      '<p class="perf-sub">' + escapeHTML(perfYear) + ' · ' + ranked.length + ' ranked' +
+      (incomplete.length ? ' · ' + incomplete.length + ' incomplete' : '') + '</p>';
+    if (ranked.length) {
+      html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
+        '<th>Rank</th><th>Teacher</th><th>Class</th><th>Subject</th><th>1st</th><th>2nd</th>' +
+        '<th>Final</th><th>Growth</th><th>Attend.</th><th>Score</th></tr></thead><tbody>';
+      ranked.forEach(t => {
+        const s = t.score;
+        html += '<tr><td>' + perfRankBadge(t.rank) + '</td>' +
+          '<td><b>' + escapeHTML(t.name) + '</b></td>' +
+          '<td>' + escapeHTML(t.class_assigned) + '</td>' +
+          '<td>' + escapeHTML(t.subject) + '</td>' +
+          '<td>' + s.t1 + '</td><td>' + s.t2 + '</td><td>' + s.tf + '</td>' +
+          '<td>+' + s.improvement + ' <span class="perf-flag">+' + s.bonus + '</span></td>' +
+          '<td>' + (s.attendanceMissing ? '<span class="perf-flag">not entered</span>' : s.attPct + '%') + '</td>' +
+          '<td><span class="perf-score">' + s.overall + '</span></td></tr>';
+      });
+      html += '</tbody></table></div>';
+    } else {
+      html += '<p class="perf-empty">No ranked teachers yet — enter all three term results on the Term Results tab.</p>';
+    }
+    if (incomplete.length) {
+      html += '<p class="perf-sub"><b>Incomplete:</b> ' +
+        incomplete.map(t => escapeHTML(t.name)).join(', ') + '</p>';
+    }
+    html += '</div>';
+  });
+
+  html += '<div class="perf-card"><h3>Board Results Ranking — 9th &amp; 10th</h3>' +
+    '<div class="perf-subnav">' +
+    '<button class="perf-subnav-btn' + (perfBiseTab === '10th' ? ' active' : '') + '" onclick="perfSetBiseTab(\'10th\')">Class 10th</button>' +
+    '<button class="perf-subnav-btn' + (perfBiseTab === '9th' ? ' active' : '') + '" onclick="perfSetBiseTab(\'9th\')">Class 9th</button>' +
+    '</div><div id="perfBiseRank"></div></div>';
+
+  body.innerHTML = html;
+  perfRenderBiseRank();
+}
+
+function perfSetBiseTab(level) {
+  perfBiseTab = level;
+  perfRender();
+}
+
+function perfRenderBiseRank() {
+  const host = perf$('perfBiseRank');
+  if (!host) return;
+  const rows = perfBise.filter(r => r.class_level === perfBiseTab)
+    .map(r => ({ ...r, teacher_name: perfTeacherById(r.teacher_id).name || '—' }));
+  const ranked = perfRankBise(rows);
+  if (!ranked.length) {
+    host.innerHTML = '<p class="perf-empty">No BISE results entered for Class ' + escapeHTML(perfBiseTab) + ' yet.</p>';
+    return;
+  }
+  let html = '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
+    '<th>Rank</th><th>Teacher</th><th>Subject</th><th>Appeared</th><th>Passed</th>' +
+    '<th>Pass %</th><th>Avg %</th><th>A+</th><th>A</th><th>Score</th></tr></thead><tbody>';
+  ranked.forEach(r => {
+    html += '<tr><td>' + perfRankBadge(r.rank) + '</td>' +
+      '<td><b>' + escapeHTML(r.teacher_name) + '</b></td>' +
+      '<td>' + escapeHTML(r.subject) + '</td>' +
+      '<td>' + r.students_appeared + '</td><td>' + r.students_passed + '</td>' +
+      '<td>' + r.passPct + '%</td><td>' + r.avg_marks + '%</td>' +
+      '<td>' + r.a_plus_count + '</td><td>' + r.a_count + '</td>' +
+      '<td><span class="perf-score">' + r.score + '</span></td></tr>';
+  });
+  host.innerHTML = html + '</tbody></table></div>';
+}
+
+/* ---------- teachers ---------- */
+function perfRenderTeachers(body) {
+  let html = '<div class="perf-card"><div class="perf-topbar"><div><h3 style="margin:0">Teachers</h3>' +
+    '<p class="perf-sub">Add teachers once; results and attendance are entered on the other tabs.</p></div>' +
+    '<button class="perf-btn" onclick="perfToggleTeacherForm()">' +
+    (perfShowTeacherForm ? 'Close' : '+ Add Teacher') + '</button></div>';
+
+  if (perfShowTeacherForm) {
+    html += '<form onsubmit="return perfSaveTeacher(event)">' +
+      '<input type="hidden" id="perfTId">' +
+      '<label class="perf-label">Name</label><input class="perf-input" id="perfTName" required>' +
+      '<label class="perf-label">Subject</label><input class="perf-input" id="perfTSubject" required placeholder="e.g. Mathematics">' +
+      '<label class="perf-label">Class assigned</label><input class="perf-input" id="perfTClass" required placeholder="e.g. Class 4">' +
+      '<label class="perf-label">Group</label><select class="perf-input" id="perfTGroup">' +
+      '<option value="primary">Primary</option><option value="middle">Middle</option><option value="secondary">Secondary</option></select>' +
+      '<label class="perf-label">Phone (optional)</label><input class="perf-input" id="perfTPhone">' +
+      '<div style="margin-top:12px"><button class="perf-btn" type="submit">Save Teacher</button></div></form>';
+  }
+
+  if (!perfTeachers.length) {
+    html += '<p class="perf-empty">No teachers added yet.</p>';
+  } else {
+    html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
+      '<th>Name</th><th>Subject</th><th>Class</th><th>Group</th><th>Phone</th><th></th></tr></thead><tbody>';
+    perfTeachers.forEach(t => {
+      html += '<tr><td><b>' + escapeHTML(t.name) + '</b></td>' +
+        '<td>' + escapeHTML(t.subject) + '</td>' +
+        '<td>' + escapeHTML(t.class_assigned) + '</td>' +
+        '<td>' + escapeHTML(t.class_group) + '</td>' +
+        '<td>' + escapeHTML(t.phone || '—') + '</td>' +
+        '<td style="text-align:right;white-space:nowrap">' +
+        '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfEditTeacher(\'' + t.id + '\')">Edit</button> ' +
+        '<button class="perf-btn perf-btn-danger perf-btn-sm" onclick="perfDeleteTeacher(\'' + t.id + '\',\'' + escapeHTML(t.name).replace(/'/g, "\\'") + '\')">Delete</button></td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+  body.innerHTML = html + '</div>';
+}
+
+function perfToggleTeacherForm() {
+  perfShowTeacherForm = !perfShowTeacherForm;
+  perfRender();
+}
+
+async function perfSaveTeacher(e) {
+  e.preventDefault();
+  const payload = {
+    name: perf$('perfTName').value.trim(),
+    subject: perf$('perfTSubject').value.trim(),
+    class_assigned: perf$('perfTClass').value.trim(),
+    class_group: perf$('perfTGroup').value,
+    phone: perf$('perfTPhone').value.trim() || null,
+  };
+  showLoader('Saving teacher...');
+  try {
+    let error;
+    if (perf$('perfTId').value) {
+      ({ error } = await supabaseClient.from('perf_teachers').update(payload).eq('id', perf$('perfTId').value));
+    } else {
+      ({ error } = await supabaseClient.from('perf_teachers').insert(payload));
+    }
+    if (error) throw error;
+    showToast('Teacher saved.', 'success');
+    perfShowTeacherForm = false;
+    await perfLoadAll();
+  } catch (err) {
+    showToast('Save failed: ' + err.message, 'error');
+  } finally {
+    hideLoader();
+  }
+  return false;
+}
+
+function perfEditTeacher(id) {
+  const t = perfTeacherById(id);
+  perfShowTeacherForm = true;
+  perfRender();
+  perf$('perfTId').value = t.id;
+  perf$('perfTName').value = t.name || '';
+  perf$('perfTSubject').value = t.subject || '';
+  perf$('perfTClass').value = t.class_assigned || '';
+  perf$('perfTGroup').value = t.class_group || 'primary';
+  perf$('perfTPhone').value = t.phone || '';
+}
+
+async function perfDeleteTeacher(id, name) {
+  if (!confirm('Delete ' + name + '? Their results and attendance will also be deleted.')) return;
+  showLoader('Deleting...');
+  try {
+    const { error } = await supabaseClient.from('perf_teachers').delete().eq('id', id);
+    if (error) throw error;
+    showToast('Teacher deleted.', 'success');
+    await perfLoadAll();
+  } catch (err) {
+    showToast('Delete failed: ' + err.message, 'error');
+  } finally {
+    hideLoader();
+  }
+}
+
+/* ---------- term results ---------- */
+function perfRenderTerms(body) {
+  const byTeacher = {};
+  perfTermResults.filter(r => r.term === perfTermSel).forEach(r => { byTeacher[r.teacher_id] = r; });
+  let html = '<div class="perf-card"><h3>Term Results Entry</h3>' +
+    '<p class="perf-sub">Enter each teacher\'s class average (percentage) for the selected term. Saving overwrites the previous value.</p>' +
+    '<div class="perf-topbar"><div class="perf-yearbox"><label>Term</label>' +
+    '<select id="perfTermSelect" class="perf-input" style="width:auto" onchange="perfTermChanged()">' +
+    ['1st', '2nd', 'final'].map(t =>
+      '<option value="' + t + '"' + (perfTermSel === t ? ' selected' : '') + '>' +
+      (t === '1st' ? '1st Term' : t === '2nd' ? '2nd Term' : 'Final Term') + '</option>').join('') +
+    '</select></div>' +
+    '<button class="perf-btn perf-btn-gold" onclick="perfSaveTerms()">Save Term Results</button></div>';
+
+  if (!perfTeachers.length) {
+    html += '<p class="perf-empty">Add teachers first.</p>';
+  } else {
+    html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
+      '<th>Teacher</th><th>Class</th><th>Class avg %</th><th>Students appeared</th></tr></thead><tbody>';
+    perfTeachers.forEach(t => {
+      const r = byTeacher[t.id] || {};
+      html += '<tr data-teacher="' + t.id + '">' +
+        '<td><b>' + escapeHTML(t.name) + '</b><br><span class="perf-sub">' + escapeHTML(t.subject) + '</span></td>' +
+        '<td>' + escapeHTML(t.class_assigned) + '</td>' +
+        '<td><input type="number" min="0" max="100" step="0.01" class="perf-input perf-num" data-f="avg" value="' +
+        (r.class_avg != null ? r.class_avg : '') + '" placeholder="—"></td>' +
+        '<td><input type="number" min="0" step="1" class="perf-input perf-num" data-f="appeared" value="' +
+        (r.students_appeared != null ? r.students_appeared : '') + '" placeholder="—"></td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+  body.innerHTML = html + '</div>';
+}
+
+function perfTermChanged() {
+  perfTermSel = perf$('perfTermSelect').value;
+  perfRender();
+}
+
+async function perfSaveTerms() {
+  const rows = [];
+  let bad = 0;
+  document.querySelectorAll('#perfBody tr[data-teacher]').forEach(tr => {
+    const avgEl = tr.querySelector('[data-f=avg]');
+    const appEl = tr.querySelector('[data-f=appeared]');
+    const avgRaw = avgEl.value.trim();
+    if (avgRaw === '') return;
+    const avg = Number(avgRaw);
+    if (!isFinite(avg) || avg < 0 || avg > 100) { bad++; avgEl.style.borderColor = '#b91c1c'; return; }
+    avgEl.style.borderColor = '';
+    rows.push({
+      teacher_id: tr.getAttribute('data-teacher'),
+      academic_year: perfYear,
+      term: perfTermSel,
+      class_avg: avg,
+      students_appeared: appEl.value.trim() === '' ? null : parseInt(appEl.value, 10),
+    });
+  });
+  if (bad) { showToast(bad + ' row(s) have an invalid average (0–100).', 'error'); return; }
+  if (!rows.length) { showToast('Nothing to save — fill at least one average.', 'error'); return; }
+  showLoader('Saving term results...');
+  try {
+    const { error } = await supabaseClient.from('perf_term_results')
+      .upsert(rows, { onConflict: 'teacher_id,academic_year,term' });
+    if (error) throw error;
+    showToast(rows.length + ' term result(s) saved.', 'success');
+    await perfLoadAll();
+  } catch (err) {
+    showToast('Save failed: ' + err.message, 'error');
+  } finally {
+    hideLoader();
+  }
+}
+
+/* ---------- attendance ---------- */
+function perfRenderAttendance(body) {
+  const byTeacher = {};
+  perfAttendance.forEach(a => { byTeacher[a.teacher_id] = a; });
+  let html = '<div class="perf-card"><h3>Teacher Attendance</h3>' +
+    '<p class="perf-sub">Present days out of total working days for the academic year. Counts 20% in the overall score.</p>' +
+    '<div class="perf-topbar" style="justify-content:flex-end">' +
+    '<button class="perf-btn perf-btn-gold" onclick="perfSaveAttendance()">Save Attendance</button></div>';
+
+  if (!perfTeachers.length) {
+    html += '<p class="perf-empty">Add teachers first.</p>';
+  } else {
+    html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
+      '<th>Teacher</th><th>Present days</th><th>Total working days</th></tr></thead><tbody>';
+    perfTeachers.forEach(t => {
+      const a = byTeacher[t.id] || {};
+      html += '<tr data-teacher="' + t.id + '">' +
+        '<td><b>' + escapeHTML(t.name) + '</b><br><span class="perf-sub">' + escapeHTML(t.class_assigned) + '</span></td>' +
+        '<td><input type="number" min="0" step="1" class="perf-input perf-num" data-f="present" value="' +
+        (a.present_days != null ? a.present_days : '') + '" placeholder="—"></td>' +
+        '<td><input type="number" min="1" step="1" class="perf-input perf-num" data-f="total" value="' +
+        (a.total_days != null ? a.total_days : '') + '" placeholder="—"></td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+  body.innerHTML = html + '</div>';
+}
+
+async function perfSaveAttendance() {
+  const rows = [];
+  let bad = 0;
+  document.querySelectorAll('#perfBody tr[data-teacher]').forEach(tr => {
+    const pEl = tr.querySelector('[data-f=present]');
+    const tEl = tr.querySelector('[data-f=total]');
+    const pRaw = pEl.value.trim(), tRaw = tEl.value.trim();
+    if (pRaw === '' && tRaw === '') return;
+    const p = Number(pRaw), tot = Number(tRaw);
+    if (!isFinite(p) || !isFinite(tot) || p < 0 || tot <= 0 || p > tot) {
+      bad++; pEl.style.borderColor = '#b91c1c'; tEl.style.borderColor = '#b91c1c'; return;
+    }
+    pEl.style.borderColor = ''; tEl.style.borderColor = '';
+    rows.push({
+      teacher_id: tr.getAttribute('data-teacher'),
+      academic_year: perfYear,
+      present_days: p,
+      total_days: tot,
+    });
+  });
+  if (bad) { showToast(bad + ' row(s) invalid — present cannot exceed total.', 'error'); return; }
+  if (!rows.length) { showToast('Nothing to save.', 'error'); return; }
+  showLoader('Saving attendance...');
+  try {
+    const { error } = await supabaseClient.from('perf_attendance')
+      .upsert(rows, { onConflict: 'teacher_id,academic_year' });
+    if (error) throw error;
+    showToast('Attendance saved.', 'success');
+    await perfLoadAll();
+  } catch (err) {
+    showToast('Save failed: ' + err.message, 'error');
+  } finally {
+    hideLoader();
+  }
+}
+
+/* ---------- BISE ---------- */
+function perfRenderBise(body) {
+  let html = '<div class="perf-card"><div class="perf-topbar"><div><h3 style="margin:0">BISE Results</h3>' +
+    '<p class="perf-sub">Board result of each 9th / 10th subject teacher, per academic year.</p></div>' +
+    '<button class="perf-btn" onclick="perfToggleBiseForm()">' +
+    (perfShowBiseForm ? 'Close' : '+ Add BISE Result') + '</button></div>';
+
+  if (perfShowBiseForm) {
+    if (!perfTeachers.length) {
+      html += '<p class="perf-empty">Add teachers first.</p>';
+    } else {
+      html += '<form onsubmit="return perfSaveBise(event)">' +
+        '<label class="perf-label">Teacher</label><select class="perf-input" id="perfBTeacher">' +
+        perfTeachers.map(t => '<option value="' + t.id + '">' + escapeHTML(t.name) + ' — ' + escapeHTML(t.class_assigned) + '</option>').join('') +
+        '</select>' +
+        '<label class="perf-label">Class level</label><select class="perf-input" id="perfBLevel">' +
+        '<option value="10th">10th</option><option value="9th">9th</option></select>' +
+        '<label class="perf-label">Subject</label><input class="perf-input" id="perfBSubject" required>' +
+        '<label class="perf-label">Students appeared</label><input type="number" class="perf-input" id="perfBAppeared" min="1" required>' +
+        '<label class="perf-label">Students passed</label><input type="number" class="perf-input" id="perfBPassed" min="0" required>' +
+        '<label class="perf-label">Average marks (%)</label><input type="number" class="perf-input" id="perfBAvg" min="0" max="100" step="0.01" required>' +
+        '<label class="perf-label">A+ grades (optional)</label><input type="number" class="perf-input" id="perfBAplus" min="0" value="0">' +
+        '<label class="perf-label">A grades (optional)</label><input type="number" class="perf-input" id="perfBA" min="0" value="0">' +
+        '<div style="margin-top:12px"><button class="perf-btn" type="submit">Save BISE Result</button></div></form>';
+    }
+  }
+
+  if (!perfBise.length) {
+    html += '<p class="perf-empty">No BISE results entered yet.</p>';
+  } else {
+    html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
+      '<th>Teacher</th><th>Level</th><th>Subject</th><th>Appeared</th><th>Passed</th>' +
+      '<th>Avg %</th><th>A+</th><th>A</th><th></th></tr></thead><tbody>';
+    perfBise.forEach(r => {
+      html += '<tr><td><b>' + escapeHTML(perfTeacherById(r.teacher_id).name || '—') + '</b></td>' +
+        '<td>' + escapeHTML(r.class_level) + '</td>' +
+        '<td>' + escapeHTML(r.subject) + '</td>' +
+        '<td>' + r.students_appeared + '</td><td>' + r.students_passed + '</td>' +
+        '<td>' + r.avg_marks + '%</td><td>' + r.a_plus_count + '</td><td>' + r.a_count + '</td>' +
+        '<td style="text-align:right"><button class="perf-btn perf-btn-danger perf-btn-sm" onclick="perfDeleteBise(\'' + r.id + '\')">Delete</button></td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+  body.innerHTML = html + '</div>';
+}
+
+function perfToggleBiseForm() {
+  perfShowBiseForm = !perfShowBiseForm;
+  perfRender();
+}
+
+async function perfSaveBise(e) {
+  e.preventDefault();
+  const appeared = parseInt(perf$('perfBAppeared').value, 10);
+  const passed = parseInt(perf$('perfBPassed').value, 10);
+  if (passed > appeared) { showToast('Passed cannot exceed appeared.', 'error'); return false; }
+  showLoader('Saving BISE result...');
+  try {
+    const { error } = await supabaseClient.from('perf_bise_results').insert({
+      teacher_id: perf$('perfBTeacher').value,
+      academic_year: perfYear,
+      class_level: perf$('perfBLevel').value,
+      subject: perf$('perfBSubject').value.trim(),
+      students_appeared: appeared,
+      students_passed: passed,
+      avg_marks: Number(perf$('perfBAvg').value),
+      a_plus_count: parseInt(perf$('perfBAplus').value || '0', 10),
+      a_count: parseInt(perf$('perfBA').value || '0', 10),
+    });
+    if (error) throw error;
+    showToast('BISE result saved.', 'success');
+    perfShowBiseForm = false;
+    await perfLoadAll();
+  } catch (err) {
+    showToast('Save failed: ' + err.message, 'error');
+  } finally {
+    hideLoader();
+  }
+  return false;
+}
+
+async function perfDeleteBise(id) {
+  if (!confirm('Delete this BISE result?')) return;
+  showLoader('Deleting...');
+  try {
+    const { error } = await supabaseClient.from('perf_bise_results').delete().eq('id', id);
+    if (error) throw error;
+    showToast('BISE result deleted.', 'success');
+    await perfLoadAll();
+  } catch (err) {
+    showToast('Delete failed: ' + err.message, 'error');
+  } finally {
+    hideLoader();
+  }
+}
+
 </script>
 
 </body>
