@@ -7717,89 +7717,134 @@ async function perfDeleteTeacher(id, name) {
   }
 }
 
-/* ---------- term results : per-student marks ---------- */
-let perfMarksTeacherId = '';
-let perfMarksRows = [];   // [{seq, name, obtained}]
-let perfMarksPaperTotal = 100;
+/* ---------- term results : class-wise subject grid ----------
+   Entry is class-wise like a result register:
+   rows = students, columns = subjects (from the class's teachers).
+   Saves per teacher into perf_student_marks + perf_term_results. */
+let perfEntryClass = '';
+let perfEntrySubjects = []; // [{subject, teacher_id, paper_total}]
+let perfEntryRows = [];     // [{seq, name, marks:{subject: '12'}}]
+
+function perfDistinctClasses() {
+  return [...new Set(perfTeachers.map(t => t.class_assigned))].sort();
+}
 
 function perfRenderTerms(body) {
   let html = '<div class="perf-card"><h3>Term Results Entry</h3>' +
-    '<p class="perf-sub">Select a teacher and term, then enter each student\'s obtained marks — the class average is calculated automatically.</p>' +
-    '<div class="perf-topbar"><div class="perf-yearbox"><label>Term</label>' +
-    '<select id="perfTermSelect" class="perf-input" style="width:auto" onchange="perfTermChanged()">' +
+    '<p class="perf-sub">Select class and term, then enter every student\'s marks subject-wise — averages calculate automatically.</p>' +
+    '<div class="perf-topbar">' +
+    '<div class="perf-yearbox"><label>Term</label>' +
+    '<select id="perfTermSelect" class="perf-input" style="width:auto" onchange="perfEntryTermChanged()">' +
     ['1st', '2nd', 'final'].map(t =>
       '<option value="' + t + '"' + (perfTermSel === t ? ' selected' : '') + '>' +
       (t === '1st' ? '1st Term' : t === '2nd' ? '2nd Term' : 'Final Term') + '</option>').join('') +
     '</select></div>' +
-    '<div class="perf-yearbox"><label>Teacher</label>' +
-    '<select id="perfMarksTeacher" class="perf-input" style="width:auto;min-width:180px" onchange="perfMarksTeacherChanged()">' +
+    '<div class="perf-yearbox"><label>Class</label>' +
+    '<select id="perfEntryClass" class="perf-input" style="width:auto;min-width:140px" onchange="perfEntryClassChanged()">' +
     '<option value="">— Select —</option>' +
-    perfTeachers.map(t => '<option value="' + t.id + '"' + (perfMarksTeacherId === t.id ? ' selected' : '') + '>' +
-      escapeHTML(t.name) + ' — ' + escapeHTML(t.class_assigned) + '</option>').join('') +
+    perfDistinctClasses().map(c =>
+      '<option value="' + escapeHTML(c) + '"' + (perfEntryClass === c ? ' selected' : '') + '>' +
+      escapeHTML(c) + '</option>').join('') +
     '</select></div></div>';
 
-  if (!perfMarksTeacherId) {
-    body.innerHTML = html + '<p class="perf-empty">Select a teacher to enter marks.</p></div>';
+  if (!perfEntryClass) {
+    body.innerHTML = html + '<p class="perf-empty">Select a class to enter marks.</p></div>';
+    return;
+  }
+  if (!perfEntrySubjects.length) {
+    body.innerHTML = html + '<p class="perf-empty">No teachers assigned to ' +
+      escapeHTML(perfEntryClass) + ' yet. Add teachers first.</p></div>';
     return;
   }
 
-  html += '<div class="perf-topbar"><div class="perf-yearbox"><label>Paper total marks</label>' +
-    '<input type="number" id="perfPaperTotal" class="perf-input perf-num" style="width:90px" min="1" step="0.01" value="' + perfMarksPaperTotal + '" oninput="perfMarksAvg()"></div>' +
-    '<div class="perf-yearbox"><label>Students</label>' +
-    '<input type="number" id="perfNumStudents" class="perf-input perf-num" style="width:70px" min="1" max="200" step="1" placeholder="—"></div>' +
-    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfGenRows()">Generate rows</button>' +
-    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfAddRow()">+ Add row</button></div>';
+  html += '<div class="perf-topbar"><div class="perf-yearbox"><label>Paper totals:</label></div>';
+  perfEntrySubjects.forEach((s, i) => {
+    html += '<div class="perf-yearbox"><label>' + escapeHTML(s.subject) + '</label>' +
+      '<input type="number" min="1" step="0.01" class="perf-input perf-num" style="width:70px" data-pt="' + i +
+      '" value="' + s.paper_total + '" oninput="perfEntryAvg()"></div>';
+  });
+  html += '</div>';
 
-  html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
-    '<th style="width:40px">#</th><th>Student name (optional)</th><th>Obtained marks</th><th></th></tr></thead>' +
-    '<tbody id="perfMarksBody">';
-  perfMarksRows.forEach((r, i) => { html += perfMarksRowHtml(i, r); });
+  html += '<div class="perf-topbar"><div class="perf-yearbox"><label>Students</label>' +
+    '<input type="number" id="perfEntryNum" class="perf-input perf-num" style="width:70px" min="1" max="200" placeholder="—"></div>' +
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfEntryGenRows()">Generate rows</button>' +
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfEntryAddRow()">+ Add row</button></div>';
+
+  html += '<div class="perf-scroll"><table class="perf-table"><thead><tr><th>#</th><th>Student</th>';
+  perfEntrySubjects.forEach(s => { html += '<th>' + escapeHTML(s.subject) + '</th>'; });
+  html += '<th></th></tr></thead><tbody id="perfEntryBody">';
+  perfEntryRows.forEach((r, i) => { html += perfEntryRowHtml(i, r); });
   html += '</tbody></table></div>';
 
-  html += '<div class="perf-topbar" style="margin-top:12px"><div class="perf-sub" id="perfMarksSummary" style="margin:0"></div>' +
-    '<button class="perf-btn perf-btn-gold" onclick="perfSaveMarks()">Save Marks</button></div>';
+  html += '<div class="perf-topbar" style="margin-top:12px"><div class="perf-sub" id="perfEntrySummary" style="margin:0"></div>' +
+    '<button class="perf-btn perf-btn-gold" onclick="perfEntrySave()">Save Marks</button></div>';
 
   body.innerHTML = html + '</div>';
-  perfMarksAvg();
+  perfEntryAvg();
 }
 
-function perfMarksRowHtml(i, r) {
-  return '<tr>' +
-    '<td>' + (i + 1) + '</td>' +
-    '<td><input type="text" class="perf-input" data-mf="name" value="' + escapeHTML(r.name || '') + '" placeholder="—"></td>' +
-    '<td><input type="number" min="0" step="0.01" class="perf-input perf-num" data-mf="obtained" value="' +
-    (r.obtained === '' || r.obtained == null ? '' : r.obtained) + '" placeholder="—" oninput="perfMarksAvg()"></td>' +
-    '<td><button class="perf-btn perf-btn-danger perf-btn-sm" onclick="perfDelRow(' + i + ')">×</button></td></tr>';
+function perfEntryRowHtml(i, r) {
+  let h = '<tr><td>' + (i + 1) + '</td>' +
+    '<td><input type="text" class="perf-input" data-ef="name" value="' + escapeHTML(r.name || '') +
+    '" placeholder="—" style="min-width:120px"></td>';
+  perfEntrySubjects.forEach(s => {
+    const v = r.marks[s.subject];
+    h += '<td><input type="number" min="0" step="0.01" class="perf-input perf-num" data-ef="mk" value="' +
+      (v === '' || v == null ? '' : v) + '" placeholder="—" oninput="perfEntryAvg()"></td>';
+  });
+  return h + '<td><button class="perf-btn perf-btn-danger perf-btn-sm" onclick="perfEntryDelRow(' + i + ')">×</button></td></tr>';
 }
 
-function perfTermChanged() {
+function perfEntryTermChanged() {
   perfTermSel = perf$('perfTermSelect').value;
-  perfMarksTeacherId = '';
-  perfMarksRows = [];
-  perfRender();
+  perfEntryLoad();
 }
 
-async function perfMarksTeacherChanged() {
-  perfMarksTeacherId = perf$('perfMarksTeacher').value;
-  perfMarksRows = [];
-  perfMarksPaperTotal = 100;
-  if (!perfMarksTeacherId) { perfRender(); return; }
+async function perfEntryClassChanged() {
+  perfEntryClass = perf$('perfEntryClass').value;
+  perfEntryRows = [];
+  await perfEntryLoad();
+}
+
+async function perfEntryLoad() {
+  perfEntrySubjects = [];
+  if (!perfEntryClass) { perfRender(); return; }
+  const seen = {};
+  perfTeachers.filter(t => t.class_assigned === perfEntryClass).forEach(t => {
+    if (!seen[t.subject]) {
+      seen[t.subject] = true;
+      perfEntrySubjects.push({ subject: t.subject, teacher_id: t.id, paper_total: 100 });
+    }
+  });
+  perfEntrySubjects.sort((a, b) => a.subject.localeCompare(b.subject));
+  if (!perfEntrySubjects.length) { perfRender(); return; }
+
   showLoader('Loading marks...');
   try {
-    const [mRes, sRes] = await Promise.all([
-      supabaseClient.from('perf_student_marks').select('*')
-        .eq('teacher_id', perfMarksTeacherId).eq('academic_year', perfYear).eq('term', perfTermSel)
-        .order('student_seq'),
-      supabaseClient.from('perf_term_results').select('*')
-        .eq('teacher_id', perfMarksTeacherId).eq('academic_year', perfYear).eq('term', perfTermSel)
-        .maybeSingle(),
-    ]);
-    if (mRes.error) throw mRes.error;
-    if (sRes.error) throw sRes.error;
-    (mRes.data || []).forEach(m => {
-      perfMarksRows.push({ seq: m.student_seq, name: m.student_name || '', obtained: m.obtained_marks });
+    const results = await Promise.all(perfEntrySubjects.map(async s => {
+      const [mRes, tRes] = await Promise.all([
+        supabaseClient.from('perf_student_marks').select('*')
+          .eq('teacher_id', s.teacher_id).eq('academic_year', perfYear).eq('term', perfTermSel)
+          .order('student_seq'),
+        supabaseClient.from('perf_term_results').select('*')
+          .eq('teacher_id', s.teacher_id).eq('academic_year', perfYear).eq('term', perfTermSel)
+          .maybeSingle(),
+      ]);
+      if (mRes.error) throw mRes.error;
+      if (tRes.error) throw tRes.error;
+      return { subj: s, marks: mRes.data || [], summary: tRes.data || null };
+    }));
+    const rowMap = {};
+    results.forEach(({ subj, marks, summary }) => {
+      if (summary && summary.paper_total) subj.paper_total = Number(summary.paper_total);
+      marks.forEach(m => {
+        if (!rowMap[m.student_seq]) rowMap[m.student_seq] = { seq: m.student_seq, name: m.student_name || '', marks: {} };
+        rowMap[m.student_seq].marks[subj.subject] = m.obtained_marks;
+        if (!rowMap[m.student_seq].name && m.student_name) rowMap[m.student_seq].name = m.student_name;
+      });
     });
-    if (sRes.data && sRes.data.paper_total) perfMarksPaperTotal = Number(sRes.data.paper_total);
+    perfEntryRows = Object.keys(rowMap).map(Number).sort((a, b) => a - b).map(k => rowMap[k]);
+    perfEntryRows.forEach((r, i) => { r.seq = i + 1; });
   } catch (err) {
     console.error(err);
     showToast('Could not load marks: ' + (err.message || err), 'error');
@@ -7809,105 +7854,137 @@ async function perfMarksTeacherChanged() {
   perfRender();
 }
 
-function perfCollectRows() {
+function perfEntryCollect() {
   const rows = [];
-  document.querySelectorAll('#perfMarksBody tr').forEach((tr, i) => {
+  document.querySelectorAll('#perfEntryBody tr').forEach((tr, i) => {
+    const inputs = tr.querySelectorAll('input[data-ef="mk"]');
+    const marks = {};
+    perfEntrySubjects.forEach((s, j) => {
+      marks[s.subject] = inputs[j] ? inputs[j].value.trim() : '';
+    });
     rows.push({
       seq: i + 1,
-      name: tr.querySelector('[data-mf=name]').value.trim(),
-      obtained: tr.querySelector('[data-mf=obtained]').value.trim(),
+      name: tr.querySelector('input[data-ef="name"]').value.trim(),
+      marks,
     });
   });
-  perfMarksRows = rows;
+  perfEntryRows = rows;
 }
 
-function perfGenRows() {
-  const n = parseInt(((perf$('perfNumStudents') || {}).value || '').trim(), 10);
+function perfEntryGenRows() {
+  const n = parseInt(((perf$('perfEntryNum') || {}).value || '').trim(), 10);
   if (!n || n < 1 || n > 200) { showToast('Enter number of students (1–200).', 'error'); return; }
-  perfCollectRows();
-  while (perfMarksRows.length < n) perfMarksRows.push({ seq: perfMarksRows.length + 1, name: '', obtained: '' });
-  perfMarksRows.length = n;
-  perfRender();
-}
-
-function perfAddRow() {
-  perfCollectRows();
-  perfMarksRows.push({ seq: perfMarksRows.length + 1, name: '', obtained: '' });
-  perfRender();
-}
-
-function perfDelRow(i) {
-  perfCollectRows();
-  perfMarksRows.splice(i, 1);
-  perfMarksRows.forEach((r, j) => { r.seq = j + 1; });
-  perfRender();
-}
-
-function perfMarksAvg() {
-  const ptEl = perf$('perfPaperTotal');
-  const pt = ptEl ? parseFloat(ptEl.value) : NaN;
-  let sum = 0, count = 0;
-  document.querySelectorAll('#perfMarksBody [data-mf=obtained]').forEach(el => {
-    const v = parseFloat(el.value);
-    if (isFinite(v) && v >= 0) { sum += v; count++; }
-  });
-  const el = perf$('perfMarksSummary');
-  if (!el) return;
-  if (count && isFinite(pt) && pt > 0) {
-    el.innerHTML = '<b>' + count + '</b> students entered · Class average: <b>' +
-      (sum / (count * pt) * 100).toFixed(2) + '%</b>';
-  } else {
-    el.textContent = count ? count + ' students entered.' : 'No marks entered yet.';
+  perfEntryCollect();
+  while (perfEntryRows.length < n) {
+    const marks = {};
+    perfEntrySubjects.forEach(s => { marks[s.subject] = ''; });
+    perfEntryRows.push({ seq: perfEntryRows.length + 1, name: '', marks });
   }
+  perfEntryRows.length = n;
+  perfRender();
 }
 
-async function perfSaveMarks() {
-  if (!perfMarksTeacherId) return;
-  const pt = parseFloat(perf$('perfPaperTotal').value);
-  if (!isFinite(pt) || pt <= 0) { showToast('Enter paper total marks.', 'error'); return; }
-  perfCollectRows();
-  const filled = perfMarksRows.filter(r => r.obtained !== '');
-  if (!filled.length) { showToast('Enter at least one student\'s marks.', 'error'); return; }
-  let bad = 0, sum = 0;
-  filled.forEach(r => {
-    const v = Number(r.obtained);
-    if (!isFinite(v) || v < 0 || v > pt) bad++;
-    else sum += v;
+function perfEntryAddRow() {
+  perfEntryCollect();
+  const marks = {};
+  perfEntrySubjects.forEach(s => { marks[s.subject] = ''; });
+  perfEntryRows.push({ seq: perfEntryRows.length + 1, name: '', marks });
+  perfRender();
+}
+
+function perfEntryDelRow(i) {
+  perfEntryCollect();
+  perfEntryRows.splice(i, 1);
+  perfEntryRows.forEach((r, j) => { r.seq = j + 1; });
+  perfRender();
+}
+
+function perfEntryAvg() {
+  const pts = [];
+  document.querySelectorAll('[data-pt]').forEach(el => { pts.push(parseFloat(el.value)); });
+  const avgs = perfEntrySubjects.map(() => ({ sum: 0, count: 0 }));
+  document.querySelectorAll('#perfEntryBody tr').forEach(tr => {
+    tr.querySelectorAll('input[data-ef="mk"]').forEach((el, j) => {
+      const v = parseFloat(el.value);
+      if (isFinite(v) && v >= 0 && avgs[j]) { avgs[j].sum += v; avgs[j].count++; }
+    });
   });
-  if (bad) { showToast(bad + ' mark(s) invalid — must be between 0 and ' + pt + '.', 'error'); return; }
-  const count = filled.length;
-  const avg = Math.round((sum / (count * pt) * 100) * 100) / 100;
+  const el = perf$('perfEntrySummary');
+  if (!el) return;
+  el.innerHTML = perfEntrySubjects.map((s, j) => {
+    const pt = pts[j];
+    if (avgs[j].count && isFinite(pt) && pt > 0) {
+      return escapeHTML(s.subject) + ': <b>' +
+        (avgs[j].sum / (avgs[j].count * pt) * 100).toFixed(2) + '%</b> (' + avgs[j].count + ')';
+    }
+    return escapeHTML(s.subject) + ': —';
+  }).join(' · ');
+}
+
+async function perfEntrySave() {
+  perfEntryCollect();
+  const pts = [];
+  let ptBad = false;
+  document.querySelectorAll('[data-pt]').forEach(el => {
+    const v = parseFloat(el.value);
+    pts.push(v);
+    if (!isFinite(v) || v <= 0) { ptBad = true; el.style.borderColor = '#b91c1c'; }
+    else el.style.borderColor = '';
+  });
+  if (ptBad) { showToast('Enter paper total marks for every subject.', 'error'); return; }
+  const rows = perfEntryRows.filter(r => perfEntrySubjects.some(s => r.marks[s.subject] !== ''));
+  if (!rows.length) { showToast('Enter at least one mark.', 'error'); return; }
+  let bad = 0;
+  rows.forEach(r => {
+    perfEntrySubjects.forEach((s, j) => {
+      const raw = r.marks[s.subject];
+      if (raw === '') return;
+      const v = Number(raw);
+      if (!isFinite(v) || v < 0 || v > pts[j]) bad++;
+    });
+  });
+  if (bad) { showToast(bad + ' mark(s) exceed the paper total.', 'error'); return; }
+
   showLoader('Saving marks...');
   try {
-    const del = await supabaseClient.from('perf_student_marks').delete()
-      .eq('teacher_id', perfMarksTeacherId).eq('academic_year', perfYear).eq('term', perfTermSel);
-    if (del.error) throw del.error;
-    const ins = await supabaseClient.from('perf_student_marks').insert(
-      filled.map((r, i) => ({
-        teacher_id: perfMarksTeacherId,
+    for (let j = 0; j < perfEntrySubjects.length; j++) {
+      const s = perfEntrySubjects[j];
+      const pt = pts[j];
+      const filled = rows
+        .map((r, i) => ({ seq: i + 1, name: r.name, v: r.marks[s.subject] }))
+        .filter(x => x.v !== '');
+      const del = await supabaseClient.from('perf_student_marks').delete()
+        .eq('teacher_id', s.teacher_id).eq('academic_year', perfYear).eq('term', perfTermSel);
+      if (del.error) throw del.error;
+      if (filled.length) {
+        const ins = await supabaseClient.from('perf_student_marks').insert(
+          filled.map(x => ({
+            teacher_id: s.teacher_id,
+            academic_year: perfYear,
+            term: perfTermSel,
+            student_seq: x.seq,
+            student_name: x.name || null,
+            obtained_marks: Number(x.v),
+          }))
+        );
+        if (ins.error) throw ins.error;
+      }
+      const sum = filled.reduce((a, x) => a + Number(x.v), 0);
+      const avg = filled.length ? Math.round((sum / (filled.length * pt) * 100) * 100) / 100 : 0;
+      const up = await supabaseClient.from('perf_term_results').upsert({
+        teacher_id: s.teacher_id,
         academic_year: perfYear,
         term: perfTermSel,
-        student_seq: i + 1,
-        student_name: r.name || null,
-        obtained_marks: Number(r.obtained),
-      }))
-    );
-    if (ins.error) throw ins.error;
-    const up = await supabaseClient.from('perf_term_results').upsert({
-      teacher_id: perfMarksTeacherId,
-      academic_year: perfYear,
-      term: perfTermSel,
-      class_avg: avg,
-      students_appeared: count,
-      paper_total: pt,
-      obtained_marks: Math.round(sum * 100) / 100,
-      total_marks: Math.round(count * pt * 100) / 100,
-    }, { onConflict: 'teacher_id,academic_year,term' });
-    if (up.error) throw up.error;
-    showToast(count + ' marks saved. Class average: ' + avg + '%.', 'success');
+        class_avg: avg,
+        students_appeared: filled.length,
+        paper_total: pt,
+        obtained_marks: Math.round(sum * 100) / 100,
+        total_marks: Math.round(filled.length * pt * 100) / 100,
+      }, { onConflict: 'teacher_id,academic_year,term' });
+      if (up.error) throw up.error;
+    }
+    showToast('Marks saved for ' + perfEntrySubjects.length + ' subject(s).', 'success');
     await perfLoadAll();
-    perfMarksRows = filled.map((r, i) => ({ seq: i + 1, name: r.name, obtained: r.obtained }));
-    perfMarksPaperTotal = pt;
     perfRender();
   } catch (err) {
     showToast('Save failed: ' + (err.message || err), 'error');
