@@ -8683,7 +8683,7 @@ async function perfRenderStudentProgress(body) {
     const teacherIds = perfTeachers.map(t => t.id).filter(Boolean);
     let marks = [], totals = [];
     if (teacherIds.length) {
-      const [marks, totals] = await Promise.all([
+      [marks, totals] = await Promise.all([
         perfSelectAll(() => supabaseClient.from('perf_student_marks').select('*')
           .eq('academic_year', stu.academic_year).in('teacher_id', teacherIds)),
         perfSelectAll(() => supabaseClient.from('perf_term_results').select('*')
@@ -9155,7 +9155,7 @@ async function perfLoadResults() {
       .filter(t => t.class_assigned === cls).map(t => t.id).filter(Boolean);
     let marks = [], totals = [];
     if (teacherIds.length) {
-      const [marks, totals] = await Promise.all([
+      [marks, totals] = await Promise.all([
         perfSelectAll(() => supabaseClient.from('perf_student_marks').select('*')
           .eq('academic_year', perfYear).in('teacher_id', teacherIds)),
         perfSelectAll(() => supabaseClient.from('perf_term_results').select('*')
