@@ -7971,6 +7971,11 @@ function perfRenderStudents(body) {
     '<div class="perf-yearbox"><label>&nbsp;</label>' +
     '<button class="perf-btn perf-btn-gold perf-btn-sm" onclick="perfPromoteClass()">Promote ' + activeCount + ' students</button></div></div></div>';
 
+  html += '<div class="perf-card" style="margin-top:14px;border:1px solid #f3b8b8"><h3 style="color:#b91c1c">Danger zone</h3>' +
+    '<p class="perf-sub">Permanently delete all <b>' + roster.length + '</b> students of ' + escapeHTML(perfRosterClass) +
+    ' from the roster, along with their term marks for ' + escapeHTML(perfYear) + '. This cannot be undone.</p>' +
+    '<button class="perf-btn perf-btn-danger perf-btn-sm" onclick="perfDeleteClass()">Delete entire class</button></div>';
+
   body.innerHTML = html + '</div>';
   if (perfLastCredentials.length && perfCredClass === perfRosterClass) perfRenderCredentials();
 }
@@ -8175,6 +8180,54 @@ async function perfStudentStatus(id, status) {
   }
 }
 
+
+
+/* ---------- delete entire class : roster + term marks ---------- */
+async function perfDeleteClass() {
+  const roster = perfStudents.filter(s =>
+    s.class_assigned === perfRosterClass && s.academic_year === perfYear);
+  if (!roster.length) {
+    showToast('No students in this class for ' + perfYear + '.', 'error');
+    return;
+  }
+  const names = roster.map(s => (s.student_name || '').trim()).filter(n => n);
+  const sure = confirm('Delete the ENTIRE class "' + perfRosterClass + '"?\n\n' +
+    roster.length + ' students will be removed from the roster.\n' +
+    'Their term marks for ' + perfYear + ' will also be deleted.\n\n' +
+    'This cannot be undone.');
+  if (!sure) return;
+
+  showLoader('Deleting class...');
+  try {
+    const teacherIds = perfTeachers
+      .filter(t => t.class_assigned === perfRosterClass).map(t => t.id);
+    if (teacherIds.length) {
+      const tr = await supabaseClient.from('perf_term_results')
+        .delete().in('teacher_id', teacherIds).eq('academic_year', perfYear);
+      if (tr.error) throw tr.error;
+      for (let i = 0; i < names.length; i += 100) {
+        const mr = await supabaseClient.from('perf_student_marks')
+          .delete().in('teacher_id', teacherIds).eq('academic_year', perfYear)
+          .in('student_name', names.slice(i, i + 100));
+        if (mr.error) throw mr.error;
+      }
+    }
+    const ids = roster.map(s => s.id);
+    for (let i = 0; i < ids.length; i += 100) {
+      const rr = await supabaseClient.from('perf_students')
+        .delete().in('id', ids.slice(i, i + 100));
+      if (rr.error) throw rr.error;
+    }
+    showToast('Class "' + perfRosterClass + '" deleted (' + roster.length + ' students).', 'success');
+    perfRosterClass = '';
+    await perfLoadAll();
+  } catch (err) {
+    console.error(err);
+    showToast('Could not delete class: ' + (err.message || err), 'error');
+  } finally {
+    hideLoader();
+  }
+}
 
 /* ---------- one-click student login accounts from roster ---------- */
 let perfLastCredentials = []; // [{name, username, password, ok, reason}]
