@@ -7550,6 +7550,7 @@ function perfRender() {
     ['subjects', 'Subjects'],
     ['students', 'Students'],
     ['terms', 'Term Results'],
+    ['results', 'Results'],
     ['attendance', 'Attendance'],
     ['bise', 'BISE Results'],
   ];
@@ -7572,6 +7573,7 @@ function perfRender() {
   else if (perfSubTab === 'subjects') perfRenderSubjects(body);
   else if (perfSubTab === 'students') perfRenderStudents(body);
   else if (perfSubTab === 'terms') perfRenderTerms(body);
+  else if (perfSubTab === 'results') perfRenderResults(body);
   else if (perfSubTab === 'attendance') perfRenderAttendance(body);
   else if (perfSubTab === 'bise') perfRenderBise(body);
 }
@@ -8508,6 +8510,398 @@ async function perfRenderStudentProgress(body) {
   }
 }
 
+
+/* ---------- results : class overall result + report cards ---------- */
+let perfResClass = '';
+let perfResTerm = '1st';      // '1st' | '2nd' | 'final' | 'all'
+let perfResStudentId = null;  // report-card view for one student
+let perfResLoading = false;
+let perfResCache = { key: '', subjects: [], rows: [] };
+let perfLastSaved = null;     // {cls, term} — post-save banner on Terms tab
+
+function perfTermLabel(t) {
+  return t === '1st' ? '1st Term' : t === '2nd' ? '2nd Term' : t === 'final' ? 'Final Term' : 'All Terms';
+}
+
+function perfGrade(pct) {
+  if (pct == null || !isFinite(pct)) return '—';
+  if (pct >= 90) return 'A+';
+  if (pct >= 80) return 'A';
+  if (pct >= 70) return 'B';
+  if (pct >= 60) return 'C';
+  if (pct >= 50) return 'D';
+  if (pct >= 40) return 'E';
+  return 'F';
+}
+
+function perfResCacheKey() { return perfYear + '|' + perfResClass + '|' + perfResTerm; }
+
+function perfResClassChanged() {
+  perfResClass = perf$('perfResClass').value;
+  perfResStudentId = null;
+  perfResCache.key = '';
+  perfRender();
+}
+
+function perfResTermChanged() {
+  perfResTerm = perf$('perfResTerm').value;
+  perfResStudentId = null;
+  perfResCache.key = '';
+  perfRender();
+}
+
+function perfOpenReport(id) { perfResStudentId = id; perfRender(); }
+function perfCloseReport() { perfResStudentId = null; perfRender(); }
+
+function perfViewSavedResult() {
+  if (!perfLastSaved) return;
+  perfResClass = perfLastSaved.cls;
+  perfResTerm = perfLastSaved.term;
+  perfResStudentId = null;
+  perfLastSaved = null;
+  perfSetTab('results');
+}
+
+function perfRenderResults(body) {
+  const classes = perfRosterClasses();
+  if (!perfResClass && classes.length) perfResClass = classes[0];
+  let html = '<div class="perf-card"><h3>Class Results & Report Cards</h3>' +
+    '<p class="perf-sub">Overall class result per term, plus a printable report card for every student.</p>' +
+    '<div class="perf-topbar">' +
+    '<div class="perf-yearbox"><label>Class</label>' +
+    '<select id="perfResClass" class="perf-input" style="width:auto;min-width:140px" onchange="perfResClassChanged()">' +
+    '<option value="">— Select —</option>' +
+    classes.map(c => '<option value="' + escapeHTML(c) + '"' + (perfResClass === c ? ' selected' : '') + '>' +
+      escapeHTML(c) + '</option>').join('') +
+    '</select></div>' +
+    '<div class="perf-yearbox"><label>Term</label>' +
+    '<select id="perfResTerm" class="perf-input" style="width:auto" onchange="perfResTermChanged()">' +
+    [['1st', '1st Term'], ['2nd', '2nd Term'], ['final', 'Final Term'], ['all', 'All Terms']].map(o =>
+      '<option value="' + o[0] + '"' + (perfResTerm === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') +
+    '</select></div></div>';
+
+  if (!perfResClass) {
+    body.innerHTML = html + '<p class="perf-empty">Select a class to view results.</p></div>';
+    return;
+  }
+  if (perfResCache.key !== perfResCacheKey()) {
+    if (!perfResLoading) perfLoadResults();
+    body.innerHTML = html + '<p class="perf-empty">Loading results…</p></div>';
+    return;
+  }
+  if (perfResStudentId) {
+    perfRenderReportCard(body, html);
+    return;
+  }
+  const data = perfResCompute();
+  const term = perfResTerm;
+  html += '<div class="perf-topbar" style="justify-content:flex-end">' +
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfPrintClassResult()">Print Class Result</button></div>';
+  if (!data.list.length) {
+    body.innerHTML = html + '<p class="perf-empty">No students in this class roster.</p></div>';
+    return;
+  }
+  const anyMarks = data.list.some(x => x.pct != null);
+  if (!anyMarks) {
+    body.innerHTML = html + '<p class="perf-empty">No marks saved for ' + escapeHTML(perfResClass) +
+      ' (' + escapeHTML(perfTermLabel(term)) + ') yet — enter them on the <b>Term Results</b> tab.</p></div>';
+    return;
+  }
+  html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
+    '<th>#</th><th>Student</th>';
+  data.subjects.forEach(sj => { html += '<th>' + escapeHTML(sj) + '</th>'; });
+  html += term === 'all' ? '<th>Overall %</th>' : '<th>Total</th><th>%</th>';
+  html += '<th>Grade</th><th>Position</th><th></th></tr></thead><tbody>';
+  data.list.forEach((x, i) => {
+    html += '<tr><td>' + (i + 1) + '</td><td><b>' + escapeHTML(x.stu.student_name) + '</b>' +
+      (x.stu.roll_no ? ' <span class="perf-sub">· ' + escapeHTML(x.stu.roll_no) + '</span>' : '') +
+      (x.stu.status === 'dropped' ? ' <span class="perf-flag">Dropped</span>' : '') + '</td>';
+    x.cells.forEach(c => {
+      if (term === 'all') html += '<td>' + (c.pct != null ? c.pct.toFixed(1) + '%' : '—') + '</td>';
+      else html += '<td>' + (c.ob != null ? perfR2(c.ob) : '—') + '</td>';
+    });
+    if (term === 'all') {
+      html += '<td><b>' + (x.pct != null ? x.pct.toFixed(1) + '%' : '—') + '</b></td>';
+    } else {
+      html += '<td><b>' + (x.totalOb != null ? perfR2(x.totalOb) + ' / ' + perfR2(x.totalPt) : '—') + '</b></td>' +
+        '<td>' + (x.pct != null ? x.pct.toFixed(1) + '%' : '—') + '</td>';
+    }
+    html += '<td>' + x.grade + '</td><td>' +
+      (x.pos === '—' ? '—' : '<span class="perf-score" style="padding:3px 10px;font-size:.72rem">' + x.pos + '</span>') +
+      '</td><td><button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfOpenReport(' + x.stu.id + ')">Report</button></td></tr>';
+  });
+  body.innerHTML = html + '</tbody></table></div></div>';
+}
+
+/* load all marks of the class (every term) once, then compute locally */
+async function perfLoadResults() {
+  perfResLoading = true;
+  const wantKey = perfResCacheKey();
+  try {
+    const cls = perfResClass;
+    const roster = perfStudents
+      .filter(s => s.class_assigned === cls && s.academic_year === perfYear)
+      .sort((a, b) => a.id - b.id);
+    const subjects = perfClassSubjects
+      .filter(s => s.class_assigned === cls).map(s => s.subject)
+      .sort((a, b) => a.localeCompare(b));
+    const teacherIds = perfTeachers
+      .filter(t => t.class_assigned === cls).map(t => t.id).filter(Boolean);
+    let marks = [], totals = [];
+    if (teacherIds.length) {
+      const [mRes, tRes] = await Promise.all([
+        supabaseClient.from('perf_student_marks').select('*')
+          .eq('academic_year', perfYear).in('teacher_id', teacherIds),
+        supabaseClient.from('perf_term_results').select('*')
+          .eq('academic_year', perfYear).in('teacher_id', teacherIds),
+      ]);
+      if (mRes.error) throw mRes.error;
+      if (tRes.error) throw tRes.error;
+      marks = mRes.data || [];
+      totals = tRes.data || [];
+    }
+    const rows = roster.map(stu => {
+      const nm = (stu.student_name || '').trim().toLowerCase();
+      const perSubj = {};
+      subjects.forEach(sj => {
+        perSubj[sj] = {
+          '1st': { ob: null, pt: null },
+          '2nd': { ob: null, pt: null },
+          'final': { ob: null, pt: null },
+        };
+      });
+      marks.filter(m => (m.student_name || '').trim().toLowerCase() === nm).forEach(m => {
+        const cell = perSubj[m.subject] && perSubj[m.subject][m.term];
+        if (!cell) return;
+        const ob = Number(m.obtained_marks);
+        if (ob != null && isFinite(ob)) cell.ob = ob;
+      });
+      totals.forEach(t => {
+        const cell = perSubj[t.subject] && perSubj[t.subject][t.term];
+        if (!cell) return;
+        const pt = Number(t.paper_total);
+        if (pt != null && isFinite(pt) && pt > 0) cell.pt = pt;
+      });
+      return { stu, perSubj };
+    });
+    perfResCache = { key: wantKey, subjects, rows };
+  } catch (err) {
+    console.error(err);
+    perfResCache = { key: wantKey, subjects: [], rows: [], loadError: true };
+    showToast('Could not load results: ' + (err.message || err), 'error');
+  } finally {
+    perfResLoading = false;
+  }
+  if (perfSubTab === 'results') perfRender();
+}
+
+/* compute totals / % / grade / position from the cached rows */
+function perfResCompute() {
+  const term = perfResTerm;
+  const subjects = perfResCache.subjects;
+  const weights = { '1st': 20, '2nd': 30, 'final': 50 };
+  const list = perfResCache.rows.map(r => {
+    const cells = subjects.map(sj => {
+      const d = r.perSubj[sj];
+      if (term === 'all') {
+        let sw = 0, sv = 0, has = false;
+        ['1st', '2nd', 'final'].forEach(t => {
+          const cell = d[t];
+          if (cell.ob != null && cell.pt) {
+            sv += weights[t] * (cell.ob / cell.pt * 100);
+            sw += weights[t];
+            has = true;
+          }
+        });
+        return { pct: has ? sv / sw : null };
+      }
+      const cell = d[term];
+      return { ob: cell.ob, pt: cell.pt };
+    });
+    let pct = null, totalOb = 0, totalPt = 0, n = 0;
+    if (term === 'all') {
+      let s = 0;
+      cells.forEach(c => { if (c.pct != null) { s += c.pct; n++; } });
+      pct = n ? s / n : null;
+    } else {
+      cells.forEach(c => {
+        if (c.ob != null) { totalOb += c.ob; n++; }
+        if (c.pt) totalPt += c.pt;
+      });
+      if (n && totalPt > 0) pct = totalOb / totalPt * 100;
+    }
+    return { stu: r.stu, cells, totalOb: n ? totalOb : null, totalPt, pct, grade: perfGrade(pct), pos: null };
+  });
+  const ranked = list.filter(x => x.pct != null).sort((a, b) => b.pct - a.pct);
+  let lastPct = null, lastPos = 0;
+  ranked.forEach((x, i) => {
+    if (lastPct == null || Math.abs(x.pct - lastPct) > 1e-9) { lastPos = i + 1; lastPct = x.pct; }
+    x.pos = lastPos;
+  });
+  list.forEach(x => { if (x.pos == null) x.pos = '—'; });
+  return { subjects, list };
+}
+
+/* ---------------- report card ---------------- */
+function perfRenderReportCard(body, headHtml) {
+  if (perfResCache.key !== perfResCacheKey()) {
+    if (!perfResLoading) perfLoadResults();
+    body.innerHTML = headHtml + '<p class="perf-empty">Loading report card…</p></div>';
+    return;
+  }
+  const data = perfResCompute();
+  const rec = data.list.find(x => x.stu.id === perfResStudentId);
+  if (!rec) {
+    body.innerHTML = headHtml + '<p class="perf-empty">Student not found.</p></div>';
+    return;
+  }
+  const stu = rec.stu;
+  const term = perfResTerm;
+  let html = headHtml +
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfCloseReport()">← Back to class result</button>' +
+    '<div class="perf-topbar" style="justify-content:flex-end">' +
+    '<button class="perf-btn perf-btn-sm" onclick="perfPrintReportCard()">Print Report Card</button></div>' +
+    '<div style="border:2px solid #0d7a58;border-radius:12px;padding:18px;max-width:640px">' +
+    '<div style="text-align:center;margin-bottom:12px">' +
+    '<div style="font-size:1.3rem;font-weight:800;color:#0d7a58">TAUHEED MODEL SCHOOL</div>' +
+    '<div class="perf-sub">Report Card · ' + escapeHTML(perfTermLabel(term)) + ' · ' + escapeHTML(perfYear) + '</div></div>' +
+    '<div class="perf-topbar"><div><b>Student:</b> ' + escapeHTML(stu.student_name) + '</div>' +
+    '<div><b>Class:</b> ' + escapeHTML(stu.class_assigned) + '</div>' +
+    (stu.roll_no ? '<div><b>Roll No:</b> ' + escapeHTML(stu.roll_no) + '</div>' : '') + '</div>' +
+    '<div class="perf-scroll"><table class="perf-table"><thead><tr><th>Subject</th>';
+  if (term === 'all') {
+    html += '<th>1st Term</th><th>2nd Term</th><th>Final Term</th><th>Overall %</th>';
+  } else {
+    html += '<th>Obtained</th><th>Paper Total</th><th>%</th>';
+  }
+  html += '</tr></thead><tbody>';
+  rec.cells.forEach((c, i) => {
+    const sj = data.subjects[i];
+    html += '<tr><td><b>' + escapeHTML(sj) + '</b></td>';
+    if (term === 'all') {
+      const d = rec.stu && perfResCache.rows.find(r => r.stu.id === stu.id).perSubj[sj];
+      html += ['1st', '2nd', 'final'].map(t =>
+        '<td>' + (d[t].ob != null ? perfR2(d[t].ob) + (d[t].pt ? ' / ' + perfR2(d[t].pt) : '') : '—') + '</td>').join('') +
+        '<td><b>' + (c.pct != null ? c.pct.toFixed(1) + '%' : '—') + '</b></td>';
+    } else {
+      const pct = (c.ob != null && c.pt) ? (c.ob / c.pt * 100) : null;
+      html += '<td>' + (c.ob != null ? perfR2(c.ob) : '—') + '</td>' +
+        '<td>' + (c.pt ? perfR2(c.pt) : '—') + '</td>' +
+        '<td>' + (pct != null ? pct.toFixed(1) + '%' : '—') + '</td>';
+    }
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>' +
+    '<div class="perf-formula" style="margin-top:12px"><b>Total:</b> ' +
+    (term === 'all'
+      ? '<b>' + (rec.pct != null ? rec.pct.toFixed(1) + '%' : '—') + '</b>'
+      : '<b>' + (rec.totalOb != null ? perfR2(rec.totalOb) + ' / ' + perfR2(rec.totalPt) : '—') + '</b>' +
+        (rec.pct != null ? ' (<b>' + rec.pct.toFixed(1) + '%</b>)' : '')) +
+    ' &nbsp;·&nbsp; <b>Grade:</b> ' + rec.grade +
+    ' &nbsp;·&nbsp; <b>Position in class:</b> ' +
+    (rec.pos === '—' ? '—' : '<span class="perf-score" style="padding:3px 12px">' + rec.pos + '</span>') +
+    '</div></div></div>';
+  body.innerHTML = html;
+}
+
+/* print-friendly (B&W) documents */
+function perfPrintDoc(title, inner) {
+  const w = window.open('', '_blank');
+  if (!w) { showToast('Popup blocked — please allow popups for this site.', 'error'); return; }
+  w.document.write('<html><head><title>' + escapeHTML(title) + '</title><style>' +
+    'body{font-family:Arial,sans-serif;color:#000;margin:22px;font-size:14px}' +
+    '.h{text-align:center;border-bottom:3px double #000;padding-bottom:10px;margin-bottom:14px}' +
+    '.h h1{margin:0;font-size:22px;letter-spacing:1px}' +
+    '.h p{margin:3px 0;font-size:13px}' +
+    '.info{display:flex;justify-content:space-between;gap:12px;margin:12px 0;font-size:14px;flex-wrap:wrap}' +
+    'table{width:100%;border-collapse:collapse;font-size:13px}' +
+    'th,td{border:1px solid #000;padding:6px 8px;text-align:left}' +
+    'th{background:#eee}' +
+    '.c{text-align:center}' +
+    '.sum{margin-top:12px;font-size:14px;border:1px solid #000;padding:10px}' +
+    '.sig{display:flex;justify-content:space-between;margin-top:52px;font-size:13px}' +
+    '.sig div{border-top:1px solid #000;padding-top:4px;width:28%;text-align:center}' +
+    '@media print{body{margin:10px}}' +
+    '</style></head><body>' + inner + '</body></html>');
+  w.document.close();
+  w.focus();
+  w.print();
+}
+
+function perfPrintReportCard() {
+  const data = perfResCompute();
+  const rec = data.list.find(x => x.stu.id === perfResStudentId);
+  if (!rec) return;
+  const stu = rec.stu;
+  const term = perfResTerm;
+  const row = perfResCache.rows.find(r => r.stu.id === stu.id);
+  let trows = '';
+  rec.cells.forEach((c, i) => {
+    const sj = data.subjects[i];
+    trows += '<tr><td><b>' + escapeHTML(sj) + '</b></td>';
+    if (term === 'all') {
+      const d = row.perSubj[sj];
+      trows += ['1st', '2nd', 'final'].map(t =>
+        '<td class="c">' + (d[t].ob != null ? perfR2(d[t].ob) + (d[t].pt ? ' / ' + perfR2(d[t].pt) : '') : '—') + '</td>').join('') +
+        '<td class="c"><b>' + (c.pct != null ? c.pct.toFixed(1) + '%' : '—') + '</b></td>';
+    } else {
+      const pct = (c.ob != null && c.pt) ? (c.ob / c.pt * 100) : null;
+      trows += '<td class="c">' + (c.ob != null ? perfR2(c.ob) : '—') + '</td>' +
+        '<td class="c">' + (c.pt ? perfR2(c.pt) : '—') + '</td>' +
+        '<td class="c">' + (pct != null ? pct.toFixed(1) + '%' : '—') + '</td>';
+    }
+    trows += '</tr>';
+  });
+  const head = term === 'all'
+    ? '<tr><th>Subject</th><th>1st Term</th><th>2nd Term</th><th>Final Term</th><th>Overall %</th></tr>'
+    : '<tr><th>Subject</th><th>Obtained</th><th>Paper Total</th><th>%</th></tr>';
+  const totalLine = term === 'all'
+    ? 'Overall: <b>' + (rec.pct != null ? rec.pct.toFixed(1) + '%' : '—') + '</b>'
+    : 'Total: <b>' + (rec.totalOb != null ? perfR2(rec.totalOb) + ' / ' + perfR2(rec.totalPt) : '—') + '</b>' +
+      (rec.pct != null ? ' (' + rec.pct.toFixed(1) + '%)' : '');
+  const inner =
+    '<div class="h"><h1>TAUHEED MODEL SCHOOL</h1>' +
+    '<p>Report Card · ' + escapeHTML(perfTermLabel(term)) + ' · Academic Year ' + escapeHTML(perfYear) + '</p></div>' +
+    '<div class="info"><div><b>Student:</b> ' + escapeHTML(stu.student_name) + '</div>' +
+    '<div><b>Class:</b> ' + escapeHTML(stu.class_assigned) + '</div>' +
+    (stu.roll_no ? '<div><b>Roll No:</b> ' + escapeHTML(stu.roll_no) + '</div>' : '') + '</div>' +
+    '<table><thead>' + head + '</thead><tbody>' + trows + '</tbody></table>' +
+    '<div class="sum">' + totalLine +
+    ' &nbsp;&nbsp; <b>Grade:</b> ' + rec.grade +
+    ' &nbsp;&nbsp; <b>Position in Class:</b> ' + (rec.pos === '—' ? '—' : rec.pos) + '</div>' +
+    '<div class="sig"><div>Class Teacher</div><div>Principal</div><div>Date</div></div>';
+  perfPrintDoc('Report Card - ' + stu.student_name, inner);
+}
+
+function perfPrintClassResult() {
+  const data = perfResCompute();
+  const term = perfResTerm;
+  let trows = '';
+  data.list.forEach((x, i) => {
+    trows += '<tr><td class="c">' + (i + 1) + '</td><td><b>' + escapeHTML(x.stu.student_name) + '</b>' +
+      (x.stu.roll_no ? ' (' + escapeHTML(x.stu.roll_no) + ')' : '') + '</td>';
+    x.cells.forEach(c => {
+      if (term === 'all') trows += '<td class="c">' + (c.pct != null ? c.pct.toFixed(1) + '%' : '—') + '</td>';
+      else trows += '<td class="c">' + (c.ob != null ? perfR2(c.ob) : '—') + '</td>';
+    });
+    if (term === 'all') trows += '<td class="c"><b>' + (x.pct != null ? x.pct.toFixed(1) + '%' : '—') + '</b></td>';
+    else trows += '<td class="c"><b>' + (x.totalOb != null ? perfR2(x.totalOb) : '—') + '</b></td>' +
+      '<td class="c">' + (x.pct != null ? x.pct.toFixed(1) + '%' : '—') + '</td>';
+    trows += '<td class="c">' + x.grade + '</td><td class="c"><b>' + (x.pos === '—' ? '—' : x.pos) + '</b></td></tr>';
+  });
+  let head = '<tr><th>#</th><th>Student</th>';
+  data.subjects.forEach(sj => { head += '<th>' + escapeHTML(sj) + '</th>'; });
+  head += term === 'all' ? '<th>Overall %</th>' : '<th>Total</th><th>%</th>';
+  head += '<th>Grade</th><th>Position</th></tr>';
+  const inner =
+    '<div class="h"><h1>TAUHEED MODEL SCHOOL</h1>' +
+    '<p>Class Result · ' + escapeHTML(perfResClass) + ' · ' + escapeHTML(perfTermLabel(term)) +
+    ' · Academic Year ' + escapeHTML(perfYear) + '</p></div>' +
+    '<table><thead>' + head + '</thead><tbody>' + trows + '</tbody></table>' +
+    '<div class="sig"><div>Class Teacher</div><div>Principal</div><div>Date</div></div>';
+  perfPrintDoc('Class Result - ' + perfResClass, inner);
+}
+
 /* ---------- term results : class-wise subject grid ----------
    Columns = the class's defined subjects. Each subject's marks are
    attributed to its teacher (exact subject match, else the 'all'
@@ -8531,6 +8925,13 @@ window.addEventListener('beforeunload', function (e) {
 function perfRenderTerms(body) {
   let html = '<div class="perf-card"><h3>Term Results Entry</h3>' +
     '<p class="perf-sub">Select class and term, then enter every student\'s marks subject-wise — averages calculate automatically.</p>';
+  if (perfLastSaved) {
+    html += '<div class="perf-formula" style="border-left:4px solid #35d39a;margin-bottom:12px">' +
+      '\u2713 Marks saved for <b>' + escapeHTML(perfLastSaved.cls) + '</b> (' +
+      escapeHTML(perfTermLabel(perfLastSaved.term)) + '). ' +
+      '<button class="perf-btn perf-btn-sm" onclick="perfViewSavedResult()">View Class Result</button> ' +
+      '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfLastSaved=null;perfRender()">Dismiss</button></div>';
+  }
   if (perfNeedsMigration) {
     html += '<p class="perf-empty" style="border:1px solid #b91c1c;border-radius:8px;padding:10px">' +
       '<b>Database update needed:</b> please run migration 003 in the Supabase SQL Editor first — ' +
@@ -8869,6 +9270,7 @@ async function perfEntrySave() {
     }
     showToast('Marks saved for ' + plan.length + ' subject(s).', 'success');
     perfEntryDirty = false;
+    perfLastSaved = { cls: perfEntryClass, term: perfTermSel };
     await perfLoadAll();
     perfRender();
   } catch (err) {
