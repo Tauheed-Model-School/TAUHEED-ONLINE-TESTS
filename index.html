@@ -8906,13 +8906,13 @@ function perfRenderResults(body) {
     return;
   }
   html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
-    '<th>Sr.</th><th>Student</th>';
+    '<th>Roll No</th><th>Student</th>';
   data.subjects.forEach(sj => { html += '<th>' + escapeHTML(sj) + '</th>'; });
   html += term === 'all' ? '<th>Overall %</th>' : '<th>Total</th><th>%</th>';
   html += '<th>Grade</th><th>Position</th><th></th></tr></thead><tbody>';
   data.list.forEach((x, i) => {
-    html += '<tr><td>' + (i + 1) + '</td><td><b>' + escapeHTML(x.stu.student_name) + '</b>' +
-      (x.stu.roll_no ? ' <span class="perf-sub">· ' + escapeHTML(x.stu.roll_no) + '</span>' : '') +
+    html += '<tr><td><b>' + (x.stu.roll_no ? escapeHTML(x.stu.roll_no) : '—') + '</b></td>' +
+      '<td><b>' + escapeHTML(x.stu.student_name) + '</b>' +
       (x.stu.status === 'dropped' ? ' <span class="perf-flag">Dropped</span>' : '') + '</td>';
     x.cells.forEach(c => {
       if (term === 'all') html += '<td>' + (c.pct != null ? c.pct.toFixed(1) + '%' : '—') + '</td>';
@@ -9174,10 +9174,13 @@ function perfPrintReportCard() {
 function perfPrintClassResult(preWin) {
   const data = perfResCompute();
   const term = perfResTerm;
+  let _sumPct = 0, _nPct = 0;
+  data.list.forEach(x => { if (x.pct != null) { _sumPct += x.pct; _nPct++; } });
+  const _classAvg = _nPct ? (_sumPct / _nPct).toFixed(1) + '%' : '—';
   let trows = '';
   data.list.forEach((x, i) => {
-    trows += '<tr><td class="c">' + (i + 1) + '</td><td><b>' + escapeHTML(x.stu.student_name) + '</b>' +
-      (x.stu.roll_no ? ' (' + escapeHTML(x.stu.roll_no) + ')' : '') + '</td>';
+    trows += '<tr><td class="c"><b>' + (x.stu.roll_no ? escapeHTML(x.stu.roll_no) : '—') + '</b></td>' +
+      '<td><b>' + escapeHTML(x.stu.student_name) + '</b></td>';
     x.cells.forEach(c => {
       if (term === 'all') trows += '<td class="c">' + (c.pct != null ? c.pct.toFixed(1) + '%' : '—') + '</td>';
       else trows += '<td class="c">' + (c.ob != null ? perfR2(c.ob) : '—') + '</td>';
@@ -9187,7 +9190,7 @@ function perfPrintClassResult(preWin) {
       '<td class="c">' + (x.pct != null ? x.pct.toFixed(1) + '%' : '—') + '</td>';
     trows += '<td class="c">' + x.grade + '</td><td class="c"><b>' + (x.pos === '—' ? '—' : x.pos) + '</b></td></tr>';
   });
-  let head = '<tr><th>Sr.</th><th>Student</th>';
+  let head = '<tr><th>Roll No</th><th>Student</th>';
   data.subjects.forEach(sj => { head += '<th>' + escapeHTML(sj) + '</th>'; });
   head += term === 'all' ? '<th>Overall %</th>' : '<th>Total</th><th>%</th>';
   head += '<th>Grade</th><th>Position</th></tr>';
@@ -9196,6 +9199,8 @@ function perfPrintClassResult(preWin) {
     '<p>Class Result · ' + escapeHTML(perfResClass) + ' · ' + escapeHTML(perfTermLabel(term)) +
     ' · Academic Year ' + escapeHTML(perfYear) + '</p></div>' +
     '<table><thead>' + head + '</thead><tbody>' + trows + '</tbody></table>' +
+    '<div class="sum"><b>Class Average:</b> ' + _classAvg +
+    ' &nbsp;&nbsp; <b>Students Appeared:</b> ' + _nPct + ' / ' + data.list.length + '</div>' +
     '<div class="sig"><div>Class Teacher</div><div>Principal</div><div>Date</div></div>';
   perfPrintDoc('Class Result - ' + perfResClass, inner, preWin);
 }
