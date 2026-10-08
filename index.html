@@ -9103,9 +9103,9 @@ function perfRenderReportCard(body, headHtml) {
 }
 
 /* print-friendly (B&W) documents */
-function perfPrintDoc(title, inner) {
-  const w = window.open('', '_blank');
-  if (!w) { showToast('Popup blocked — please allow popups for this site.', 'error'); return; }
+function perfPrintDoc(title, inner, preWin) {
+  const w = preWin || window.open('', '_blank');
+  if (!w || w.closed) { showToast('Popup blocked — please allow popups for this site.', 'error'); return; }
   w.document.write('<html><head><title>' + escapeHTML(title) + '</title><style>' +
     'body{font-family:Arial,sans-serif;color:#000;margin:22px;font-size:14px}' +
     '.h{text-align:center;border-bottom:3px double #000;padding-bottom:10px;margin-bottom:14px}' +
@@ -9171,7 +9171,7 @@ function perfPrintReportCard() {
   perfPrintDoc('Report Card - ' + stu.student_name, inner);
 }
 
-function perfPrintClassResult() {
+function perfPrintClassResult(preWin) {
   const data = perfResCompute();
   const term = perfResTerm;
   let trows = '';
@@ -9197,7 +9197,35 @@ function perfPrintClassResult() {
     ' · Academic Year ' + escapeHTML(perfYear) + '</p></div>' +
     '<table><thead>' + head + '</thead><tbody>' + trows + '</tbody></table>' +
     '<div class="sig"><div>Class Teacher</div><div>Principal</div><div>Date</div></div>';
-  perfPrintDoc('Class Result - ' + perfResClass, inner);
+  perfPrintDoc('Class Result - ' + perfResClass, inner, preWin);
+}
+
+/* print the result sheet straight from the Term Results entry tab */
+async function perfPrintEntrySheet() {
+  if (!perfEntryClass) { showToast('Select a class first.', 'error'); return; }
+  if (!perfEntrySubjects.length) { showToast('No subjects defined for this class.', 'error'); return; }
+  const w = window.open('', '_blank'); // open now — browsers block late popups
+  if (!w) { showToast('Popup blocked — please allow popups for this site.', 'error'); return; }
+  try {
+    if (perfEntryDirty && !perfEntrySaving) {
+      showToast('Saving marks first…', 'success');
+      await perfEntrySave();
+      if (perfEntryDirty) { w.close(); return; } // save did not complete
+    }
+    perfResClass = perfEntryClass;
+    perfResTerm = perfTermSel;
+    perfResStudentId = null;
+    showLoader('Preparing result sheet...');
+    try { await perfLoadResults(); }
+    finally { hideLoader(); }
+    if (!perfResCache.rows.length) { showToast('No students in roster.', 'error'); w.close(); return; }
+    const data = perfResCompute();
+    if (!data.list.some(x => x.pct != null)) { showToast('No saved marks to print yet.', 'error'); w.close(); return; }
+    perfPrintClassResult(w);
+  } catch (err) {
+    try { w.close(); } catch (e) {}
+    throw err;
+  }
 }
 
 /* ---------- term results : class-wise subject grid ----------
@@ -9296,6 +9324,7 @@ function perfRenderTerms(body) {
   html += '</tbody></table></div>';
 
   html += '<div class="perf-topbar" style="margin-top:12px"><div class="perf-sub" id="perfEntrySummary" style="margin:0"></div>' +
+    '<button class="perf-btn perf-btn-ghost" onclick="perfPrintEntrySheet()">Print Result Sheet</button>' +
     '<button class="perf-btn perf-btn-gold" onclick="perfEntrySave()">Save Marks</button></div>';
 
   body.innerHTML = html + '</div>';
@@ -9569,6 +9598,7 @@ async function perfEntrySave() {
     showToast('Marks saved for ' + plan.length + ' subject(s).', 'success');
     perfEntryDirty = false;
     perfLastSaved = { cls: perfEntryClass, term: perfTermSel };
+    perfResCache.key = '';
     await perfLoadAll();
     perfRender();
   } catch (err) {
