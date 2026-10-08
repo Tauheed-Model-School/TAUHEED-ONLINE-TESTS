@@ -7788,7 +7788,7 @@ let perfClassSubjects = []; // [{id, class_assigned, subject}]
 let perfSubjClass = '';
 
 function perfRenderSubjects(body) {
-  const classes = perfDistinctClasses();
+  const classes = perfRosterClasses();
   if (!perfSubjClass && classes.length) perfSubjClass = classes[0];
   let html = '<div class="perf-card"><h3>Class Subjects</h3>' +
     '<p class="perf-sub">Define which subjects each class has. A teacher with subject "all" (class teacher) automatically covers every subject of their class.</p>';
@@ -8484,7 +8484,7 @@ function perfRenderTerms(body) {
     '<div class="perf-yearbox"><label>Class</label>' +
     '<select id="perfEntryClass" class="perf-input" style="width:auto;min-width:140px" onchange="perfEntryClassChanged()">' +
     '<option value="">— Select —</option>' +
-    perfDistinctClasses().map(c =>
+    perfRosterClasses().map(c =>
       '<option value="' + escapeHTML(c) + '"' + (perfEntryClass === c ? ' selected' : '') + '>' +
       escapeHTML(c) + '</option>').join('') +
     '</select></div></div>';
@@ -8510,7 +8510,7 @@ function perfRenderTerms(body) {
   html += '</div>';
 
   const perfEntryRoster = perfNeedsStudentsMigration ? null :
-    perfStudents.filter(s => s.class_assigned === perfEntryClass && s.status !== 'dropped')
+    perfStudents.filter(s => s.class_assigned === perfEntryClass && s.status !== 'dropped' && s.academic_year === perfYear)
       .sort((a, b) => a.id - b.id);
 
   if (perfEntryRoster && perfEntryRoster.length) {
@@ -8593,7 +8593,7 @@ async function perfEntryLoad() {
     perfEntryPaper = {};
     // seed rows from the class roster — names never need retyping
     const seedRoster = perfNeedsStudentsMigration ? [] :
-      perfStudents.filter(s => s.class_assigned === perfEntryClass && s.status !== 'dropped')
+      perfStudents.filter(s => s.class_assigned === perfEntryClass && s.status !== 'dropped' && s.academic_year === perfYear)
         .sort((a, b) => a.id - b.id);
     seedRoster.forEach((s, i) => {
       const marks = {};
