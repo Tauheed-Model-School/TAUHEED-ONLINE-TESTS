@@ -1678,6 +1678,7 @@
 .perf-table { width:100%; border-collapse:collapse; font-size:.86rem; }
 .perf-table th, .perf-table td { padding:9px 8px; text-align:left; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
 .perf-table th { background:#e8f4ec; color:#075c33; font-size:.74rem; text-transform:uppercase; letter-spacing:.4px; }
+.perf-total { font-weight:700; color:#075c33; background:#f2faf5; min-width:64px; text-align:center !important; }
 .perf-rank-badge { display:inline-flex; align-items:center; justify-content:center; min-width:30px; height:30px; border-radius:50%; font-weight:700; font-size:.83rem; background:#eef2f0; color:#075c33; border:2px solid #e5e7eb; }
 .perf-rank-1 { background:#faf3dd; border-color:#c9a227; color:#7a5c00; }
 .perf-rank-2 { background:#f3f4f6; border-color:#9ca3af; color:#374151; }
@@ -7917,7 +7918,7 @@ function perfRenderTerms(body) {
 
   html += '<div class="perf-scroll"><table class="perf-table"><thead><tr><th>#</th><th>Student</th>';
   perfEntrySubjects.forEach(s => { html += '<th>' + escapeHTML(s) + '</th>'; });
-  html += '<th></th></tr></thead><tbody id="perfEntryBody">';
+  html += '<th>Total</th><th></th></tr></thead><tbody id="perfEntryBody">';
   perfEntryRows.forEach((r, i) => { html += perfEntryRowHtml(i, r); });
   html += '</tbody></table></div>';
 
@@ -7937,7 +7938,8 @@ function perfEntryRowHtml(i, r) {
     h += '<td><input type="number" min="0" step="0.01" class="perf-input perf-num" data-ef="mk" value="' +
       (v === '' || v == null ? '' : v) + '" placeholder="—" oninput="perfEntryAvg()"></td>';
   });
-  return h + '<td><button class="perf-btn perf-btn-danger perf-btn-sm" onclick="perfEntryDelRow(' + i + ')">×</button></td></tr>';
+  return h + '<td class="perf-total" data-ef="tot">\u2014</td>' +
+    '<td><button class="perf-btn perf-btn-danger perf-btn-sm" onclick="perfEntryDelRow(' + i + ')">\u00d7</button></td></tr>';
 }
 
 function perfEntryTermChanged() {
@@ -8047,14 +8049,29 @@ function perfEntryPaperTotals() {
   return pts;
 }
 
+function perfFmtNum(n) {
+  return String(Math.round(n * 100) / 100);
+}
+
 function perfEntryAvg() {
   const pts = perfEntryPaperTotals();
   const avgs = perfEntrySubjects.map(() => ({ sum: 0, count: 0 }));
+  const nSubj = perfEntrySubjects.length;
   document.querySelectorAll('#perfEntryBody tr').forEach(tr => {
+    let rowSum = 0, rowFilled = 0;
     tr.querySelectorAll('input[data-ef="mk"]').forEach((el, j) => {
       const v = parseFloat(el.value);
       if (isFinite(v) && v >= 0 && avgs[j]) { avgs[j].sum += v; avgs[j].count++; }
+      if (el.value.trim() !== '' && isFinite(v) && v >= 0) { rowSum += v; rowFilled++; }
     });
+    const totCell = tr.querySelector('[data-ef="tot"]');
+    if (totCell) {
+      if (nSubj > 0 && rowFilled === nSubj) {
+        totCell.innerHTML = '<b>' + perfFmtNum(rowSum) + '</b>';
+      } else {
+        totCell.textContent = '\u2014';
+      }
+    }
   });
   const el = perf$('perfEntrySummary');
   if (!el) return;
