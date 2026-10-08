@@ -1678,6 +1678,10 @@
 .perf-sec-btn { border:2px solid #e5e7eb; background:#fff; border-radius:12px; padding:11px 20px; font-size:1rem; font-weight:700; cursor:pointer; color:#374151; }
 .perf-sec-btn.active { background:#0a6b3c; border-color:#0a6b3c; color:#fff; }
 .perf-sec-btn:not(.active):hover { border-color:#0a6b3c; color:#0a6b3c; }
+.perf-chips { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 14px; }
+.perf-chip { border:1px solid #d1d5db; background:#fff; border-radius:999px; padding:8px 16px; font-size:.87rem; font-weight:600; cursor:pointer; color:#374151; }
+.perf-chip:hover:not(:disabled) { border-color:#0a6b3c; color:#0a6b3c; background:#f2faf5; }
+.perf-chip.added { background:#e8f4ec; border-color:#0a6b3c; color:#0a6b3c; cursor:default; }
 .perf-scroll { overflow-x:auto; }
 .perf-table { width:100%; border-collapse:collapse; font-size:.86rem; }
 .perf-table th, .perf-table td { padding:9px 8px; text-align:left; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
@@ -7820,6 +7824,30 @@ async function perfDeleteTeacher(id, name) {
 let perfClassSubjects = []; // [{id, class_assigned, subject}]
 let perfSubjClass = '';
 
+const PERF_SUBJECT_PRESETS = [
+  'English', 'Urdu', 'Mathematics', 'Islamiat', 'Nazra Quran', 'Tarjuma-tul-Quran',
+  'Science', 'General Science', 'Computer Science', 'Computer', 'Social Studies',
+  'Pakistan Studies', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography',
+  'Civics', 'Economics', 'Arabic', 'Persian', 'Punjabi', 'Art', 'General Knowledge', 'Ethics',
+];
+async function perfAddPresetSubject(name) {
+  if (!perfSubjClass || !name) return;
+  const exists = perfClassSubjects.some(s => s.class_assigned === perfSubjClass &&
+    (s.subject || '').trim().toLowerCase() === name.trim().toLowerCase());
+  if (exists) { perfRender(); return; }
+  showLoader('Adding...');
+  try {
+    const { error } = await supabaseClient.from('perf_class_subjects').insert({
+      class_assigned: perfSubjClass, subject: name.trim(),
+    });
+    if (error) throw error;
+    await perfLoadAll();
+  } catch (err) {
+    showToast('Save failed: ' + (err.message || err), 'error');
+  } finally {
+    hideLoader();
+  }
+}
 function perfRenderSubjects(body) {
   const classes = perfRosterClasses();
   if (!perfSubjClass && classes.length) perfSubjClass = classes[0];
@@ -7846,6 +7874,15 @@ function perfRenderSubjects(body) {
   html += '<div class="perf-topbar"><div class="perf-yearbox"><label>New subject</label>' +
     '<input type="text" id="perfNewSubject" class="perf-input" style="width:180px" placeholder="e.g. English">' +
     '<button class="perf-btn perf-btn-sm" onclick="perfAddSubject()">Add</button></div></div>';
+  html += '<p class="perf-sub" style="margin:10px 0 4px"><b>Quick add:</b> neechay subjects par click karen — foran add ho jayenge:</p>' +
+    '<div class="perf-chips">';
+  PERF_SUBJECT_PRESETS.forEach(sj => {
+    const added = subs.some(s => (s.subject || '').trim().toLowerCase() === sj.toLowerCase());
+    html += '<button class="perf-chip' + (added ? ' added' : '') + '"' +
+      (added ? ' disabled' : ' onclick="perfAddPresetSubject(\'' + sj.replace(/'/g, "\\'") + '\')"') + '>' +
+      (added ? '\u2713 ' : '') + escapeHTML(sj) + '</button>';
+  });
+  html += '</div>';
   if (!subs.length) {
     html += '<p class="perf-empty">No subjects defined for ' + escapeHTML(perfSubjClass) + ' yet — add them above.</p>';
   } else {
