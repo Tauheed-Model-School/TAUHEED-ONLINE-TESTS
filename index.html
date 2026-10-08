@@ -9278,6 +9278,120 @@ function perfPrintClassResult(preWin) {
   perfPrintDoc('Class Result - ' + perfResClass, inner, preWin);
 }
 
+/* ---------- CSV marks import ---------- */
+function perfParseCsv(text) {
+  const rows = [];
+  let row = [], cell = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { cell += '"'; i++; }
+        else inQ = false;
+      } else cell += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ',') { row.push(cell); cell = ''; }
+    else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+    else if (c === '\r') { /* skip */ }
+    else cell += c;
+  }
+  if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(x => String(x || '').trim() !== ''));
+}
+function perfMarksCsvSample() {
+  if (!perfEntryClass || !perfEntrySubjects.length) { showToast('Select a class first.', 'error'); return; }
+  const head = ['Roll No', 'Name'].concat(perfEntrySubjects);
+  const lines = [head.join(',')];
+  lines.push(['MAX', ''].concat(perfEntrySubjects.map(() => '100')).join(','));
+  lines.push(['101', 'Ahmed Khan'].concat(perfEntrySubjects.map(() => '')).join(','));
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'marks_' + perfEntryClass.replace(/\s+/g, '_') + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function perfImportMarksCsvFile(ev) {
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => { try { perfImportMarksCsvText(String(rd.result || '')); } finally { ev.target.value = ''; } };
+  rd.readAsText(f);
+}
+function perfImportMarksCsvText(text) {
+  if (!perfEntryClass || !perfEntrySubjects.length) { showToast('Select a class first.', 'error'); return; }
+  const rows = perfParseCsv(text);
+  if (rows.length < 2) { showToast('CSV is empty.', 'error'); return; }
+  const header = rows[0].map(x => String(x || '').trim());
+  const subjNorm = {};
+  perfEntrySubjects.forEach(s => { subjNorm[s.trim().toLowerCase()] = s; });
+  const colSubj = {};
+  let matchedCols = 0;
+  for (let j = 1; j < header.length; j++) {
+    const s = subjNorm[header[j].trim().toLowerCase()] || null;
+    colSubj[j] = s;
+    if (s) matchedCols++;
+  }
+  if (!matchedCols) {
+    showToast('Koi subject column match nahi hua. Naam ye hon: ' + perfEntrySubjects.join(', '), 'error');
+    return;
+  }
+  const roster = perfStudents.filter(s => s.class_assigned === perfEntryClass &&
+    s.academic_year === perfYear && s.status !== 'dropped');
+  const byRoll = {}, byName = {};
+  roster.forEach(s => {
+    if (s.roll_no && String(s.roll_no).trim()) byRoll[String(s.roll_no).trim()] = s;
+    byName[(s.student_name || '').trim().toLowerCase()] = s;
+  });
+  perfEntryCollect(); // keep anything already typed
+  const rowByName = {};
+  perfEntryRows.forEach(r => { if (r.locked) rowByName[(r.name || '').trim().toLowerCase()] = r; });
+  let nStu = 0, nMarks = 0, nSkip = 0, nBad = 0;
+  const skipRows = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    const c0 = String(r[0] || '').trim();
+    if (/^(total|max|max marks|paper total)$/i.test(c0)) {
+      for (let j = 1; j < r.length; j++) {
+        const subj = colSubj[j];
+        if (!subj) continue;
+        const v = parseFloat(String(r[j] || '').trim());
+        if (!isNaN(v) && v > 0) perfEntryPaper[subj] = v;
+      }
+      continue;
+    }
+    let stu = byRoll[c0] || byName[c0.toLowerCase()];
+    if (!stu && r.length > 1) stu = byName[String(r[1] || '').trim().toLowerCase()];
+    const erow = stu ? rowByName[(stu.student_name || '').trim().toLowerCase()] : null;
+    if (!erow) { nSkip++; if (skipRows.length < 5) skipRows.push(i + 1); continue; }
+    let anyMark = false;
+    for (let j = 1; j < r.length; j++) {
+      const subj = colSubj[j];
+      if (!subj) continue;
+      const raw = String(r[j] || '').trim();
+      if (raw === '') continue;
+      const v = parseFloat(raw);
+      const total = parseFloat(perfEntryPaper[subj]) || 0;
+      if (isNaN(v) || v < 0 || (total > 0 && v > total)) { nBad++; continue; }
+      erow.marks[subj] = String(v);
+      nMarks++;
+      anyMark = true;
+    }
+    if (anyMark) nStu++;
+    else { nSkip++; if (skipRows.length < 5) skipRows.push(i + 1); }
+  }
+  perfEntryDirty = true;
+  perfRender();
+  let msg = nMarks + ' marks import ho gaye (' + nStu + ' students).';
+  if (nSkip) msg += ' ' + nSkip + ' row(s) skip — roster se match nahi hui' +
+    (skipRows.length ? ' (row ' + skipRows.join(', ') + ')' : '') + '.';
+  if (nBad) msg += ' ' + nBad + ' ghalat number ignore kiye.';
+  msg += ' Grid check karke Save Marks dabayen.';
+  showToast(msg, nStu ? 'success' : 'error');
+}
+
 /* print the result sheet straight from the Term Results entry tab */
 async function perfPrintEntrySheet() {
   if (!perfEntryClass) { showToast('Select a class first.', 'error'); return; }
@@ -9377,6 +9491,14 @@ function perfRenderTerms(body) {
       escapeHTML(s) + '" value="' + (perfEntryPaper[s] || 100) + '" oninput="perfEntryDirty=true;perfEntryAvg()"></div>';
   });
   html += '</div>';
+
+  html += '<div class="perf-card" style="margin:12px 0"><h3>Import marks from CSV</h3>' +
+    '<p class="perf-sub">Excel se CSV banaen: pehla column <b>Roll No</b>, doosra <b>Name</b>, baqi columns subjects ke naam — ' +
+    '<code>' + perfEntrySubjects.map(escapeHTML).join(', ') + '</code>. ' +
+    'Ek <b>MAX</b> wali row se paper totals bhi de sakte hain. Import ke baad grid check karke <b>Save Marks</b> dabayen.</p>' +
+    '<div class="perf-topbar"><label class="perf-btn perf-btn-ghost perf-btn-sm" style="cursor:pointer">Choose CSV file' +
+    '<input type="file" id="perfMarksCsv" accept=".csv,text/csv" style="display:none" onchange="perfImportMarksCsvFile(event)"></label>' +
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfMarksCsvSample()">Sample CSV</button></div></div>';
 
   const perfEntryRoster = perfNeedsStudentsMigration ? null :
     perfStudents.filter(s => s.class_assigned === perfEntryClass && s.status !== 'dropped' && s.academic_year === perfYear)
