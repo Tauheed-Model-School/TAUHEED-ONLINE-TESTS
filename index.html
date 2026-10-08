@@ -9835,20 +9835,33 @@ async function perfEntrySave() {
 function perfRenderAttendance(body) {
   const byTeacher = {};
   perfAttendance.forEach(a => { byTeacher[a.teacher_id] = a; });
+  // Lecture system: one teacher can teach several classes (one row per class).
+  // Attendance is per person, so group rows by teacher name — enter once,
+  // it applies to all their classes.
+  const people = [];
+  const seen = {};
+  perfTeachers.forEach(t => {
+    const key = (t.name || '').trim().toLowerCase();
+    if (!key) return;
+    if (!seen[key]) { seen[key] = { name: t.name.trim(), ids: [], detail: [] }; people.push(seen[key]); }
+    seen[key].ids.push(t.id);
+    seen[key].detail.push(t.class_assigned + ' \u00b7 ' + t.subject);
+  });
   let html = '<div class="perf-card"><h3>Teacher Attendance</h3>' +
-    '<p class="perf-sub">Present days out of total working days for the academic year. Counts 20% in the overall score.</p>' +
+    '<p class="perf-sub">Present days out of total working days for the academic year. Counts 20% in the overall score.<br>' +
+    'Har teacher ki attendance <b>sirf ek dafa</b> likhen — unki tamam classes par khud apply ho jayegi.</p>' +
     '<div class="perf-topbar" style="justify-content:flex-end">' +
     '<button class="perf-btn perf-btn-gold" onclick="perfSaveAttendance()">Save Attendance</button></div>';
 
-  if (!perfTeachers.length) {
+  if (!people.length) {
     html += '<p class="perf-empty">Add teachers first.</p>';
   } else {
     html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
       '<th>Teacher</th><th>Present days</th><th>Total working days</th></tr></thead><tbody>';
-    perfTeachers.forEach(t => {
-      const a = byTeacher[t.id] || {};
-      html += '<tr data-teacher="' + t.id + '">' +
-        '<td><b>' + escapeHTML(t.name) + '</b><br><span class="perf-sub">' + escapeHTML(t.class_assigned) + '</span></td>' +
+    people.forEach(pn => {
+      const a = pn.ids.map(id => byTeacher[id]).find(x => x) || {};
+      html += '<tr data-ids="' + pn.ids.join(',') + '">' +
+        '<td><b>' + escapeHTML(pn.name) + '</b><br><span class="perf-sub">' + escapeHTML(pn.detail.join(', ')) + '</span></td>' +
         '<td><input type="number" min="0" step="1" class="perf-input perf-num" data-f="present" value="' +
         (a.present_days != null ? a.present_days : '') + '" placeholder="—"></td>' +
         '<td><input type="number" min="1" step="1" class="perf-input perf-num" data-f="total" value="' +
@@ -9862,7 +9875,8 @@ function perfRenderAttendance(body) {
 async function perfSaveAttendance() {
   const rows = [];
   let bad = 0;
-  document.querySelectorAll('#perfBody tr[data-teacher]').forEach(tr => {
+  document.querySelectorAll('#perfBody tr[data-ids]').forEach(tr => {
+    const ids = (tr.getAttribute('data-ids') || '').split(',').filter(Boolean);
     const pEl = tr.querySelector('[data-f=present]');
     const tEl = tr.querySelector('[data-f=total]');
     const pRaw = pEl.value.trim(), tRaw = tEl.value.trim();
@@ -9872,11 +9886,13 @@ async function perfSaveAttendance() {
       bad++; pEl.style.borderColor = '#b91c1c'; tEl.style.borderColor = '#b91c1c'; return;
     }
     pEl.style.borderColor = ''; tEl.style.borderColor = '';
-    rows.push({
-      teacher_id: tr.getAttribute('data-teacher'),
-      academic_year: perfYear,
-      present_days: p,
-      total_days: tot,
+    ids.forEach(id => {
+      rows.push({
+        teacher_id: id,
+        academic_year: perfYear,
+        present_days: p,
+        total_days: tot,
+      });
     });
   });
   if (bad) { showToast(bad + ' row(s) invalid — present cannot exceed total.', 'error'); return; }
