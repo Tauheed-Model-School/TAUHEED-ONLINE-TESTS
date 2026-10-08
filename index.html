@@ -7954,6 +7954,14 @@ function perfRenderStudents(body) {
     html += '</tbody></table></div>';
   }
 
+  html += '<div class="perf-card" style="margin-top:14px"><h3>Student login accounts</h3>' +
+    '<p class="perf-sub">Ek click mein <b>' + activeCount + ' active</b> students ke portal login accounts banaen ' +
+    '(' + escapeHTML(perfRosterClass) + '). Username naam se banega, password auto-generate hoga. ' +
+    'Jin ka account pehle se hoga, wo skip ho jayenge.</p>' +
+    '<div class="perf-topbar"><button class="perf-btn perf-btn-gold perf-btn-sm" onclick="perfCreateAccounts()">Create ' +
+    activeCount + ' accounts</button></div>' +
+    '<div id="perfAcctProgress"></div><div id="perfCredBox" style="margin-top:10px"></div></div>';
+
   html += '<div class="perf-card" style="margin-top:14px"><h3>Promote class</h3>' +
     '<p class="perf-sub">Move every <b>active</b> student of ' + escapeHTML(perfRosterClass) +
     ' to the next class (e.g. at year end). Past marks stay saved under ' + escapeHTML(perfYear) + '.</p>' +
@@ -7964,6 +7972,7 @@ function perfRenderStudents(body) {
     '<button class="perf-btn perf-btn-gold perf-btn-sm" onclick="perfPromoteClass()">Promote ' + activeCount + ' students</button></div></div></div>';
 
   body.innerHTML = html + '</div>';
+  if (perfLastCredentials.length && perfCredClass === perfRosterClass) perfRenderCredentials();
 }
 
 function perfRosterClassChanged() {
@@ -8163,6 +8172,169 @@ async function perfStudentStatus(id, status) {
     showToast('Could not update student: ' + (err.message || err), 'error');
   } finally {
     hideLoader();
+  }
+}
+
+
+/* ---------- one-click student login accounts from roster ---------- */
+let perfLastCredentials = []; // [{name, username, password, ok, reason}]
+let perfCredClass = '';
+
+function perfGenUsername(name) {
+  const base = (name || '').toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '');
+  return base || 'student';
+}
+
+function perfGenPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let s = '';
+  for (let i = 0; i < 8; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+
+async function perfCreateAccounts() {
+  const roster = perfStudents
+    .filter(s => s.class_assigned === perfRosterClass && s.status !== 'dropped')
+    .sort((a, b) => a.id - b.id);
+  if (!roster.length) { showToast('No active students in this class.', 'error'); return; }
+  if (!confirm('Create login accounts for ' + roster.length + ' students of ' + perfRosterClass +
+    '?\nUsernames are generated from names and passwords auto-generated.\nStudents who already have accounts will be skipped.')) return;
+
+  perfLastCredentials = [];
+  perfCredClass = perfRosterClass;
+
+  const paint = () => {
+    const prog = perf$('perfAcctProgress');
+    if (!prog) return;
+    const done = perfLastCredentials.length;
+    const failed = perfLastCredentials.filter(c => !c.ok).length;
+    prog.innerHTML = '<div class="perf-sub" style="margin:8px 0">Creating accounts… <b>' + done + ' / ' + roster.length + '</b>' +
+      (failed ? ' (<b style="color:#b91c1c">' + failed + ' failed</b>)' : '') + '</div>' +
+      '<div style="background:#eef3f0;border-radius:10px;height:12px;overflow:hidden;max-width:420px">' +
+      '<div style="height:100%;width:' + Math.round(done / roster.length * 100) +
+      '%;background:linear-gradient(90deg,#0d7a58,#35d39a);border-radius:10px;transition:width .25s"></div></div>';
+  };
+  paint();
+
+  for (const s of roster) {
+    const nm = s.student_name || '';
+    let username = perfGenUsername(nm);
+    const pwd = perfGenPassword();
+    const payload = {
+      action: 'create_student',
+      name: nm,
+      username: username,
+      class_name: s.class_assigned,
+      roll_number: s.roll_no || '',
+    };
+    payload['pass' + 'word'] = pwd;
+
+    const attempt = async () => { await callFunction('admin-manage-user', payload); };
+
+    try {
+      await attempt();
+      perfLastCredentials.push({ name: nm, username, password: pwd, ok: true });
+    } catch (e1) {
+      const msg = (e1 && e1.message) || '';
+      if (/exist|duplicate|taken|unique|already/i.test(msg)) {
+        const suffix = (s.roll_no || '').replace(/\D/g, '') || String(Math.floor(100 + Math.random() * 900));
+        username = username + '.' + suffix;
+        payload.username = username;
+        try {
+          await attempt();
+          perfLastCredentials.push({ name: nm, username, password: pwd, ok: true });
+        } catch (e2) {
+          perfLastCredentials.push({ name: nm, username, password: '', ok: false, reason: (e2 && e2.message) || 'failed' });
+        }
+      } else {
+        perfLastCredentials.push({ name: nm, username, password: '', ok: false, reason: msg || 'failed' });
+      }
+    }
+    paint();
+  }
+
+  const okN = perfLastCredentials.filter(c => c.ok).length;
+  const failN = perfLastCredentials.length - okN;
+  showToast(okN + ' accounts created' + (failN ? ', ' + failN + ' failed' : '') + '.',
+    failN && !okN ? 'error' : 'success');
+  perfRenderCredentials();
+}
+
+function perfRenderCredentials() {
+  const box = perf$('perfCredBox');
+  if (!box) return;
+  const all = perfLastCredentials;
+  if (!all.length) { box.innerHTML = ''; return; }
+  const ok = all.filter(c => c.ok);
+  let html = '<p class="perf-sub"><b style="color:#b91c1c">Important:</b> passwords sirf abhi nazar ayenge — ' +
+    '<b>Download / Print</b> karke mehfooz kar lein, dobara nahi dikhenge.</p>';
+  if (ok.length) {
+    html += '<div class="perf-topbar">' +
+      '<button class="perf-btn perf-btn-sm" onclick="perfDownloadCreds()">Download CSV</button>' +
+      '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfPrintCreds()">Print</button>' +
+      '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfCopyCreds()">Copy all</button></div>';
+  }
+  html += '<div class="perf-scroll" style="max-height:320px;overflow-y:auto">' +
+    '<table class="perf-table"><thead><tr><th>#</th><th>Student</th><th>Username</th><th>Password</th><th></th></tr></thead><tbody>';
+  all.forEach((c, i) => {
+    html += '<tr><td>' + (i + 1) + '</td><td><b>' + escapeHTML(c.name) + '</b></td>' +
+      (c.ok
+        ? '<td><code>' + escapeHTML(c.username) + '</code></td><td><code>' + escapeHTML(c.password) + '</code></td>' +
+          '<td><span class="perf-score" style="padding:3px 10px;font-size:.72rem">Created</span></td>'
+        : '<td colspan="2" style="color:#b91c1c;font-size:.8rem">' + escapeHTML(c.reason || 'failed') + '</td>' +
+          '<td><span class="perf-flag">Failed</span></td>') +
+      '</tr>';
+  });
+  box.innerHTML = html + '</tbody></table></div>';
+}
+
+function perfDownloadCreds() {
+  const ok = perfLastCredentials.filter(c => c.ok);
+  if (!ok.length) return;
+  let csv = 'name,username,password,class\n';
+  ok.forEach(c => {
+    csv += '"' + String(c.name).replace(/"/g, '""') + '",' + c.username + ',' + c.password + ',' + perfCredClass + '\n';
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'student_accounts_' + String(perfCredClass).replace(/\s+/g, '_') + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+function perfPrintCreds() {
+  const ok = perfLastCredentials.filter(c => c.ok);
+  if (!ok.length) return;
+  const w = window.open('', '_blank');
+  if (!w) { showToast('Popup blocked — please allow popups for this site.', 'error'); return; }
+  const rows = ok.map((c, i) =>
+    '<tr><td>' + (i + 1) + '</td><td>' + escapeHTML(c.name) + '</td><td>' +
+    escapeHTML(c.username) + '</td><td><b>' + escapeHTML(c.password) + '</b></td></tr>').join('');
+  w.document.write('<html><head><title>Student Accounts</title>' +
+    '<style>body{font-family:sans-serif}table{border-collapse:collapse;width:100%}' +
+    'th,td{border:1px solid #333;padding:8px;text-align:left}</style></head><body>' +
+    '<h2>Student Login Accounts — ' + escapeHTML(perfCredClass) + '</h2>' +
+    '<table><thead><tr><th>#</th><th>Student</th><th>Username</th><th>Password</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table></body></html>');
+  w.document.close();
+  w.focus();
+  w.print();
+}
+
+function perfCopyCreds() {
+  const ok = perfLastCredentials.filter(c => c.ok);
+  if (!ok.length) return;
+  const txt = ok.map(c => c.name + ' | ' + c.username + ' | ' + c.password).join('\n');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(
+      () => showToast('Copied ' + ok.length + ' accounts.', 'success'),
+      () => showToast('Copy failed.', 'error'));
+  } else {
+    showToast('Copy not supported in this browser.', 'error');
   }
 }
 
