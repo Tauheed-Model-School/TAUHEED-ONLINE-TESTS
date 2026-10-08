@@ -7919,6 +7919,18 @@ function perfRenderStudents(body) {
     '<div class="perf-yearbox"><label>&nbsp;</label>' +
     '<button class="perf-btn perf-btn-sm" onclick="perfAddStudent()">Add student</button></div></div>';
 
+  html += '<div class="perf-card" style="margin-top:12px"><h3>Bulk add (fast)</h3>' +
+    '<p class="perf-sub">Paste names below — one per line. Format: <code>101, Ahmed Khan</code> or just ' +
+    '<code>Ahmed Khan</code>. They go to <b>' + escapeHTML(perfRosterClass) + '</b>. ' +
+    'Duplicates are skipped automatically. For all 35 sections at once, use one CSV with a <code>class</code> column.</p>' +
+    '<textarea id="perfBulkNames" class="perf-input" rows="5" style="width:100%;max-width:520px" ' +
+    'placeholder="101, Ahmed Khan&#10;102, Fatima Ali&#10;Ahmed Raza" oninput="perfBulkCount()"></textarea>' +
+    '<div class="perf-topbar"><button class="perf-btn perf-btn-sm" id="perfBulkBtn" onclick="perfBulkAdd()">Add students</button>' +
+    '<span class="perf-sub">or</span>' +
+    '<label class="perf-btn perf-btn-ghost perf-btn-sm" style="cursor:pointer">Choose CSV file' +
+    '<input type="file" id="perfBulkCsv" accept=".csv,text/csv" style="display:none" onchange="perfBulkCsvFile(event)"></label>' +
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfBulkSampleCsv()">Sample CSV</button></div></div>';
+
   if (!roster.length) {
     html += '<p class="perf-empty">No students in ' + escapeHTML(perfRosterClass) + ' yet — add them above.</p>';
   } else {
@@ -7983,6 +7995,158 @@ async function perfAddStudent() {
   } finally {
     hideLoader();
   }
+}
+
+
+/* ---------- bulk add students : paste names or CSV ---------- */
+function perfBulkCount() {
+  const ta = perf$('perfBulkNames');
+  const btn = perf$('perfBulkBtn');
+  if (!ta || !btn) return;
+  let n = 0;
+  ta.value.split('\n').forEach(ln => { if (ln.trim()) n++; });
+  btn.textContent = n ? 'Add ' + n + ' students' : 'Add students';
+}
+
+function perfBulkRowsFromLines(lines, defaultClass) {
+  const seen = {};
+  const existing = {};
+  perfStudents.forEach(s => {
+    if (s.academic_year === perfYear)
+      existing[(s.class_assigned + '|' + (s.student_name || '').trim().toLowerCase())] = true;
+  });
+  const rows = [];
+  let invalid = 0, dupes = 0;
+  lines.forEach(raw => {
+    const line = (raw || '').trim();
+    if (!line) return;
+    let roll = null, name = line, cls = defaultClass;
+    const ci = line.indexOf(',');
+    if (ci >= 0) {
+      roll = line.slice(0, ci).trim() || null;
+      name = line.slice(ci + 1).trim();
+    }
+    if (!name) { invalid++; return; }
+    const key = (cls + '|' + name.toLowerCase());
+    if (seen[key] || existing[key]) { dupes++; return; }
+    seen[key] = true;
+    rows.push({
+      academic_year: perfYear, class_assigned: cls,
+      student_name: name, roll_no: roll, status: 'active',
+    });
+  });
+  return { rows, invalid, dupes };
+}
+
+async function perfBulkInsert(rows, dupes, invalid) {
+  if (!rows.length) {
+    showToast('No valid names to add.' +
+      (dupes ? ' (' + dupes + ' already exist)' : ''), 'error');
+    return;
+  }
+  const clsNote = rows[0].class_assigned;
+  const multiClass = rows.some(r => r.class_assigned !== clsNote);
+  if (!confirm('Add ' + rows.length + ' students' +
+    (multiClass ? ' (multiple classes)' : ' to ' + clsNote) + '?' +
+    (dupes ? ' (' + dupes + ' duplicates skipped)' : '') +
+    (invalid ? ' (' + invalid + ' invalid lines skipped)' : ''))) return;
+  showLoader('Adding ' + rows.length + ' students...');
+  try {
+    for (let i = 0; i < rows.length; i += 200) {
+      const chunk = rows.slice(i, i + 200);
+      const { error } = await supabaseClient.from('perf_students').insert(chunk);
+      if (error) throw error;
+    }
+    showToast(rows.length + ' students added.', 'success');
+    await perfLoadAll();
+  } catch (err) {
+    console.error(err);
+    showToast('Could not add students: ' + (err.message || err), 'error');
+  } finally {
+    hideLoader();
+  }
+}
+
+async function perfBulkAdd() {
+  if (!perfRosterClass) return;
+  const ta = perf$('perfBulkNames');
+  const parsed = perfBulkRowsFromLines((ta.value || '').split('\n'), perfRosterClass);
+  await perfBulkInsert(parsed.rows, parsed.dupes, parsed.invalid);
+  if (parsed.rows.length) { ta.value = ''; perfBulkCount(); }
+}
+
+/* minimal CSV parser: handles quoted fields */
+function perfParseCsv(text) {
+  const rows = [];
+  let row = [], field = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQ = false;
+      } else field += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ',') { row.push(field); field = ''; }
+    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else if (c === '\r') { /* skip */ }
+    else field += c;
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(f => String(f).trim() !== ''));
+}
+
+async function perfBulkCsvFile(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  let text = '';
+  try { text = await file.text(); }
+  catch (e) { showToast('Could not read file.', 'error'); return; }
+  const raw = perfParseCsv(text);
+  if (raw.length < 2) { showToast('No rows found in CSV.', 'error'); return; }
+  const head = raw[0].map(h => String(h).trim().toLowerCase());
+  const iName = head.indexOf('name');
+  const iRoll = head.indexOf('roll_no') >= 0 ? head.indexOf('roll_no') : head.indexOf('roll');
+  const iCls = head.indexOf('class') >= 0 ? head.indexOf('class') : head.indexOf('class_assigned');
+  if (iName < 0) {
+    showToast('CSV needs a "name" column (optional: roll_no, class).', 'error');
+    return;
+  }
+  const seen = {};
+  const existing = {};
+  perfStudents.forEach(s => {
+    if (s.academic_year === perfYear)
+      existing[(s.class_assigned + '|' + (s.student_name || '').trim().toLowerCase())] = true;
+  });
+  const rows = [];
+  let invalid = 0, dupes = 0;
+  raw.slice(1).forEach(r => {
+    const name = String(r[iName] || '').trim();
+    const roll = iRoll >= 0 ? (String(r[iRoll] || '').trim() || null) : null;
+    const cls = (iCls >= 0 && String(r[iCls] || '').trim()) || perfRosterClass;
+    if (!name || !cls) { invalid++; return; }
+    const key = (cls + '|' + name.toLowerCase());
+    if (seen[key] || existing[key]) { dupes++; return; }
+    seen[key] = true;
+    rows.push({
+      academic_year: perfYear, class_assigned: cls,
+      student_name: name, roll_no: roll, status: 'active',
+    });
+  });
+  await perfBulkInsert(rows, dupes, invalid);
+}
+
+function perfBulkSampleCsv() {
+  const csv = 'name,roll_no,class\nAhmed Khan,101,Class 3\nFatima Ali,102,Class 3\nUsman Tariq,,Class 3\n';
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'students_sample.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
 async function perfStudentStatus(id, status) {
