@@ -1674,6 +1674,10 @@
 .perf-subnav { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
 .perf-subnav-btn { border:1px solid #e5e7eb; background:#fff; border-radius:999px; padding:8px 16px; font-size:.87rem; font-weight:600; cursor:pointer; }
 .perf-subnav-btn.active { background:#0a6b3c; border-color:#0a6b3c; color:#fff; }
+.perf-sections { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+.perf-sec-btn { border:2px solid #e5e7eb; background:#fff; border-radius:12px; padding:11px 20px; font-size:1rem; font-weight:700; cursor:pointer; color:#374151; }
+.perf-sec-btn.active { background:#0a6b3c; border-color:#0a6b3c; color:#fff; }
+.perf-sec-btn:not(.active):hover { border-color:#0a6b3c; color:#0a6b3c; }
 .perf-scroll { overflow-x:auto; }
 .perf-table { width:100%; border-collapse:collapse; font-size:.86rem; }
 .perf-table th, .perf-table td { padding:9px 8px; text-align:left; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
@@ -7530,12 +7534,37 @@ async function showAdminPerformance() {
   }
 }
 
+const perfSections = [
+  { id: 'students', label: 'Student Results', icon: '\uD83D\uDCCB', sub: 'Student roster, marks entry, class results and performance tracking. Admin only.', tabs: [
+    ['students', 'Students'],
+    ['terms', 'Enter Marks'],
+    ['results', 'Class Results'],
+    ['tracking', 'Tracking'],
+  ]},
+  { id: 'teachers', label: 'Teacher Performance', icon: '\uD83C\uDFC6', sub: 'Automatic teacher ranking from term results, attendance and BISE board results. Admin only.', tabs: [
+    ['rankings', 'Rankings'],
+    ['teachers', 'Teachers'],
+    ['subjects', 'Subjects'],
+    ['attendance', 'Attendance'],
+    ['bise', 'BISE Results'],
+  ]},
+];
+function perfSectionFor(tab) {
+  for (const s of perfSections) if (s.tabs.some(t => t[0] === tab)) return s.id;
+  return 'teachers';
+}
+let perfLastTab = { students: 'students', teachers: 'rankings' };
 function perfSetTab(tab) {
   perfSubTab = tab;
+  perfLastTab[perfSectionFor(tab)] = tab;
   perfShowTeacherForm = false;
   perfShowBiseForm = false;
   perfProgressId = null;
   perfRender();
+}
+function perfSetSection(id) {
+  const sec = perfSections.find(s => s.id === id);
+  perfSetTab(perfLastTab[id] || sec.tabs[0][0]);
 }
 
 function perfReloadYear() {
@@ -7544,26 +7573,21 @@ function perfReloadYear() {
 }
 
 function perfRender() {
-  const tabs = [
-    ['rankings', 'Rankings'],
-    ['teachers', 'Teachers'],
-    ['subjects', 'Subjects'],
-    ['students', 'Students'],
-    ['terms', 'Term Results'],
-    ['results', 'Results'],
-    ['tracking', 'Tracking'],
-    ['attendance', 'Attendance'],
-    ['bise', 'BISE Results'],
-  ];
-  let html = '<h1 class="page-title">Teacher Performance</h1>' +
-    '<p class="page-subtitle">Automatic teacher ranking from term results, attendance and BISE board results. Admin only.</p>' +
+  const secId = perfSectionFor(perfSubTab);
+  const sec = perfSections.find(s => s.id === secId);
+  let html = '<h1 class="page-title">' + sec.icon + ' ' + sec.label + '</h1>' +
+    '<p class="page-subtitle">' + sec.sub + '</p>' +
     '<div class="perf-topbar">' +
       '<div class="perf-yearbox"><label>Academic year</label>' +
       '<input type="text" id="perfYearInput" value="' + escapeHTML(perfYear) + '">' +
       '<button class="perf-btn perf-btn-ghost" onclick="perfReloadYear()">Load</button></div>' +
     '</div>' +
+    '<div class="perf-sections">' +
+    perfSections.map(s => '<button class="perf-sec-btn' + (s.id === secId ? ' active' : '') +
+      '" onclick="perfSetSection(\'' + s.id + '\')">' + s.icon + ' ' + s.label + '</button>').join('') +
+    '</div>' +
     '<div class="perf-subnav">' +
-    tabs.map(t => '<button class="perf-subnav-btn' + (perfSubTab === t[0] ? ' active' : '') +
+    sec.tabs.map(t => '<button class="perf-subnav-btn' + (perfSubTab === t[0] ? ' active' : '') +
       '" onclick="perfSetTab(\'' + t[0] + '\')">' + t[1] + '</button>').join('') +
     '</div>' +
     '<div id="perfBody"></div>';
@@ -7638,7 +7662,7 @@ function perfRenderRankings(body) {
       });
       html += '</tbody></table></div>';
     } else {
-      html += '<p class="perf-empty">No ranked teachers yet — enter all three term results on the Term Results tab.</p>';
+      html += '<p class="perf-empty">No ranked teachers yet — enter all three term results on the Enter Marks tab.</p>';
     }
     if (incomplete.length) {
       html += '<p class="perf-sub"><b>Incomplete:</b> ' +
@@ -7895,7 +7919,7 @@ function perfRenderStudents(body) {
   if (perfProgressId) { perfRenderStudentProgress(body); return; }
 
   let html = '<div class="perf-card"><h3>Class Students (Roster)</h3>' +
-    '<p class="perf-sub">Add each class\'s students once — Term Results will fill their names automatically and you only enter marks. Dropping a student keeps their past marks history.</p>';
+    '<p class="perf-sub">Add each class\'s students once — Enter Marks will fill their names automatically and you only enter marks. Dropping a student keeps their past marks history.</p>';
   if (perfNeedsStudentsMigration) {
     html += '<p class="perf-empty" style="border:1px solid #b91c1c;border-radius:8px;padding:10px">' +
       '<b>Database update needed:</b> please run migration 004 in the Supabase SQL Editor first — ' +
@@ -8902,7 +8926,7 @@ function perfRenderResults(body) {
   const anyMarks = data.list.some(x => x.pct != null);
   if (!anyMarks) {
     body.innerHTML = html + '<p class="perf-empty">No marks saved for ' + escapeHTML(perfResClass) +
-      ' (' + escapeHTML(perfTermLabel(term)) + ') yet — enter them on the <b>Term Results</b> tab.</p></div>';
+      ' (' + escapeHTML(perfTermLabel(term)) + ') yet — enter them on the <b>Enter Marks</b> tab.</p></div>';
     return;
   }
   html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
