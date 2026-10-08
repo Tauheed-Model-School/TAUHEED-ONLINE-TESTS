@@ -7381,6 +7381,7 @@ let perfAttendance = [];
 let perfBise = [];
 let perfYear = '2026-27';
 let perfSubTab = 'rankings';
+let perfEditStuId = null;
 let perfBiseTab = '10th';
 let perfShowTeacherForm = false;
 let perfShowBiseForm = false;
@@ -7556,6 +7557,7 @@ function perfSectionFor(tab) {
 let perfLastTab = { students: 'students', teachers: 'rankings' };
 function perfSetTab(tab) {
   perfSubTab = tab;
+  perfEditStuId = null;
   perfLastTab[perfSectionFor(tab)] = tab;
   perfShowTeacherForm = false;
   perfShowBiseForm = false;
@@ -7969,18 +7971,30 @@ function perfRenderStudents(body) {
       '<th>#</th><th>Student</th><th>Roll No.</th><th>Status</th><th></th></tr></thead><tbody>';
     roster.forEach((s, i) => {
       const dropped = s.status === 'dropped';
-      html += '<tr><td>' + (i + 1) + '</td>' +
-        '<td><b>' + escapeHTML(s.student_name) + '</b></td>' +
-        '<td>' + escapeHTML(s.roll_no || '—') + '</td>' +
-        '<td>' + (dropped
+      const editing = perfEditStuId === s.id;
+      html += '<tr><td>' + (i + 1) + '</td>';
+      if (editing) {
+        html += '<td><input type="text" id="perfEditName_' + s.id + '" class="perf-input" style="width:170px" value="' + escapeHTML(s.student_name) + '"></td>' +
+          '<td><input type="text" id="perfEditRoll_' + s.id + '" class="perf-input" style="width:70px" value="' + escapeHTML(s.roll_no || '') + '"></td>';
+      } else {
+        html += '<td><b>' + escapeHTML(s.student_name) + '</b></td>' +
+          '<td>' + escapeHTML(s.roll_no || '—') + '</td>';
+      }
+      html += '<td>' + (dropped
           ? '<span class="perf-flag">Dropped</span>'
           : '<span class="perf-score" style="padding:3px 10px;font-size:.72rem">Active</span>') + '</td>' +
-        '<td style="text-align:right;white-space:nowrap">' +
-        '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfStudentProgress(' + s.id + ')">Progress</button> ' +
-        (dropped
-          ? '<button class="perf-btn perf-btn-sm" onclick="perfStudentStatus(' + s.id + ',\'active\')">Re-activate</button>'
-          : '<button class="perf-btn perf-btn-danger perf-btn-sm" onclick="perfStudentStatus(' + s.id + ',\'dropped\')">Drop</button>') +
-        '</td></tr>';
+        '<td style="text-align:right;white-space:nowrap">';
+      if (editing) {
+        html += '<button class="perf-btn perf-btn-sm" onclick="perfSaveEdit(' + s.id + ')">Save</button> ' +
+          '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfCancelEdit()">Cancel</button>';
+      } else {
+        html += '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfStudentProgress(' + s.id + ')">Progress</button> ' +
+          '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfEditStudent(' + s.id + ')">Edit</button> ' +
+          (dropped
+            ? '<button class="perf-btn perf-btn-sm" onclick="perfStudentStatus(' + s.id + ',\'active\')">Re-activate</button>'
+            : '<button class="perf-btn perf-btn-danger perf-btn-sm" onclick="perfStudentStatus(' + s.id + ',\'dropped\')">Drop</button>');
+      }
+      html += '</td></tr>';
     });
     html += '</tbody></table></div>';
   }
@@ -8197,6 +8211,41 @@ function perfBulkSampleCsv() {
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
+function perfEditStudent(id) { perfEditStuId = id; perfRender(); }
+function perfCancelEdit() { perfEditStuId = null; perfRender(); }
+async function perfSaveEdit(id) {
+  const s = perfStudents.find(x => x.id === id);
+  if (!s) return;
+  const newName = (document.getElementById('perfEditName_' + id).value || '').trim();
+  const newRoll = (document.getElementById('perfEditRoll_' + id).value || '').trim();
+  if (!newName) { showToast('Name cannot be empty.', 'error'); return; }
+  const oldName = s.student_name || '';
+  showLoader('Saving...');
+  try {
+    const { error } = await supabaseClient.from('perf_students')
+      .update({ student_name: newName, roll_no: newRoll || null }).eq('id', id);
+    if (error) throw error;
+    if (oldName.trim().toLowerCase() !== newName.toLowerCase()) {
+      const teacherIds = perfTeachers.filter(t => t.class_assigned === s.class_assigned).map(t => t.id);
+      if (teacherIds.length) {
+        const { error: mErr } = await supabaseClient.from('perf_student_marks')
+          .update({ student_name: newName })
+          .in('teacher_id', teacherIds)
+          .eq('academic_year', s.academic_year)
+          .eq('student_name', oldName);
+        if (mErr) throw mErr;
+      }
+    }
+    perfEditStuId = null;
+    showToast('Student updated.', 'success');
+    await perfLoadAll();
+  } catch (err) {
+    console.error(err);
+    showToast('Could not update student: ' + (err.message || err), 'error');
+  } finally {
+    hideLoader();
+  }
+}
 async function perfStudentStatus(id, status) {
   const verb = status === 'dropped' ? 'Drop' : 'Re-activate';
   if (!confirm(verb + ' this student?' + (status === 'dropped' ? ' Past marks are kept.' : ''))) return;
