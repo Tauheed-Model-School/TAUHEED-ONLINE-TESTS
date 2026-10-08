@@ -2684,6 +2684,10 @@ function buildNavigation() {
         Performance
       </button>
       <button class="nav-btn"
+        data-page="admin-find-student">
+        Find Student
+      </button>
+      <button class="nav-btn"
         data-page="admin-results">
         Results
       </button>
@@ -2781,6 +2785,9 @@ async function navigate(page) {
 
     if (page === "admin-performance")
       return showAdminPerformance();
+
+    if (page === "admin-find-student")
+      return showAdminFindStudent();
     if (page === "admin-results")
       return showAdminResults();
 
@@ -7395,6 +7402,7 @@ let perfStudents = []; // roster: {id, academic_year, class_assigned, student_na
 let perfNeedsStudentsMigration = false; // true when perf_students table is missing
 let perfRosterClass = '';
 let perfProgressId = null; // roster id open in the progress view
+let perfProgressReturn = null; // where the progress Back button returns to
 
 function perf$(id) { return document.getElementById(id); }
 function perfR2(n) { return Math.round(n * 100) / 100; }
@@ -7533,6 +7541,79 @@ async function perfLoadAll() {
 }
 
 /* ---------- main page ---------- */
+let perfFindQuery = '';
+let perfFindClass = '';
+async function showAdminFindStudent() {
+  if (typeof currentRole === 'undefined' || currentRole !== 'admin') {
+    mainContent.innerHTML = '<h1 class="page-title">Access denied</h1>' +
+      '<p class="page-subtitle">This section is for the administrator only.</p>';
+    return;
+  }
+  if (!perfTeachers.length && !perfStudents.length) {
+    await perfLoadAll(); // ends with perfRender(); we overwrite below
+  }
+  perfFindQuery = '';
+  perfFindClass = '';
+  perfRenderFindStudent();
+}
+function perfRenderFindStudent() {
+  const classes = perfRosterClasses();
+  let html = '<h1 class="page-title">🔍 Find Student</h1>' +
+    '<p class="page-subtitle">Naam ya roll number se talash karen, ya poori class dekhen \u2014 phir performance kholen. (' +
+    escapeHTML(perfYear) + ')</p>' +
+    '<div class="perf-card"><div class="perf-topbar">' +
+    '<div class="perf-yearbox"><label>Search name / roll no.</label>' +
+    '<input type="text" id="perfFindQ" class="perf-input" style="width:220px" placeholder="e.g. Ahmed" value="' +
+    escapeHTML(perfFindQuery) + '" oninput="perfFindQuery=this.value;perfFindResults()"></div>' +
+    '<div class="perf-yearbox"><label>Class</label>' +
+    '<select id="perfFindClassSel" class="perf-input" style="width:auto;min-width:140px" onchange="perfFindClass=this.value;perfFindResults()">' +
+    '<option value="">All classes</option>' +
+    classes.map(c => '<option value="' + escapeHTML(c) + '"' + (perfFindClass === c ? ' selected' : '') + '>' +
+      escapeHTML(c) + '</option>').join('') +
+    '</select></div></div>' +
+    '<div id="perfFindResults"></div></div>';
+  mainContent.innerHTML = html;
+  perfFindResults();
+  const inp = document.getElementById('perfFindQ');
+  if (inp) { inp.focus(); }
+}
+function perfFindResults() {
+  const host = document.getElementById('perfFindResults');
+  if (!host) return;
+  const q = (perfFindQuery || '').trim().toLowerCase();
+  let list = perfStudents.filter(s => s.academic_year === perfYear);
+  if (perfFindClass) list = list.filter(s => s.class_assigned === perfFindClass);
+  if (q) list = list.filter(s => (s.student_name || '').toLowerCase().includes(q) ||
+    String(s.roll_no || '').toLowerCase().includes(q));
+  list = list.sort((a, b) => a.id - b.id);
+  if (!q && !perfFindClass) {
+    host.innerHTML = '<p class="perf-empty">Naam likhen ya class select karen \u2014 bachay yahan nazar ayenge.</p>';
+    return;
+  }
+  if (!list.length) {
+    host.innerHTML = '<p class="perf-empty">Koi bacha nahi mila.</p>';
+    return;
+  }
+  const shown = list.slice(0, 100);
+  let h = '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
+    '<th>Student</th><th>Roll No.</th><th>Class</th><th>Status</th><th></th></tr></thead><tbody>';
+  shown.forEach(s => {
+    h += '<tr><td><b>' + escapeHTML(s.student_name) + '</b></td>' +
+      '<td>' + escapeHTML(s.roll_no || '\u2014') + '</td>' +
+      '<td>' + escapeHTML(s.class_assigned) + '</td>' +
+      '<td>' + (s.status === 'dropped' ? '<span class="perf-flag">Dropped</span>' :
+        '<span class="perf-score" style="padding:3px 10px;font-size:.72rem">Active</span>') + '</td>' +
+      '<td style="text-align:right"><button class="perf-btn perf-btn-sm" onclick="perfFindView(' + s.id + ')">View Performance</button></td></tr>';
+  });
+  h += '</tbody></table></div>';
+  if (list.length > 100) h += '<p class="perf-sub">Pehle 100 dikhaye \u2014 search mazeed specific karen.</p>';
+  host.innerHTML = h;
+}
+function perfFindView(id) {
+  perfProgressId = id;
+  perfProgressReturn = perfRenderFindStudent;
+  perfRenderStudentProgress(mainContent);
+}
 async function showAdminPerformance() {
   if (typeof currentRole === 'undefined' || currentRole !== 'admin') {
     mainContent.innerHTML = '<h1 class="page-title">Access denied</h1>' +
@@ -8577,12 +8658,20 @@ function perfStudentProgress(id) {
   perfRender();
 }
 
+function perfProgressGoBack() {
+  const ret = perfProgressReturn;
+  perfProgressId = null;
+  perfProgressReturn = null;
+  if (ret) ret();
+  else perfRender();
+}
 async function perfRenderStudentProgress(body) {
   const stu = perfStudents.find(s => s.id === perfProgressId);
-  if (!stu) { perfProgressId = null; perfRender(); return; }
+  if (!stu) { perfProgressGoBack(); return; }
 
   let html = '<div class="perf-card">' +
-    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfProgressId=null;perfRender()">← Back to roster</button>' +
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfProgressGoBack()">← ' +
+    (perfProgressReturn ? 'Back to search' : 'Back to roster') + '</button>' +
     '<h3 style="margin-top:10px">' + escapeHTML(stu.student_name) +
     (stu.roll_no ? ' <span class="perf-sub">· Roll ' + escapeHTML(stu.roll_no) + '</span>' : '') + '</h3>' +
     '<p class="perf-sub">' + escapeHTML(stu.class_assigned) + ' · ' + escapeHTML(stu.academic_year) +
