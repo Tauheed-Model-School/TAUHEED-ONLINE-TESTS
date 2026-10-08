@@ -1797,6 +1797,24 @@
 .perf-num { width:90px; padding:7px; }
 @media (max-width:640px){ .perf-card{ padding:13px; } .perf-table th, .perf-table td{ padding:7px 5px; font-size:.8rem; } }
 
+/* ---------- collapsible helper cards ---------- */
+.perf-collapse-head {
+  width: 100%; border: 0; background: transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 2px 0; text-align: left;
+}
+.perf-collapse-head h3 { margin: 0 !important; }
+.perf-collapse-arrow {
+  font-size: 1rem; color: #9aa5a0; transition: transform .2s cubic-bezier(.22,.8,.3,1);
+  background: #f1f4f2; width: 28px; height: 28px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.perf-collapse.open .perf-collapse-arrow { transform: rotate(180deg); background: #e8f4ec; color: #075c33; }
+.perf-collapse-body { display: none; }
+.perf-collapse.open .perf-collapse-body { display: block; animation: perfFadeIn .25s cubic-bezier(.22,.8,.3,1); }
+@keyframes perfFadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.perf-collapse-head:hover .perf-collapse-arrow { background: #e8f4ec; color: #075c33; }
+
 </style>
 </head>
 
@@ -8120,6 +8138,13 @@ function perfTeacherFor(classAssigned, subject) {
 }
 
 /* ---------- students : class-wise roster ---------- */
+/* collapsible card: title + inner HTML; toggles without re-render so form input is kept */
+function perfCollapseCard(title, inner, extraStyle) {
+  return '<div class="perf-card perf-collapse" style="margin-top:14px' + (extraStyle ? ';' + extraStyle : '') + '">' +
+    '<button class="perf-collapse-head" onclick="this.closest(\'.perf-collapse\').classList.toggle(\'open\')">' +
+    '<h3>' + title + '</h3><span class="perf-collapse-arrow">\u25be</span></button>' +
+    '<div class="perf-collapse-body" style="margin-top:10px">' + inner + '</div></div>';
+}
 function perfRosterClasses() {
   const seen = {};
   perfStudents.forEach(s => { if (s.class_assigned) seen[s.class_assigned] = true; });
@@ -8162,7 +8187,7 @@ function perfRenderStudents(body) {
     '<div class="perf-yearbox"><label>&nbsp;</label>' +
     '<button class="perf-btn perf-btn-sm" onclick="perfAddStudent()">Add student</button></div></div>';
 
-  html += '<div class="perf-card" style="margin-top:12px"><h3>Bulk add (fast)</h3>' +
+  html += perfCollapseCard('📦 Bulk add (fast)',
     '<p class="perf-sub">Paste names below — one per line. Format: <code>101, Ahmed Khan</code> or just ' +
     '<code>Ahmed Khan</code>. They go to <b>' + escapeHTML(perfRosterClass) + '</b>. ' +
     'Duplicates are skipped automatically. For all 35 sections at once, use one CSV with a <code>class</code> column.</p>' +
@@ -8172,7 +8197,7 @@ function perfRenderStudents(body) {
     '<span class="perf-sub">or</span>' +
     '<label class="perf-btn perf-btn-ghost perf-btn-sm" style="cursor:pointer">Choose CSV file' +
     '<input type="file" id="perfBulkCsv" accept=".csv,text/csv" style="display:none" onchange="perfBulkCsvFile(event)"></label>' +
-    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfBulkSampleCsv()">Sample CSV</button></div></div>';
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfBulkSampleCsv()">Sample CSV</button></div>');
 
   if (!roster.length) {
     html += '<p class="perf-empty">No students in ' + escapeHTML(perfRosterClass) + ' yet — add them above.</p>';
@@ -8209,15 +8234,15 @@ function perfRenderStudents(body) {
     html += '</tbody></table></div>';
   }
 
-  html += '<div class="perf-card" style="margin-top:14px"><h3>Student login accounts</h3>' +
+  html += perfCollapseCard('🔑 Student login accounts',
     '<p class="perf-sub">Ek click mein <b>' + activeCount + ' active</b> students ke portal login accounts banaen ' +
     '(' + escapeHTML(perfRosterClass) + '). Username naam se banega, password auto-generate hoga. ' +
     'Jin ka account pehle se hoga, wo skip ho jayenge.</p>' +
     '<div class="perf-topbar"><button class="perf-btn perf-btn-gold perf-btn-sm" onclick="perfCreateAccounts()">Create ' +
     activeCount + ' accounts</button></div>' +
-    '<div id="perfAcctProgress"></div><div id="perfCredBox" style="margin-top:10px"></div></div>';
+    '<div id="perfAcctProgress"></div><div id="perfCredBox" style="margin-top:10px"></div>');
 
-  html += '<div class="perf-card" style="margin-top:14px"><h3>Promote class</h3>' +
+  html += perfCollapseCard('📈 Promote class',
     '<p class="perf-sub">Copy every <b>active</b> student of ' + escapeHTML(perfRosterClass) +
     ' into the next class for a new academic year (e.g. at year end). ' +
     'The ' + escapeHTML(perfYear) + ' record stays untouched as history — years are never merged.</p>' +
@@ -8227,12 +8252,13 @@ function perfRenderStudents(body) {
     '<div class="perf-yearbox"><label>Target year</label>' +
     '<input type="text" id="perfPromoteYear" class="perf-input" style="width:110px" value="' + escapeHTML(perfNextYear(perfYear)) + '"></div>' +
     '<div class="perf-yearbox"><label>&nbsp;</label>' +
-    '<button class="perf-btn perf-btn-gold perf-btn-sm" onclick="perfPromoteClass()">Promote ' + activeCount + ' students</button></div></div></div>';
+    '<button class="perf-btn perf-btn-gold perf-btn-sm" onclick="perfPromoteClass()">Promote ' + activeCount + ' students</button></div></div>');
 
-  html += '<div class="perf-card" style="margin-top:14px;border:1px solid #f3b8b8"><h3 style="color:#b91c1c">Danger zone</h3>' +
+  html += perfCollapseCard('<span style="color:#b91c1c">\u26a0\ufe0f Danger zone</span>',
     '<p class="perf-sub">Permanently delete all <b>' + roster.length + '</b> students of ' + escapeHTML(perfRosterClass) +
     ' from the roster, along with their term marks for ' + escapeHTML(perfYear) + '. This cannot be undone.</p>' +
-    '<button class="perf-btn perf-btn-danger perf-btn-sm" onclick="perfDeleteClass()">Delete entire class</button></div>';
+    '<button class="perf-btn perf-btn-danger perf-btn-sm" onclick="perfDeleteClass()">Delete entire class</button>',
+    'border:1px solid #f3b8b8');
 
   body.innerHTML = html + '</div>';
   if (perfLastCredentials.length && perfCredClass === perfRosterClass) perfRenderCredentials();
@@ -9725,13 +9751,13 @@ function perfRenderTerms(body) {
   });
   html += '</div>';
 
-  html += '<div class="perf-card" style="margin:12px 0"><h3>Import marks from CSV</h3>' +
+  html += perfCollapseCard('📥 Import marks from CSV',
     '<p class="perf-sub">Excel se CSV banaen: pehla column <b>Roll No</b>, doosra <b>Name</b>, baqi columns subjects ke naam — ' +
     '<code>' + perfEntrySubjects.map(escapeHTML).join(', ') + '</code>. ' +
     'Ek <b>MAX</b> wali row se paper totals bhi de sakte hain. Import ke baad grid check karke <b>Save Marks</b> dabayen.</p>' +
     '<div class="perf-topbar"><label class="perf-btn perf-btn-ghost perf-btn-sm" style="cursor:pointer">Choose CSV file' +
     '<input type="file" id="perfMarksCsv" accept=".csv,text/csv" style="display:none" onchange="perfImportMarksCsvFile(event)"></label>' +
-    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfMarksCsvSample()">Sample CSV</button></div></div>';
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfMarksCsvSample()">Sample CSV</button></div>');
 
   const perfEntryRoster = perfNeedsStudentsMigration ? null :
     perfStudents.filter(s => s.class_assigned === perfEntryClass && s.status !== 'dropped' && s.academic_year === perfYear)
