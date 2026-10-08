@@ -7694,7 +7694,7 @@ function perfRender() {
   else if (perfSubTab === 'terms') perfRenderTerms(body);
   else if (perfSubTab === 'results') perfRenderResults(body);
   else if (perfSubTab === 'tracking') {
-    if (!perfTrackCache.students.length && !perfTrackLoading) perfTrackLoad();
+    if (!perfTrackCache.loaded && !perfTrackLoading) perfTrackLoad();
     else perfRenderTracking(body);
   }
   else if (perfSubTab === 'attendance') perfRenderAttendance(body);
@@ -8835,29 +8835,26 @@ async function perfTrackLoad(force) {
   perfTrackLoading = true;
   showLoader('Loading tracking data...');
   try {
-    const [sRes, mRes, tRes] = await Promise.all([
-      supabaseClient.from('perf_students').select('id,academic_year,class_assigned,student_name,roll_no,status')
-        .order('academic_year').order('class_assigned').order('id'),
-      supabaseClient.from('perf_student_marks')
-        .select('teacher_id,subject,academic_year,term,student_name,obtained_marks'),
-      supabaseClient.from('perf_term_results')
-        .select('teacher_id,subject,academic_year,term,paper_total'),
+    const [students, marks, totals] = await Promise.all([
+      perfSelectAll(() => supabaseClient.from('perf_students').select('id,academic_year,class_assigned,student_name,roll_no,status')
+        .order('academic_year').order('class_assigned').order('id')),
+      perfSelectAll(() => supabaseClient.from('perf_student_marks')
+        .select('teacher_id,subject,academic_year,term,student_name,obtained_marks')),
+      perfSelectAll(() => supabaseClient.from('perf_term_results')
+        .select('teacher_id,subject,academic_year,term,paper_total')),
     ]);
-    if (sRes.error) throw sRes.error;
-    if (mRes.error) throw mRes.error;
-    if (tRes.error) throw tRes.error;
-    const students = sRes.data || [], marks = mRes.data || [], totals = tRes.data || [];
     const yset = {};
     students.forEach(s => { if (s.academic_year) yset[s.academic_year] = 1; });
     marks.forEach(m => { if (m.academic_year) yset[m.academic_year] = 1; });
     totals.forEach(t => { if (t.academic_year) yset[t.academic_year] = 1; });
     const years = Object.keys(yset).sort().reverse();
-    perfTrackCache = { years, students, marks, totals };
+    perfTrackCache = { years, students, marks, totals, loaded: true };
     if (!perfTrackYear || !yset[perfTrackYear]) perfTrackYear = years.length ? years[0] : '';
     perfTrackClass = '';
   } catch (err) {
     console.error(err);
     showToast('Could not load tracking data: ' + (err.message || err), 'error');
+    perfTrackCache.loaded = true; // don't infinite-retry on persistent failure
   } finally {
     perfTrackLoading = false;
     hideLoader();
@@ -8870,9 +8867,13 @@ function perfRenderTracking(body) {
   let html = '<div class="perf-card"><h3>Performance Tracking</h3>' +
     '<p class="perf-sub">Term-wise and year-wise trends — which students and classes are improving or going down. ' +
     'Every year is kept separate; nothing is merged across years.</p>';
-  if (!cache.years.length) {
+  if (!cache.years.length && !cache.loaded) {
     if (!perfTrackLoading) perfTrackLoad();
     body.innerHTML = html + '<p class="perf-empty">Loading tracking data…</p></div>';
+    return;
+  }
+  if (!cache.years.length) {
+    body.innerHTML = html + '<p class="perf-empty">No tracking data yet — enter marks first.</p></div>';
     return;
   }
   const Y = perfTrackYear || cache.years[0];
