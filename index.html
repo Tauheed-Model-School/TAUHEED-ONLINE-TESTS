@@ -7551,6 +7551,7 @@ function perfRender() {
     ['students', 'Students'],
     ['terms', 'Term Results'],
     ['results', 'Results'],
+    ['tracking', 'Tracking'],
     ['attendance', 'Attendance'],
     ['bise', 'BISE Results'],
   ];
@@ -7574,6 +7575,10 @@ function perfRender() {
   else if (perfSubTab === 'students') perfRenderStudents(body);
   else if (perfSubTab === 'terms') perfRenderTerms(body);
   else if (perfSubTab === 'results') perfRenderResults(body);
+  else if (perfSubTab === 'tracking') {
+    if (!perfTrackCache.students.length && !perfTrackLoading) perfTrackLoad();
+    else perfRenderTracking(body);
+  }
   else if (perfSubTab === 'attendance') perfRenderAttendance(body);
   else if (perfSubTab === 'bise') perfRenderBise(body);
 }
@@ -7965,11 +7970,14 @@ function perfRenderStudents(body) {
     '<div id="perfAcctProgress"></div><div id="perfCredBox" style="margin-top:10px"></div></div>';
 
   html += '<div class="perf-card" style="margin-top:14px"><h3>Promote class</h3>' +
-    '<p class="perf-sub">Move every <b>active</b> student of ' + escapeHTML(perfRosterClass) +
-    ' to the next class (e.g. at year end). Past marks stay saved under ' + escapeHTML(perfYear) + '.</p>' +
+    '<p class="perf-sub">Copy every <b>active</b> student of ' + escapeHTML(perfRosterClass) +
+    ' into the next class for a new academic year (e.g. at year end). ' +
+    'The ' + escapeHTML(perfYear) + ' record stays untouched as history — years are never merged.</p>' +
     '<div class="perf-topbar"><div class="perf-yearbox"><label>Target class</label>' +
-    '<input type="text" id="perfPromoteTarget" class="perf-input" list="perfClassList" style="width:160px" placeholder="e.g. Class 4">' +
+    '<input type="text" id="perfPromoteTarget" class="perf-input" list="perfClassList" style="width:150px" placeholder="e.g. Class 4">' +
     '<datalist id="perfClassList">' + classes.map(c => '<option value="' + escapeHTML(c) + '">').join('') + '</datalist></div>' +
+    '<div class="perf-yearbox"><label>Target year</label>' +
+    '<input type="text" id="perfPromoteYear" class="perf-input" style="width:110px" value="' + escapeHTML(perfNextYear(perfYear)) + '"></div>' +
     '<div class="perf-yearbox"><label>&nbsp;</label>' +
     '<button class="perf-btn perf-btn-gold perf-btn-sm" onclick="perfPromoteClass()">Promote ' + activeCount + ' students</button></div></div></div>';
 
@@ -8393,23 +8401,50 @@ function perfCopyCreds() {
   }
 }
 
+
+/* ---------- promote class : copy roster into the next academic year ----------
+   Each academic year's record stays separate — promoting creates a NEW
+   roster for the target year instead of moving this year's rows. */
 async function perfPromoteClass() {
   const target = (perf$('perfPromoteTarget').value || '').trim();
+  let targetYear = (perf$('perfPromoteYear').value || '').trim();
+  if (!targetYear) targetYear = perfNextYear(perfYear);
   if (!target) { showToast('Enter the target class.', 'error'); return; }
-  if (target === perfRosterClass) { showToast('Target class is the same as current.', 'error'); return; }
-  const n = perfStudents.filter(s => s.class_assigned === perfRosterClass && s.status !== 'dropped').length;
-  if (!n) { showToast('No active students to promote.', 'error'); return; }
-  if (!confirm('Promote ' + n + ' students from ' + perfRosterClass + ' to ' + target + '?')) return;
+  if (!targetYear) { showToast('Enter the target academic year.', 'error'); return; }
+  const src = perfStudents.filter(s =>
+    s.class_assigned === perfRosterClass && s.academic_year === perfYear && s.status !== 'dropped');
+  if (!src.length) { showToast('No active students to promote.', 'error'); return; }
+  if (!confirm('Promote ' + src.length + ' students from ' + perfRosterClass + ' (' + perfYear + ')' +
+    ' to ' + target + ' (' + targetYear + ')?\n\nA new roster will be created for ' + targetYear +
+    ' — the ' + perfYear + ' record stays as history.')) return;
   showLoader('Promoting...');
   try {
-    const { error } = await supabaseClient.from('perf_students')
-      .update({ class_assigned: target })
-      .eq('academic_year', perfYear)
-      .eq('class_assigned', perfRosterClass)
-      .neq('status', 'dropped');
-    if (error) throw error;
-    showToast(n + ' students promoted to ' + target + '.', 'success');
-    perfRosterClass = target;
+    const existing = {};
+    perfStudents.forEach(s => {
+      if (s.academic_year === targetYear && s.class_assigned === target)
+        existing[(s.student_name || '').trim().toLowerCase()] = true;
+    });
+    const rows = [];
+    src.forEach(s => {
+      const k = (s.student_name || '').trim().toLowerCase();
+      if (existing[k]) return;
+      existing[k] = true;
+      rows.push({
+        academic_year: targetYear,
+        class_assigned: target,
+        student_name: s.student_name,
+        roll_no: s.roll_no,
+        status: 'active',
+      });
+    });
+    for (let i = 0; i < rows.length; i += 200) {
+      const { error } = await supabaseClient.from('perf_students')
+        .insert(rows.slice(i, i + 200));
+      if (error) throw error;
+    }
+    const skipped = src.length - rows.length;
+    showToast(rows.length + ' students promoted to ' + target + ' (' + targetYear + ').' +
+      (skipped ? ' ' + skipped + ' already existed there.' : ''), 'success');
     await perfLoadAll();
   } catch (err) {
     console.error(err);
@@ -8418,6 +8453,7 @@ async function perfPromoteClass() {
     hideLoader();
   }
 }
+
 
 function perfStudentProgress(id) {
   perfProgressId = id;
@@ -8510,6 +8546,268 @@ async function perfRenderStudentProgress(body) {
   }
 }
 
+
+
+/* ---------- tracking : term-wise & year-wise performance trends ----------
+   Every number is computed per academic year — years are never merged. */
+let perfTrackYear = '';
+let perfTrackClass = '';   // '' = all classes
+let perfTrackLoading = false;
+let perfTrackCache = { years: [], students: [], marks: [], totals: [] };
+
+function perfNextYear(y) {
+  const m = String(y || '').match(/(\d{4})\s*-\s*(\d{2,4})/);
+  if (!m) return '';
+  const a = parseInt(m[1], 10) + 1;
+  let b = String((m[2].length === 2 ? parseInt('20' + m[2], 10) : parseInt(m[2], 10)) + 1);
+  if (m[2].length === 2) b = b.slice(-2);
+  return a + '-' + b;
+}
+
+function perfTrackYearChanged() {
+  perfTrackYear = perf$('perfTrackYear').value;
+  perfTrackClass = '';
+  perfRender();
+}
+
+function perfTrackClassChanged() {
+  perfTrackClass = perf$('perfTrackClass').value;
+  perfRender();
+}
+
+function perfTrendArrow(diff) {
+  if (diff == null || !isFinite(diff)) return '—';
+  if (diff > 0.5) return '<b style="color:#0d7a58">↗ +' + diff.toFixed(1) + '</b>';
+  if (diff < -0.5) return '<b style="color:#b91c1c">↘ ' + diff.toFixed(1) + '</b>';
+  return '<span style="color:#888">→ ' + (diff >= 0 ? '+' : '') + diff.toFixed(1) + '</span>';
+}
+
+/* one student's percentage for a single term (null when no marks) */
+function perfTrackOne(cache, year, teacherIds, name, term) {
+  const nm = (name || '').trim().toLowerCase();
+  const set = teacherIds.length ? new Set(teacherIds.map(String)) : null;
+  const ptBySubj = {};
+  cache.totals.forEach(t => {
+    if (t.academic_year !== year || t.term !== term) return;
+    if (set && !set.has(String(t.teacher_id))) return;
+    const p = Number(t.paper_total);
+    if (isFinite(p) && p > 0) {
+      const k = t.subject || '';
+      ptBySubj[k] = Math.max(ptBySubj[k] || 0, p);
+    }
+  });
+  const obBySubj = {};
+  cache.marks.forEach(m => {
+    if (m.academic_year !== year || m.term !== term) return;
+    if (set && !set.has(String(m.teacher_id))) return;
+    if ((m.student_name || '').trim().toLowerCase() !== nm) return;
+    const v = Number(m.obtained_marks);
+    if (isFinite(v)) obBySubj[m.subject || ''] = v;
+  });
+  let ob = 0, pt = 0, n = 0;
+  Object.keys(obBySubj).forEach(sj => {
+    if (ptBySubj[sj]) { ob += obBySubj[sj]; pt += ptBySubj[sj]; n++; }
+  });
+  if (!n || pt <= 0) return null;
+  return { pct: ob / pt * 100, ob, pt };
+}
+
+/* weighted 20/30/50 percentage across terms (renormalized over entered terms) */
+function perfTrackWeighted(cache, year, teacherIds, name) {
+  const weights = { '1st': 20, '2nd': 30, 'final': 50 };
+  let sw = 0, sv = 0;
+  ['1st', '2nd', 'final'].forEach(t => {
+    const p = perfTrackOne(cache, year, teacherIds, name, t);
+    if (p && p.pct != null) { sv += weights[t] * p.pct; sw += weights[t]; }
+  });
+  return sw ? sv / sw : null;
+}
+
+async function perfTrackLoad(force) {
+  if (perfTrackLoading) return;
+  if (!force && perfTrackCache.students.length) { if (perfSubTab === 'tracking') perfRender(); return; }
+  perfTrackLoading = true;
+  showLoader('Loading tracking data...');
+  try {
+    const [sRes, mRes, tRes] = await Promise.all([
+      supabaseClient.from('perf_students').select('id,academic_year,class_assigned,student_name,roll_no,status')
+        .order('academic_year').order('class_assigned').order('id'),
+      supabaseClient.from('perf_student_marks')
+        .select('teacher_id,subject,academic_year,term,student_name,obtained_marks'),
+      supabaseClient.from('perf_term_results')
+        .select('teacher_id,subject,academic_year,term,paper_total'),
+    ]);
+    if (sRes.error) throw sRes.error;
+    if (mRes.error) throw mRes.error;
+    if (tRes.error) throw tRes.error;
+    const students = sRes.data || [], marks = mRes.data || [], totals = tRes.data || [];
+    const yset = {};
+    students.forEach(s => { if (s.academic_year) yset[s.academic_year] = 1; });
+    marks.forEach(m => { if (m.academic_year) yset[m.academic_year] = 1; });
+    totals.forEach(t => { if (t.academic_year) yset[t.academic_year] = 1; });
+    const years = Object.keys(yset).sort().reverse();
+    perfTrackCache = { years, students, marks, totals };
+    if (!perfTrackYear || !yset[perfTrackYear]) perfTrackYear = years.length ? years[0] : '';
+    perfTrackClass = '';
+  } catch (err) {
+    console.error(err);
+    showToast('Could not load tracking data: ' + (err.message || err), 'error');
+  } finally {
+    perfTrackLoading = false;
+    hideLoader();
+  }
+  if (perfSubTab === 'tracking') perfRender();
+}
+
+function perfRenderTracking(body) {
+  const cache = perfTrackCache;
+  let html = '<div class="perf-card"><h3>Performance Tracking</h3>' +
+    '<p class="perf-sub">Term-wise and year-wise trends — which students and classes are improving or going down. ' +
+    'Every year is kept separate; nothing is merged across years.</p>';
+  if (!cache.years.length) {
+    if (!perfTrackLoading) perfTrackLoad();
+    body.innerHTML = html + '<p class="perf-empty">Loading tracking data…</p></div>';
+    return;
+  }
+  const Y = perfTrackYear || cache.years[0];
+  const classes = [...new Set(cache.students.filter(s => s.academic_year === Y)
+    .map(s => s.class_assigned))].sort();
+  html += '<div class="perf-topbar">' +
+    '<div class="perf-yearbox"><label>Academic year</label>' +
+    '<select id="perfTrackYear" class="perf-input" style="width:auto" onchange="perfTrackYearChanged()">' +
+    cache.years.map(y => '<option value="' + escapeHTML(y) + '"' + (Y === y ? ' selected' : '') + '>' +
+      escapeHTML(y) + '</option>').join('') + '</select></div>' +
+    '<div class="perf-yearbox"><label>Class</label>' +
+    '<select id="perfTrackClass" class="perf-input" style="width:auto;min-width:140px" onchange="perfTrackClassChanged()">' +
+    '<option value="">All classes</option>' +
+    classes.map(c => '<option value="' + escapeHTML(c) + '"' + (perfTrackClass === c ? ' selected' : '') + '>' +
+      escapeHTML(c) + '</option>').join('') + '</select></div>' +
+    '<div class="perf-yearbox"><label>&nbsp;</label>' +
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfTrackLoad(true)">Refresh</button></div></div>';
+
+  const data = perfTrackCompute(Y, perfTrackClass);
+
+  /* --- section 1 : class term trends --- */
+  html += '<div class="perf-card" style="margin-top:14px"><h3>Class trends — ' + escapeHTML(Y) + '</h3>' +
+    '<p class="perf-sub">Average % per term. Trend compares Final (or latest term with marks) against 1st Term.</p>';
+  if (!data.classRows.length) {
+    html += '<p class="perf-empty">No classes with students for this year.</p>';
+  } else {
+    html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
+      '<th>Class</th><th>Students</th><th>1st Term</th><th>2nd Term</th><th>Final Term</th><th>Trend</th></tr>' +
+      '</thead><tbody>' +
+      data.classRows.map(r => '<tr><td><b>' + escapeHTML(r.cls) + '</b></td><td>' + r.n + '</td>' +
+        r.termAvgs.map(a => '<td>' + (a != null ? a.toFixed(1) + '%' : '—') + '</td>').join('') +
+        '<td>' + perfTrendArrow(r.trend) + '</td></tr>').join('') +
+      '</tbody></table></div>';
+  }
+  html += '</div>';
+
+  /* --- section 2 : year over year --- */
+  html += '<div class="perf-card" style="margin-top:14px"><h3>Year over year</h3>' +
+    '<p class="perf-sub">Weighted overall % per academic year (20 / 30 / 50 term weights). Each year stays separate.</p>';
+  if (cache.years.length < 2) {
+    html += '<p class="perf-empty">Only one academic year on record so far (' + escapeHTML(cache.years[0] || '—') +
+      '). Year-over-year comparison will appear once a second year has marks.</p>';
+  } else {
+    html += '<div class="perf-scroll"><table class="perf-table"><thead><tr><th>Class</th>' +
+      cache.years.map(y => '<th>' + escapeHTML(y) + '</th>').join('') + '<th>Change</th></tr></thead><tbody>' +
+      data.yoyRows.map(r => '<tr><td><b>' + escapeHTML(r.cls) + '</b></td>' +
+        r.avgs.map(a => '<td>' + (a != null ? a.toFixed(1) + '%' : '—') + '</td>').join('') +
+        '<td>' + perfTrendArrow(r.yoyDiff) + '</td></tr>').join('') +
+      '</tbody></table></div>';
+  }
+  html += '</div>';
+
+  /* --- section 3 : student movers --- */
+  html += '<div class="perf-card" style="margin-top:14px"><h3>Student movers — ' + escapeHTML(Y) +
+    (perfTrackClass ? ' · ' + escapeHTML(perfTrackClass) : ' · All classes') + '</h3>' +
+    '<p class="perf-sub">Change from each student\'s first term with marks to their latest term with marks.</p>';
+  const up = data.movers.filter(m => m.diff > 0.5).slice(0, 5);
+  const down = data.movers.filter(m => m.diff < -0.5).slice(-5).reverse();
+  const moverTable = (rows, label) => {
+    if (!rows.length) return '<p class="perf-empty">' + label + ': none.</p>';
+    return '<div class="perf-scroll"><table class="perf-table"><thead><tr><th>Student</th><th>Class</th>' +
+      '<th>First</th><th>Latest</th><th>Change</th></tr></thead><tbody>' +
+      rows.map(m => '<tr><td><b>' + escapeHTML(m.stu.student_name) + '</b>' +
+        (m.stu.roll_no ? ' <span class="perf-sub">· ' + escapeHTML(m.stu.roll_no) + '</span>' : '') + '</td>' +
+        '<td>' + escapeHTML(m.cls) + '</td>' +
+        '<td>' + m.first.toFixed(1) + '% <span class="perf-sub">(' + escapeHTML(perfTermLabel(m.firstTerm)) + ')</span></td>' +
+        '<td>' + m.last.toFixed(1) + '% <span class="perf-sub">(' + escapeHTML(perfTermLabel(m.lastTerm)) + ')</span></td>' +
+        '<td>' + perfTrendArrow(m.diff) + '</td></tr>').join('') +
+      '</tbody></table></div>';
+  };
+  html += '<h4 style="color:#0d7a58">↗ Most improved</h4>' + moverTable(up, 'No improvers yet') +
+    '<h4 style="color:#b91c1c;margin-top:14px">↘ Needs attention</h4>' + moverTable(down, 'No decliners — good news');
+  html += '</div>';
+
+  body.innerHTML = html + '</div>';
+}
+
+function perfTrackCompute(Y, onlyClass) {
+  const cache = perfTrackCache;
+  const terms = ['1st', '2nd', 'final'];
+  const classes = [...new Set(cache.students.filter(s => s.academic_year === Y)
+    .map(s => s.class_assigned))].sort()
+    .filter(c => !onlyClass || c === onlyClass);
+
+  const classRows = classes.map(cls => {
+    const roster = cache.students.filter(s => s.academic_year === Y && s.class_assigned === cls);
+    const teacherIds = perfTeachers.filter(t => t.class_assigned === cls).map(t => t.id);
+    const termAvgs = terms.map(tm => {
+      let s = 0, n = 0;
+      roster.forEach(stu => {
+        const p = perfTrackOne(cache, Y, teacherIds, stu.student_name, tm);
+        if (p && p.pct != null) { s += p.pct; n++; }
+      });
+      return n ? s / n : null;
+    });
+    const known = termAvgs.map((a, i) => a == null ? null : i).filter(i => i != null);
+    const trend = known.length >= 2 ? termAvgs[known[known.length - 1]] - termAvgs[known[0]] : null;
+    return { cls, n: roster.length, termAvgs, trend };
+  });
+
+  const yoyClasses = onlyClass ? [onlyClass] :
+    [...new Set(cache.students.map(s => s.class_assigned))].sort();
+  const yoyRows = yoyClasses.map(cls => {
+    const avgs = cache.years.map(yy => {
+      const roster = cache.students.filter(s => s.academic_year === yy && s.class_assigned === cls);
+      if (!roster.length) return null;
+      const teacherIds = perfTeachers.filter(t => t.class_assigned === cls).map(t => t.id);
+      let s = 0, n = 0;
+      roster.forEach(stu => {
+        const p = perfTrackWeighted(cache, yy, teacherIds, stu.student_name);
+        if (p != null) { s += p; n++; }
+      });
+      return n ? s / n : null;
+    });
+    const known = avgs.map((a, i) => a == null ? null : i).filter(i => i != null);
+    const yoyDiff = known.length >= 2 ? avgs[known[known.length - 1]] - avgs[known[0]] : null;
+    return { cls, avgs, yoyDiff };
+  }).filter(r => r.avgs.some(a => a != null));
+
+  const movers = [];
+  classes.forEach(cls => {
+    const roster = cache.students.filter(s => s.academic_year === Y && s.class_assigned === cls && s.status !== 'dropped');
+    const teacherIds = perfTeachers.filter(t => t.class_assigned === cls).map(t => t.id);
+    roster.forEach(stu => {
+      const pts = terms.map(tm => {
+        const p = perfTrackOne(cache, Y, teacherIds, stu.student_name, tm);
+        return p ? p.pct : null;
+      });
+      const known = pts.map((p, i) => p == null ? null : i).filter(i => i != null);
+      if (known.length >= 2) {
+        const first = pts[known[0]], last = pts[known[known.length - 1]];
+        movers.push({
+          stu, cls, first, last, diff: last - first,
+          firstTerm: terms[known[0]], lastTerm: terms[known[known.length - 1]],
+        });
+      }
+    });
+  });
+  movers.sort((a, b) => b.diff - a.diff);
+  return { classRows, yoyRows, movers };
+}
 
 /* ---------- results : class overall result + report cards ---------- */
 let perfResClass = '';
