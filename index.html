@@ -8982,6 +8982,8 @@ function perfRenderResults(body) {
       ' (' + escapeHTML(perfTermLabel(term)) + ') yet — enter them on the <b>Enter Marks</b> tab.</p></div>';
     return;
   }
+  const tLine2 = perfClassTeacherLine(perfResClass);
+  if (tLine2) html += '<p class="perf-sub" style="margin:2px 0 10px;font-size:.95rem">' + tLine2 + '</p>';
   html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
     '<th>Roll No</th><th>Student</th>';
   data.subjects.forEach(sj => { html += '<th>' + escapeHTML(sj) + '</th>'; });
@@ -9248,6 +9250,14 @@ function perfPrintReportCard() {
   perfPrintDoc('Report Card - ' + stu.student_name, inner);
 }
 
+function perfClassTeacherLine(cls) {
+  const ts = perfTeachers.filter(t => t.class_assigned === cls && t.name);
+  if (!ts.length) return '';
+  const ct = ts.find(t => (t.subject || '').trim().toLowerCase() === 'all');
+  if (ct) return 'Class Teacher: <b>' + escapeHTML(ct.name) + '</b>';
+  const names = ts.map(t => t.name).filter(Boolean);
+  return 'Teacher' + (names.length > 1 ? 's' : '') + ': <b>' + escapeHTML(names.join(', ')) + '</b>';
+}
 function perfPrintClassResult(preWin) {
   const data = perfResCompute();
   const term = perfResTerm;
@@ -9271,10 +9281,12 @@ function perfPrintClassResult(preWin) {
   data.subjects.forEach(sj => { head += '<th>' + escapeHTML(sj) + '</th>'; });
   head += term === 'all' ? '<th>Overall %</th>' : '<th>Total</th><th>%</th>';
   head += '<th>Grade</th><th>Position</th></tr>';
+  const tLine = perfClassTeacherLine(perfResClass);
   const inner =
     '<div class="h"><h1>TAUHEED MODEL SCHOOL</h1>' +
     '<p>Class Result · ' + escapeHTML(perfResClass) + ' · ' + escapeHTML(perfTermLabel(term)) +
-    ' · Academic Year ' + escapeHTML(perfYear) + '</p></div>' +
+    ' · Academic Year ' + escapeHTML(perfYear) + '</p>' +
+    (tLine ? '<p>' + tLine + '</p>' : '') + '</div>' +
     '<table><thead>' + head + '</thead><tbody>' + trows + '</tbody></table>' +
     '<div class="sum"><b>Class Average:</b> ' + _classAvg +
     ' &nbsp;&nbsp; <b>Students Appeared:</b> ' + _nPct + ' / ' + data.list.length + '</div>' +
