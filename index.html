@@ -7382,6 +7382,10 @@ let perfShowTeacherForm = false;
 let perfShowBiseForm = false;
 let perfNeedsMigration = false; // true when perf_class_subjects table is missing
 let perfTermSel = '1st';
+let perfStudents = []; // roster: {id, academic_year, class_assigned, student_name, roll_no, status}
+let perfNeedsStudentsMigration = false; // true when perf_students table is missing
+let perfRosterClass = '';
+let perfProgressId = null; // roster id open in the progress view
 
 function perf$(id) { return document.getElementById(id); }
 function perfR2(n) { return Math.round(n * 100) / 100; }
@@ -7481,6 +7485,8 @@ async function perfLoadAll() {
     // subjects table exists only after migration 003 — keep the tab
     // usable even before the migration is run
     perfNeedsMigration = false;
+    // roster table exists only after migration 004
+    perfNeedsStudentsMigration = false;
     try {
       const sRes = await supabaseClient.from('perf_class_subjects')
         .select('*').order('class_assigned').order('subject');
@@ -7490,6 +7496,16 @@ async function perfLoadAll() {
       console.warn('perf_class_subjects unavailable:', subErr);
       perfClassSubjects = [];
       perfNeedsMigration = true;
+    }
+    try {
+      const stRes = await supabaseClient.from('perf_students')
+        .select('*').eq('academic_year', perfYear).order('class_assigned').order('id');
+      if (stRes.error) throw stRes.error;
+      perfStudents = stRes.data || [];
+    } catch (stErr) {
+      console.warn('perf_students unavailable:', stErr);
+      perfStudents = [];
+      perfNeedsStudentsMigration = true;
     }
     perfRender();
   } catch (err) {
@@ -7518,6 +7534,7 @@ function perfSetTab(tab) {
   perfSubTab = tab;
   perfShowTeacherForm = false;
   perfShowBiseForm = false;
+  perfProgressId = null;
   perfRender();
 }
 
@@ -7531,6 +7548,7 @@ function perfRender() {
     ['rankings', 'Rankings'],
     ['teachers', 'Teachers'],
     ['subjects', 'Subjects'],
+    ['students', 'Students'],
     ['terms', 'Term Results'],
     ['attendance', 'Attendance'],
     ['bise', 'BISE Results'],
@@ -7552,6 +7570,7 @@ function perfRender() {
   if (perfSubTab === 'rankings') perfRenderRankings(body);
   else if (perfSubTab === 'teachers') perfRenderTeachers(body);
   else if (perfSubTab === 'subjects') perfRenderSubjects(body);
+  else if (perfSubTab === 'students') perfRenderStudents(body);
   else if (perfSubTab === 'terms') perfRenderTerms(body);
   else if (perfSubTab === 'attendance') perfRenderAttendance(body);
   else if (perfSubTab === 'bise') perfRenderBise(body);
@@ -7857,6 +7876,249 @@ function perfTeacherFor(classAssigned, subject) {
       || null;
 }
 
+/* ---------- students : class-wise roster ---------- */
+function perfRosterClasses() {
+  const seen = {};
+  perfStudents.forEach(s => { if (s.class_assigned) seen[s.class_assigned] = true; });
+  perfDistinctClasses().forEach(c => { seen[c] = true; });
+  return Object.keys(seen).sort();
+}
+
+function perfRenderStudents(body) {
+  if (perfProgressId) { perfRenderStudentProgress(body); return; }
+
+  let html = '<div class="perf-card"><h3>Class Students (Roster)</h3>' +
+    '<p class="perf-sub">Add each class\'s students once — Term Results will fill their names automatically and you only enter marks. Dropping a student keeps their past marks history.</p>';
+  if (perfNeedsStudentsMigration) {
+    html += '<p class="perf-empty" style="border:1px solid #b91c1c;border-radius:8px;padding:10px">' +
+      '<b>Database update needed:</b> please run migration 004 in the Supabase SQL Editor first — ' +
+      'the Students tab will not work until then.</p>';
+    body.innerHTML = html + '</div>';
+    return;
+  }
+  const classes = perfRosterClasses();
+  if (!perfRosterClass && classes.length) perfRosterClass = classes[0];
+  html += '<div class="perf-topbar"><div class="perf-yearbox"><label>Class</label>' +
+    '<select id="perfRosterClassSel" class="perf-input" style="width:auto;min-width:140px" onchange="perfRosterClassChanged()">' +
+    classes.map(c => '<option value="' + escapeHTML(c) + '"' + (perfRosterClass === c ? ' selected' : '') + '>' +
+      escapeHTML(c) + '</option>').join('') +
+    '</select></div></div>';
+  if (!perfRosterClass) {
+    body.innerHTML = html + '<p class="perf-empty">Add teachers first — classes come from the teachers list.</p></div>';
+    return;
+  }
+
+  const roster = perfStudents.filter(s => s.class_assigned === perfRosterClass)
+    .sort((a, b) => a.id - b.id);
+  const activeCount = roster.filter(s => s.status !== 'dropped').length;
+
+  html += '<div class="perf-topbar"><div class="perf-yearbox"><label>Student name</label>' +
+    '<input type="text" id="perfNewStuName" class="perf-input" style="width:180px" placeholder="e.g. Ahmed Khan"></div>' +
+    '<div class="perf-yearbox"><label>Roll no. (optional)</label>' +
+    '<input type="text" id="perfNewStuRoll" class="perf-input" style="width:90px" placeholder="—"></div>' +
+    '<div class="perf-yearbox"><label>&nbsp;</label>' +
+    '<button class="perf-btn perf-btn-sm" onclick="perfAddStudent()">Add student</button></div></div>';
+
+  if (!roster.length) {
+    html += '<p class="perf-empty">No students in ' + escapeHTML(perfRosterClass) + ' yet — add them above.</p>';
+  } else {
+    html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
+      '<th>#</th><th>Student</th><th>Roll No.</th><th>Status</th><th></th></tr></thead><tbody>';
+    roster.forEach((s, i) => {
+      const dropped = s.status === 'dropped';
+      html += '<tr><td>' + (i + 1) + '</td>' +
+        '<td><b>' + escapeHTML(s.student_name) + '</b></td>' +
+        '<td>' + escapeHTML(s.roll_no || '—') + '</td>' +
+        '<td>' + (dropped
+          ? '<span class="perf-flag">Dropped</span>'
+          : '<span class="perf-score" style="padding:3px 10px;font-size:.72rem">Active</span>') + '</td>' +
+        '<td style="text-align:right;white-space:nowrap">' +
+        '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfStudentProgress(' + s.id + ')">Progress</button> ' +
+        (dropped
+          ? '<button class="perf-btn perf-btn-sm" onclick="perfStudentStatus(' + s.id + ',\'active\')">Re-activate</button>'
+          : '<button class="perf-btn perf-btn-danger perf-btn-sm" onclick="perfStudentStatus(' + s.id + ',\'dropped\')">Drop</button>') +
+        '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
+  html += '<div class="perf-card" style="margin-top:14px"><h3>Promote class</h3>' +
+    '<p class="perf-sub">Move every <b>active</b> student of ' + escapeHTML(perfRosterClass) +
+    ' to the next class (e.g. at year end). Past marks stay saved under ' + escapeHTML(perfYear) + '.</p>' +
+    '<div class="perf-topbar"><div class="perf-yearbox"><label>Target class</label>' +
+    '<input type="text" id="perfPromoteTarget" class="perf-input" list="perfClassList" style="width:160px" placeholder="e.g. Class 4">' +
+    '<datalist id="perfClassList">' + classes.map(c => '<option value="' + escapeHTML(c) + '">').join('') + '</datalist></div>' +
+    '<div class="perf-yearbox"><label>&nbsp;</label>' +
+    '<button class="perf-btn perf-btn-gold perf-btn-sm" onclick="perfPromoteClass()">Promote ' + activeCount + ' students</button></div></div></div>';
+
+  body.innerHTML = html + '</div>';
+}
+
+function perfRosterClassChanged() {
+  perfRosterClass = perf$('perfRosterClassSel').value;
+  perfProgressId = null;
+  perfRender();
+}
+
+async function perfAddStudent() {
+  const name = (perf$('perfNewStuName').value || '').trim();
+  const roll = (perf$('perfNewStuRoll').value || '').trim();
+  if (!name) { showToast('Type the student name.', 'error'); return; }
+  if (!perfRosterClass) return;
+  showLoader('Saving...');
+  try {
+    const { error } = await supabaseClient.from('perf_students').insert({
+      academic_year: perfYear,
+      class_assigned: perfRosterClass,
+      student_name: name,
+      roll_no: roll || null,
+      status: 'active',
+    });
+    if (error) throw error;
+    showToast('Student added.', 'success');
+    await perfLoadAll();
+  } catch (err) {
+    console.error(err);
+    showToast('Could not add student: ' + (err.message || err), 'error');
+  } finally {
+    hideLoader();
+  }
+}
+
+async function perfStudentStatus(id, status) {
+  const verb = status === 'dropped' ? 'Drop' : 'Re-activate';
+  if (!confirm(verb + ' this student?' + (status === 'dropped' ? ' Past marks are kept.' : ''))) return;
+  showLoader('Saving...');
+  try {
+    const { error } = await supabaseClient.from('perf_students').update({ status }).eq('id', id);
+    if (error) throw error;
+    showToast(status === 'dropped' ? 'Student dropped.' : 'Student re-activated.', 'success');
+    await perfLoadAll();
+  } catch (err) {
+    console.error(err);
+    showToast('Could not update student: ' + (err.message || err), 'error');
+  } finally {
+    hideLoader();
+  }
+}
+
+async function perfPromoteClass() {
+  const target = (perf$('perfPromoteTarget').value || '').trim();
+  if (!target) { showToast('Enter the target class.', 'error'); return; }
+  if (target === perfRosterClass) { showToast('Target class is the same as current.', 'error'); return; }
+  const n = perfStudents.filter(s => s.class_assigned === perfRosterClass && s.status !== 'dropped').length;
+  if (!n) { showToast('No active students to promote.', 'error'); return; }
+  if (!confirm('Promote ' + n + ' students from ' + perfRosterClass + ' to ' + target + '?')) return;
+  showLoader('Promoting...');
+  try {
+    const { error } = await supabaseClient.from('perf_students')
+      .update({ class_assigned: target })
+      .eq('academic_year', perfYear)
+      .eq('class_assigned', perfRosterClass)
+      .neq('status', 'dropped');
+    if (error) throw error;
+    showToast(n + ' students promoted to ' + target + '.', 'success');
+    perfRosterClass = target;
+    await perfLoadAll();
+  } catch (err) {
+    console.error(err);
+    showToast('Could not promote class: ' + (err.message || err), 'error');
+  } finally {
+    hideLoader();
+  }
+}
+
+function perfStudentProgress(id) {
+  perfProgressId = id;
+  perfRender();
+}
+
+async function perfRenderStudentProgress(body) {
+  const stu = perfStudents.find(s => s.id === perfProgressId);
+  if (!stu) { perfProgressId = null; perfRender(); return; }
+
+  let html = '<div class="perf-card">' +
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfProgressId=null;perfRender()">← Back to roster</button>' +
+    '<h3 style="margin-top:10px">' + escapeHTML(stu.student_name) +
+    (stu.roll_no ? ' <span class="perf-sub">· Roll ' + escapeHTML(stu.roll_no) + '</span>' : '') + '</h3>' +
+    '<p class="perf-sub">' + escapeHTML(stu.class_assigned) + ' · ' + escapeHTML(stu.academic_year) +
+    (stu.status === 'dropped' ? ' · <span class="perf-flag">Dropped</span>' : '') + '</p>' +
+    '<div id="perfProgBody"><p class="perf-empty">Loading progress…</p></div></div>';
+  body.innerHTML = html;
+
+  try {
+    const teacherIds = perfTeachers.map(t => t.id).filter(Boolean);
+    let marks = [], totals = [];
+    if (teacherIds.length) {
+      const [mRes, tRes] = await Promise.all([
+        supabaseClient.from('perf_student_marks').select('*')
+          .eq('academic_year', stu.academic_year).in('teacher_id', teacherIds),
+        supabaseClient.from('perf_term_results').select('*')
+          .eq('academic_year', stu.academic_year).in('teacher_id', teacherIds),
+      ]);
+      if (mRes.error) throw mRes.error;
+      if (tRes.error) throw tRes.error;
+      marks = mRes.data || [];
+      totals = tRes.data || [];
+    }
+    const nm = (stu.student_name || '').trim().toLowerCase();
+    const mine = marks.filter(m => (m.student_name || '').trim().toLowerCase() === nm);
+    const terms = ['1st', '2nd', 'final'];
+    const tlabel = { '1st': '1st Term', '2nd': '2nd Term', 'final': 'Final Term' };
+    let out = '';
+    const trend = [];
+    terms.forEach(tm => {
+      const bySubj = {};
+      mine.filter(m => m.term === tm).forEach(m => {
+        const subj = m.subject || '—';
+        if (!bySubj[subj]) bySubj[subj] = { subj, ob: null, pt: null };
+        const ob = m.obtained_marks == null ? null : Number(m.obtained_marks);
+        if (ob != null && isFinite(ob)) bySubj[subj].ob = ob;
+      });
+      totals.filter(t => t.term === tm).forEach(t => {
+        const subj = t.subject || '—';
+        if (!bySubj[subj]) bySubj[subj] = { subj, ob: null, pt: null };
+        const pt = t.paper_total == null ? null : Number(t.paper_total);
+        if (pt != null && isFinite(pt) && pt > 0) bySubj[subj].pt = pt;
+      });
+      const rows = Object.keys(bySubj).sort((a, b) => a.localeCompare(b))
+        .map(k => bySubj[k]).filter(r => r.ob != null);
+      if (!rows.length) {
+        out += '<h4>' + tlabel[tm] + '</h4><p class="perf-empty">No marks entered.</p>';
+        return;
+      }
+      const sumOb = rows.reduce((a, r) => a + r.ob, 0);
+      const sumPt = rows.reduce((a, r) => a + (r.pt || 0), 0);
+      const pct = sumPt > 0 ? (sumOb / sumPt * 100) : null;
+      trend.push({ tm, pct });
+      out += '<h4>' + tlabel[tm] + ' — Total <b>' + perfR2(sumOb) +
+        (sumPt ? ' / ' + perfR2(sumPt) : '') + '</b>' +
+        (pct != null ? ' (<b>' + pct.toFixed(1) + '%</b>)' : '') + '</h4>' +
+        '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
+        '<th>Subject</th><th>Obtained</th><th>Paper</th><th>%</th></tr></thead><tbody>' +
+        rows.map(r => '<tr><td><b>' + escapeHTML(r.subj) + '</b></td><td>' + perfR2(r.ob) + '</td><td>' +
+          (r.pt != null ? perfR2(r.pt) : '—') + '</td><td>' +
+          (r.pt ? (r.ob / r.pt * 100).toFixed(1) + '%' : '—') + '</td></tr>').join('') +
+        '</tbody></table></div>';
+    });
+    const withPct = trend.filter(g => g.pct != null);
+    if (withPct.length >= 2) {
+      const first = withPct[0].pct, last = withPct[withPct.length - 1].pct;
+      const diff = last - first;
+      const arrow = diff > 0.05 ? ' ↗ improving' : diff < -0.05 ? ' ↘ declining' : ' → steady';
+      out += '<div class="perf-formula" style="margin-top:12px"><b>Trend:</b> ' +
+        withPct.map(g => tlabel[g.tm] + ' ' + g.pct.toFixed(1) + '%').join(' → ') +
+        '<b>' + arrow + ' (' + (diff >= 0 ? '+' : '') + diff.toFixed(1) + ' pts)</b></div>';
+    }
+    const pb = perf$('perfProgBody');
+    if (pb) pb.innerHTML = out || '<p class="perf-empty">No marks found for this student.</p>';
+  } catch (err) {
+    console.error(err);
+    const pb = perf$('perfProgBody');
+    if (pb) pb.innerHTML = '<p class="perf-empty">Could not load progress.</p>';
+  }
+}
+
 /* ---------- term results : class-wise subject grid ----------
    Columns = the class's defined subjects. Each subject's marks are
    attributed to its teacher (exact subject match, else the 'all'
@@ -7911,10 +8173,22 @@ function perfRenderTerms(body) {
   });
   html += '</div>';
 
-  html += '<div class="perf-topbar"><div class="perf-yearbox"><label>Students</label>' +
-    '<input type="number" id="perfEntryNum" class="perf-input perf-num" style="width:70px" min="1" max="200" placeholder="—"></div>' +
-    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfEntryGenRows()">Generate rows</button>' +
-    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfEntryAddRow()">+ Add row</button></div>';
+  const perfEntryRoster = perfNeedsStudentsMigration ? null :
+    perfStudents.filter(s => s.class_assigned === perfEntryClass && s.status !== 'dropped')
+      .sort((a, b) => a.id - b.id);
+
+  if (perfEntryRoster && perfEntryRoster.length) {
+    html += '<p class="perf-sub">Students loaded from the class roster (' + perfEntryRoster.length +
+      ') — just enter marks. Add, drop or promote students on the <b>Students</b> tab.</p>';
+  } else {
+    html += '<div class="perf-topbar"><div class="perf-yearbox"><label>Students</label>' +
+      '<input type="number" id="perfEntryNum" class="perf-input perf-num" style="width:70px" min="1" max="200" placeholder="—"></div>' +
+      '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfEntryGenRows()">Generate rows</button>' +
+      '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfEntryAddRow()">+ Add row</button></div>';
+    if (!perfNeedsStudentsMigration) {
+      html += '<p class="perf-sub">Tip: add students once on the <b>Students</b> tab and their names will fill in automatically.</p>';
+    }
+  }
 
   html += '<div class="perf-scroll"><table class="perf-table"><thead><tr><th>#</th><th>Student</th>';
   perfEntrySubjects.forEach(s => { html += '<th>' + escapeHTML(s) + '</th>'; });
@@ -7930,9 +8204,13 @@ function perfRenderTerms(body) {
 }
 
 function perfEntryRowHtml(i, r) {
-  let h = '<tr><td>' + (i + 1) + '</td>' +
-    '<td><input type="text" class="perf-input" data-ef="name" value="' + escapeHTML(r.name || '') +
-    '" placeholder="—" style="min-width:120px"></td>';
+  let h = '<tr><td>' + (i + 1) + '</td>';
+  if (r.locked) {
+    h += '<td><span data-ef="name" data-locked="1"><b>' + escapeHTML(r.name || '') + '</b></span></td>';
+  } else {
+    h += '<td><input type="text" class="perf-input" data-ef="name" value="' + escapeHTML(r.name || '') +
+      '" placeholder="—" style="min-width:120px"></td>';
+  }
   perfEntrySubjects.forEach(s => {
     const v = r.marks[s];
     h += '<td><input type="number" min="0" step="0.01" class="perf-input perf-num" data-ef="mk" value="' +
@@ -7977,12 +8255,27 @@ async function perfEntryLoad() {
     }));
     const rowMap = {};
     perfEntryPaper = {};
+    // seed rows from the class roster — names never need retyping
+    const seedRoster = perfNeedsStudentsMigration ? [] :
+      perfStudents.filter(s => s.class_assigned === perfEntryClass && s.status !== 'dropped')
+        .sort((a, b) => a.id - b.id);
+    seedRoster.forEach((s, i) => {
+      const marks = {};
+      subjects.forEach(subj => { marks[subj] = ''; });
+      rowMap[i + 1] = { seq: i + 1, name: s.student_name, locked: true, marks };
+    });
     results.forEach(({ subj, marks, summary }) => {
       if (summary && summary.paper_total) perfEntryPaper[subj] = Number(summary.paper_total);
       marks.forEach(m => {
-        if (!rowMap[m.student_seq]) rowMap[m.student_seq] = { seq: m.student_seq, name: m.student_name || '', marks: {} };
-        rowMap[m.student_seq].marks[subj] = m.obtained_marks;
-        if (!rowMap[m.student_seq].name && m.student_name) rowMap[m.student_seq].name = m.student_name;
+        // match the roster row by name first (stable across drops/adds), fall back to seq
+        const mName = (m.student_name || '').trim().toLowerCase();
+        let key = mName ? Object.keys(rowMap).find(k =>
+          (rowMap[k].name || '').trim().toLowerCase() === mName) : null;
+        if (!key) {
+          key = m.student_seq;
+          if (!rowMap[key]) rowMap[key] = { seq: Number(key), name: m.student_name || '', marks: {} };
+        }
+        rowMap[key].marks[subj] = m.obtained_marks;
       });
     });
     perfEntryRows = Object.keys(rowMap).map(Number).sort((a, b) => a - b).map(k => rowMap[k]);
@@ -8004,9 +8297,12 @@ function perfEntryCollect() {
     perfEntrySubjects.forEach((s, j) => {
       marks[s] = inputs[j] ? inputs[j].value.trim() : '';
     });
+    const nameEl = tr.querySelector('[data-ef="name"]');
+    const nm = nameEl ? (nameEl.tagName === 'INPUT' ? nameEl.value.trim() : nameEl.textContent.trim()) : '';
     rows.push({
       seq: i + 1,
-      name: tr.querySelector('input[data-ef="name"]').value.trim(),
+      name: nm,
+      locked: !!(nameEl && nameEl.dataset && nameEl.dataset.locked === '1'),
       marks,
     });
   });
