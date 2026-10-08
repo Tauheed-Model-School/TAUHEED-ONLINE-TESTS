@@ -7494,7 +7494,7 @@ async function perfLoadAll() {
     perfNeedsStudentsMigration = false;
     try {
       const sRes = await supabaseClient.from('perf_class_subjects')
-        .select('*').order('class_assigned').order('subject');
+        .select('*').order('class_assigned').order('id');
       if (sRes.error) throw sRes.error;
       perfClassSubjects = sRes.data || [];
     } catch (subErr) {
@@ -7842,7 +7842,7 @@ function perfRenderSubjects(body) {
     return;
   }
   const subs = perfClassSubjects.filter(s => s.class_assigned === perfSubjClass)
-    .sort((a, b) => a.subject.localeCompare(b.subject));
+    .sort((a, b) => a.id - b.id);
   html += '<div class="perf-topbar"><div class="perf-yearbox"><label>New subject</label>' +
     '<input type="text" id="perfNewSubject" class="perf-input" style="width:180px" placeholder="e.g. English">' +
     '<button class="perf-btn perf-btn-sm" onclick="perfAddSubject()">Add</button></div></div>';
@@ -8581,7 +8581,11 @@ async function perfRenderStudentProgress(body) {
         const pt = t.paper_total == null ? null : Number(t.paper_total);
         if (pt != null && isFinite(pt) && pt > 0) bySubj[subj].pt = pt;
       });
-      const rows = Object.keys(bySubj).sort((a, b) => a.localeCompare(b))
+      const subjOrder = {};
+      perfClassSubjects.filter(s => s.class_assigned === stu.class_assigned)
+        .forEach((s, idx) => { subjOrder[s.subject] = idx; });
+      const rows = Object.keys(bySubj).sort((a, b) =>
+        (subjOrder[a] === undefined ? 999 : subjOrder[a]) - (subjOrder[b] === undefined ? 999 : subjOrder[b]))
         .map(k => bySubj[k]).filter(r => r.ob != null);
       if (!rows.length) {
         out += '<h4>' + tlabel[tm] + '</h4><p class="perf-empty">No marks entered.</p>';
@@ -9014,8 +9018,8 @@ async function perfLoadResults() {
       .filter(s => s.class_assigned === cls && s.academic_year === perfYear)
       .sort((a, b) => a.id - b.id);
     const subjects = perfClassSubjects
-      .filter(s => s.class_assigned === cls).map(s => s.subject)
-      .sort((a, b) => a.localeCompare(b));
+      .filter(s => s.class_assigned === cls)
+      .sort((a, b) => a.id - b.id).map(s => s.subject);
     const teacherIds = perfTeachers
       .filter(t => t.class_assigned === cls).map(t => t.id).filter(Boolean);
     let marks = [], totals = [];
@@ -9477,7 +9481,7 @@ function perfRenderTerms(body) {
     return;
   }
   perfEntrySubjects = perfClassSubjects.filter(s => s.class_assigned === perfEntryClass)
-    .map(s => s.subject).sort((a, b) => a.localeCompare(b));
+    .sort((a, b) => a.id - b.id).map(s => s.subject);
   if (!perfEntrySubjects.length) {
     body.innerHTML = html + '<p class="perf-empty">No subjects defined for ' + escapeHTML(perfEntryClass) +
       ' — add them on the Subjects tab first.</p></div>';
@@ -9565,7 +9569,7 @@ async function perfEntryClassChanged() {
 async function perfEntryLoad() {
   if (!perfEntryClass) { perfRender(); return; }
   const subjects = perfClassSubjects.filter(s => s.class_assigned === perfEntryClass)
-    .map(s => s.subject).sort((a, b) => a.localeCompare(b));
+    .sort((a, b) => a.id - b.id).map(s => s.subject);
   showLoader('Loading marks...');
   try {
     const results = await Promise.all(subjects.map(async subj => {
