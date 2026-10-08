@@ -8906,7 +8906,7 @@ function perfRenderResults(body) {
     return;
   }
   html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
-    '<th>#</th><th>Student</th>';
+    '<th>Sr.</th><th>Student</th>';
   data.subjects.forEach(sj => { html += '<th>' + escapeHTML(sj) + '</th>'; });
   html += term === 'all' ? '<th>Overall %</th>' : '<th>Total</th><th>%</th>';
   html += '<th>Grade</th><th>Position</th><th></th></tr></thead><tbody>';
@@ -9187,7 +9187,7 @@ function perfPrintClassResult(preWin) {
       '<td class="c">' + (x.pct != null ? x.pct.toFixed(1) + '%' : '—') + '</td>';
     trows += '<td class="c">' + x.grade + '</td><td class="c"><b>' + (x.pos === '—' ? '—' : x.pos) + '</b></td></tr>';
   });
-  let head = '<tr><th>#</th><th>Student</th>';
+  let head = '<tr><th>Sr.</th><th>Student</th>';
   data.subjects.forEach(sj => { head += '<th>' + escapeHTML(sj) + '</th>'; });
   head += term === 'all' ? '<th>Overall %</th>' : '<th>Total</th><th>%</th>';
   head += '<th>Grade</th><th>Position</th></tr>';
