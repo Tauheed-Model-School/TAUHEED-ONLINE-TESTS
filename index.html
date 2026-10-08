@@ -7470,6 +7470,21 @@ function perfRankBadge(rank) {
 }
 
 /* ---------- data ---------- */
+/* Supabase returns max 1000 rows per request — page through everything so
+   large schools (1000+ students) never lose data silently. */
+async function perfSelectAll(makeQuery) {
+  const PAGE = 1000;
+  let from = 0;
+  const out = [];
+  for (;;) {
+    const { data, error } = await makeQuery().range(from, from + PAGE - 1);
+    if (error) throw error;
+    out.push(...(data || []));
+    if (!data || data.length < PAGE) break;
+    from += PAGE;
+  }
+  return out;
+}
 function perfTeacherById(id) {
   return perfTeachers.find(t => t.id === id) || {};
 }
@@ -7477,40 +7492,32 @@ function perfTeacherById(id) {
 async function perfLoadAll() {
   showLoader('Loading performance data...');
   try {
-    const [tRes, trRes, aRes, bRes] = await Promise.all([
-      supabaseClient.from('perf_teachers').select('*').eq('active', true).order('name'),
-      supabaseClient.from('perf_term_results').select('*').eq('academic_year', perfYear),
-      supabaseClient.from('perf_attendance').select('*').eq('academic_year', perfYear),
-      supabaseClient.from('perf_bise_results').select('*').eq('academic_year', perfYear),
+    const [teachers, termResults, attendance, bise] = await Promise.all([
+      perfSelectAll(() => supabaseClient.from('perf_teachers').select('*').eq('active', true).order('name')),
+      perfSelectAll(() => supabaseClient.from('perf_term_results').select('*').eq('academic_year', perfYear)),
+      perfSelectAll(() => supabaseClient.from('perf_attendance').select('*').eq('academic_year', perfYear)),
+      perfSelectAll(() => supabaseClient.from('perf_bise_results').select('*').eq('academic_year', perfYear)),
     ]);
-    if (tRes.error) throw tRes.error;
-    if (trRes.error) throw trRes.error;
-    if (aRes.error) throw aRes.error;
-    if (bRes.error) throw bRes.error;
-    perfTeachers = tRes.data || [];
-    perfTermResults = trRes.data || [];
-    perfAttendance = aRes.data || [];
-    perfBise = bRes.data || [];
+    perfTeachers = teachers;
+    perfTermResults = termResults;
+    perfAttendance = attendance;
+    perfBise = bise;
     // subjects table exists only after migration 003 — keep the tab
     // usable even before the migration is run
     perfNeedsMigration = false;
     // roster table exists only after migration 004
     perfNeedsStudentsMigration = false;
     try {
-      const sRes = await supabaseClient.from('perf_class_subjects')
-        .select('*').order('class_assigned').order('id');
-      if (sRes.error) throw sRes.error;
-      perfClassSubjects = sRes.data || [];
+      perfClassSubjects = await perfSelectAll(() => supabaseClient.from('perf_class_subjects')
+        .select('*').order('class_assigned').order('id'));
     } catch (subErr) {
       console.warn('perf_class_subjects unavailable:', subErr);
       perfClassSubjects = [];
       perfNeedsMigration = true;
     }
     try {
-      const stRes = await supabaseClient.from('perf_students')
-        .select('*').eq('academic_year', perfYear).order('class_assigned').order('id');
-      if (stRes.error) throw stRes.error;
-      perfStudents = stRes.data || [];
+      perfStudents = await perfSelectAll(() => supabaseClient.from('perf_students')
+        .select('*').eq('academic_year', perfYear).order('class_assigned').order('id'));
     } catch (stErr) {
       console.warn('perf_students unavailable:', stErr);
       perfStudents = [];
@@ -8587,16 +8594,12 @@ async function perfRenderStudentProgress(body) {
     const teacherIds = perfTeachers.map(t => t.id).filter(Boolean);
     let marks = [], totals = [];
     if (teacherIds.length) {
-      const [mRes, tRes] = await Promise.all([
-        supabaseClient.from('perf_student_marks').select('*')
-          .eq('academic_year', stu.academic_year).in('teacher_id', teacherIds),
-        supabaseClient.from('perf_term_results').select('*')
-          .eq('academic_year', stu.academic_year).in('teacher_id', teacherIds),
+      const [marks, totals] = await Promise.all([
+        perfSelectAll(() => supabaseClient.from('perf_student_marks').select('*')
+          .eq('academic_year', stu.academic_year).in('teacher_id', teacherIds)),
+        perfSelectAll(() => supabaseClient.from('perf_term_results').select('*')
+          .eq('academic_year', stu.academic_year).in('teacher_id', teacherIds)),
       ]);
-      if (mRes.error) throw mRes.error;
-      if (tRes.error) throw tRes.error;
-      marks = mRes.data || [];
-      totals = tRes.data || [];
     }
     const nm = (stu.student_name || '').trim().toLowerCase();
     const mine = marks.filter(m => (m.student_name || '').trim().toLowerCase() === nm);
@@ -9063,16 +9066,12 @@ async function perfLoadResults() {
       .filter(t => t.class_assigned === cls).map(t => t.id).filter(Boolean);
     let marks = [], totals = [];
     if (teacherIds.length) {
-      const [mRes, tRes] = await Promise.all([
-        supabaseClient.from('perf_student_marks').select('*')
-          .eq('academic_year', perfYear).in('teacher_id', teacherIds),
-        supabaseClient.from('perf_term_results').select('*')
-          .eq('academic_year', perfYear).in('teacher_id', teacherIds),
+      const [marks, totals] = await Promise.all([
+        perfSelectAll(() => supabaseClient.from('perf_student_marks').select('*')
+          .eq('academic_year', perfYear).in('teacher_id', teacherIds)),
+        perfSelectAll(() => supabaseClient.from('perf_term_results').select('*')
+          .eq('academic_year', perfYear).in('teacher_id', teacherIds)),
       ]);
-      if (mRes.error) throw mRes.error;
-      if (tRes.error) throw tRes.error;
-      marks = mRes.data || [];
-      totals = tRes.data || [];
     }
     const rows = roster.map(stu => {
       const nm = (stu.student_name || '').trim().toLowerCase();
