@@ -9264,6 +9264,11 @@ function perfPrintClassResult(preWin) {
   let _sumPct = 0, _nPct = 0;
   data.list.forEach(x => { if (x.pct != null) { _sumPct += x.pct; _nPct++; } });
   const _classAvg = _nPct ? (_sumPct / _nPct).toFixed(1) + '%' : '—';
+  const _gradeOrder = ['A+', 'A', 'B', 'C', 'D', 'E', 'F'];
+  const _gCount = {};
+  _gradeOrder.forEach(g => { _gCount[g] = 0; });
+  data.list.forEach(x => { if (x.grade && _gCount[x.grade] !== undefined) _gCount[x.grade]++; });
+  const _gLine = _gradeOrder.map(g => g + ': ' + _gCount[g]).join(' &nbsp;&nbsp; ');
   let trows = '';
   data.list.forEach((x, i) => {
     trows += '<tr><td class="c"><b>' + (x.stu.roll_no ? escapeHTML(x.stu.roll_no) : '—') + '</b></td>' +
@@ -9290,6 +9295,7 @@ function perfPrintClassResult(preWin) {
     '<table><thead>' + head + '</thead><tbody>' + trows + '</tbody></table>' +
     '<div class="sum"><b>Class Average:</b> ' + _classAvg +
     ' &nbsp;&nbsp; <b>Students Appeared:</b> ' + _nPct + ' / ' + data.list.length + '</div>' +
+    '<div class="sum"><b>Grade Summary:</b> ' + _gLine + '</div>' +
     '<div class="sig"><div>Class Teacher</div><div>Principal</div><div>Date</div></div>';
   perfPrintDoc('Class Result - ' + perfResClass, inner, preWin);
 }
