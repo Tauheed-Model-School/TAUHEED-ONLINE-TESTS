@@ -2929,14 +2929,16 @@ async function navigate(page) {
    ADMIN DATA REFRESH
 ========================================================= */
 
-async function refreshAdminData() {
+async function refreshAdminData(full) {
 
+  // NOTE: admin_dashboard_summary limits lists to 5 rows (dashboard widgets).
+  // Pass full=true for management tabs that need the COMPLETE lists.
   adminData =
     await callFunction(
       "portal-data",
       {
         action:
-        "admin_dashboard_summary"
+        full ? "admin_dashboard" : "admin_dashboard_summary"
       }
     );
 
@@ -3159,7 +3161,7 @@ async function showAdminStudents() {
   showLoader("Loading students...");
 
   try {
-    await refreshAdminData();
+    await refreshAdminData(true);
 
     const allStudents = adminData.students || [];
 
@@ -3649,7 +3651,7 @@ async function showAdminTeachers() {
 
   try {
 
-    await refreshAdminData();
+    await refreshAdminData(true);
 
     const teachers =
       adminData.teachers || [];
@@ -4053,7 +4055,7 @@ async function showAdminTests() {
 
   try {
 
-    await refreshAdminData();
+    await refreshAdminData(true);
 
     const tests = adminData.tests || [];
 
@@ -4381,7 +4383,7 @@ async function showAdminResults() {
 
   try {
 
-    await refreshAdminData();
+    await refreshAdminData(true);
 
     const results =
       adminData.results || [];
