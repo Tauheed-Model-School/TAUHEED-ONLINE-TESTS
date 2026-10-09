@@ -8241,7 +8241,8 @@ function perfRenderStudents(body) {
     '(' + escapeHTML(perfRosterClass) + '). Username naam se banega, password auto-generate hoga (6-digit simple number). ' +
     'Jin ka account pehle se hoga, wo skip ho jayenge.</p>' +
     '<div class="perf-topbar"><button class="perf-btn perf-btn-gold perf-btn-sm" onclick="perfCreateAccounts()">Create ' +
-    activeCount + ' accounts</button></div>' +
+    activeCount + ' accounts</button>' +
+    '<button class="perf-btn perf-btn-danger perf-btn-sm" onclick="perfDeleteAccounts()">Delete class accounts</button></div>' +
     '<div id="perfAcctProgress"></div><div id="perfCredBox" style="margin-top:10px"></div>');
 
   html += perfCollapseCard('📈 Promote class',
@@ -8661,6 +8662,46 @@ function perfRenderCredentials() {
   box.innerHTML = html + '</tbody></table></div>';
 }
 
+async function perfDeleteAccounts() {
+  showLoader('Loading accounts...');
+  try {
+    await refreshAdminData(true);
+  } catch (e) {
+    hideLoader();
+    showToast('Could not load accounts: ' + (e.message || e), 'error');
+    return;
+  }
+  hideLoader();
+  const targets = (adminData.students || []).filter(s =>
+    (s.class_name || '').trim() === perfRosterClass);
+  if (!targets.length) {
+    showToast('No portal accounts found for ' + perfRosterClass + '.', 'error');
+    return;
+  }
+  if (!confirm('Delete ' + targets.length + ' login accounts of ' + perfRosterClass + '?\n\n' +
+    'Sirf login accounts delete honge — roster aur marks mehfooz rahenge.\nThis cannot be undone.')) return;
+  const prog = perf$('perfAcctProgress');
+  let done = 0, failed = 0;
+  const paint = () => {
+    if (!prog) return;
+    prog.innerHTML = '<div class="perf-sub" style="margin:8px 0">Deleting accounts\u2026 <b>' + done + ' / ' +
+      targets.length + '</b>' + (failed ? ' (<b style="color:#b91c1c">' + failed + ' failed</b>)' : '') + '</div>' +
+      '<div style="background:#eef3f0;border-radius:10px;height:12px;overflow:hidden;max-width:420px">' +
+      '<div style="height:100%;width:' + Math.round(done / targets.length * 100) +
+      '%;background:linear-gradient(90deg,#b91c1c,#e06060);border-radius:10px;transition:width .25s"></div></div>';
+  };
+  paint();
+  for (const s of targets) {
+    try {
+      await callFunction('admin-manage-user', { action: 'delete_student', id: s.id });
+    } catch (e) { failed++; }
+    done++;
+    paint();
+  }
+  if (prog) prog.innerHTML = '';
+  showToast((done - failed) + ' accounts deleted' + (failed ? ', ' + failed + ' failed' : '') + '.',
+    failed && done === failed ? 'error' : 'success');
+}
 function perfDownloadCreds() {
   const ok = perfLastCredentials.filter(c => c.ok);
   if (!ok.length) return;
