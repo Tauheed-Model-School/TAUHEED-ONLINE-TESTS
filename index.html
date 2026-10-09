@@ -7979,7 +7979,11 @@ function perfRenderTeachers(body) {
   } else {
     html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
       '<th>Name</th><th>Subject</th><th>Class</th><th>Group</th><th>Phone</th><th></th></tr></thead><tbody>';
-    perfTeachers.forEach(t => {
+    [...perfTeachers].sort((a, b) =>
+      compareClassNatural(a.class_assigned, b.class_assigned) ||
+      String(a.subject || '').localeCompare(String(b.subject || '')) ||
+      String(a.name || '').localeCompare(String(b.name || ''))
+    ).forEach(t => {
       html += '<tr><td><b>' + escapeHTML(t.name) + '</b></td>' +
         '<td>' + escapeHTML(t.subject) + '</td>' +
         '<td>' + escapeHTML(t.class_assigned) + '</td>' +
