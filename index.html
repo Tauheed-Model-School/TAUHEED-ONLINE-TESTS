@@ -8238,7 +8238,7 @@ function perfRenderStudents(body) {
 
   html += perfCollapseCard('🔑 Student login accounts',
     '<p class="perf-sub">Ek click mein <b>' + activeCount + ' active</b> students ke portal login accounts banaen ' +
-    '(' + escapeHTML(perfRosterClass) + '). Username naam se banega, password auto-generate hoga. ' +
+    '(' + escapeHTML(perfRosterClass) + '). Username naam se banega, password auto-generate hoga (6-digit simple number). ' +
     'Jin ka account pehle se hoga, wo skip ho jayenge.</p>' +
     '<div class="perf-topbar"><button class="perf-btn perf-btn-gold perf-btn-sm" onclick="perfCreateAccounts()">Create ' +
     activeCount + ' accounts</button></div>' +
@@ -8561,10 +8561,8 @@ function perfGenUsername(name) {
 }
 
 function perfGenPassword() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-  let s = '';
-  for (let i = 0; i < 8; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return s;
+  // 6-digit simple numeric password — easy for small children to remember
+  return String(Math.floor(100000 + Math.random() * 900000));
 }
 
 async function perfCreateAccounts() {
