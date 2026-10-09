@@ -2423,6 +2423,41 @@ function escapeHTML(value) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+/* Natural school class order: Nursery, KG, Prep, 1..10 (+ sections), then anything else.
+   Alphabetical sort wrongly puts "10th" right after "Nursery". */
+function classSortKey(cls) {
+  const raw = String(cls || '').trim().toLowerCase();
+  const alpha = raw.replace(/[^a-z]/g, '');
+  const named = [
+    ['playgroup', 0], ['pg', 0],
+    ['nursery', 1], ['nurs', 1], ['nsy', 1], ['nur', 1],
+    ['kindergarten', 2], ['kg', 2],
+    ['preparatory', 3], ['prep', 3],
+  ];
+  for (const [k, v] of named) if (alpha.startsWith(k)) return [v, ''];
+  const clean = raw.replace(/[^a-z0-9]/g, '');
+  const m = clean.match(/\d+/);
+  if (!m) return [900, clean];
+  const num = parseInt(m[0], 10);
+  const rest = clean.slice(m.index + m[0].length).replace(/^(th|st|nd|rd)/, '');
+  return [100 + num, rest];
+}
+function sortClassesNatural(list) {
+  return [...new Set(list)].sort((a, b) => {
+    const ka = classSortKey(a), kb = classSortKey(b);
+    if (ka[0] !== kb[0]) return ka[0] - kb[0];
+    if (ka[1] < kb[1]) return -1;
+    if (ka[1] > kb[1]) return 1;
+    return String(a).localeCompare(String(b));
+  });
+}
+function compareClassNatural(a, b) {
+  const ka = classSortKey(a), kb = classSortKey(b);
+  if (ka[0] !== kb[0]) return ka[0] - kb[0];
+  if (ka[1] < kb[1]) return -1;
+  if (ka[1] > kb[1]) return 1;
+  return String(a).localeCompare(String(b));
+}
 /* =========================================================
    MATH CONTENT RENDERER (CLEAN & SYNTAX FIXED)
 ========================================================= */
@@ -3166,9 +3201,9 @@ async function showAdminStudents() {
     const allStudents = adminData.students || [];
 
     // 1. Unique classes nikaalein dropdown ke liye
-    const classList = Array.from(
-      new Set(allStudents.map(s => (s.class_name || "Unassigned").trim()))
-    ).sort();
+    const classList = sortClassesNatural(
+      allStudents.map(s => (s.class_name || "Unassigned").trim())
+    );
 
     // 2. Selected class ke hisaab se filter karein
     const filteredStudents = selectedAdminClassFilter === "all"
@@ -3177,7 +3212,7 @@ async function showAdminStudents() {
 
     // 3. Class aur Roll Number ke hisaab se sort karein
     filteredStudents.sort((a, b) => {
-      const classCompare = (a.class_name || "").localeCompare(b.class_name || "");
+      const classCompare = compareClassNatural(a.class_name || "", b.class_name || "");
       if (classCompare !== 0) return classCompare;
       return (Number(a.roll_number) || 0) - (Number(b.roll_number) || 0);
     });
@@ -4869,8 +4904,7 @@ addQuestion();
     defaultClasses.forEach(c => availableClasses.add(c));
 
     classSelect.innerHTML = `<option value="">-- Select Class --</option>` +
-      Array.from(availableClasses)
-        .sort()
+      sortClassesNatural(Array.from(availableClasses))
         .map(cls => `<option value="${escapeAttr(cls)}" ${cls === teacherData?.teacher?.class_name ? "selected" : ""}>${escapeHTML(cls)}</option>`)
         .join("");
 
@@ -8133,7 +8167,7 @@ async function perfDelSubject(id) {
 function perfDistinctClasses() {
   const seen = {};
   perfTeachers.forEach(t => { if (t.class_assigned) seen[t.class_assigned] = true; });
-  return Object.keys(seen).sort();
+  return sortClassesNatural(Object.keys(seen));
 }
 
 function perfTeacherFor(classAssigned, subject) {
@@ -8156,7 +8190,7 @@ function perfRosterClasses() {
   const seen = {};
   perfStudents.forEach(s => { if (s.class_assigned) seen[s.class_assigned] = true; });
   perfDistinctClasses().forEach(c => { seen[c] = true; });
-  return Object.keys(seen).sort();
+  return sortClassesNatural(Object.keys(seen));
 }
 
 function perfRenderStudents(body) {
@@ -9044,7 +9078,7 @@ function perfOverviewCompute(Y) {
   rows.filter(r => r.weighted != null)
     .sort((a, b) => b.weighted - a.weighted)
     .forEach((r, i) => r.rank = i + 1);
-  if (perfOverviewSort === 'name') rows.sort((a, b) => a.cls.localeCompare(b.cls));
+  if (perfOverviewSort === 'name') rows.sort((a, b) => compareClassNatural(a.cls, b.cls));
   else rows.sort((a, b) => (b.weighted == null ? -1 : b.weighted) - (a.weighted == null ? -1 : a.weighted));
   return rows;
 }
@@ -9150,8 +9184,8 @@ function perfRenderTracking(body) {
     return;
   }
   const Y = perfTrackYear || cache.years[0];
-  const classes = [...new Set(cache.students.filter(s => s.academic_year === Y)
-    .map(s => s.class_assigned))].sort();
+  const classes = sortClassesNatural(cache.students.filter(s => s.academic_year === Y)
+    .map(s => s.class_assigned));
   html += '<div class="perf-topbar">' +
     '<div class="perf-yearbox"><label>Academic year</label>' +
     '<select id="perfTrackYear" class="perf-input" style="width:auto" onchange="perfTrackYearChanged()">' +
@@ -9227,8 +9261,8 @@ function perfRenderTracking(body) {
 function perfTrackCompute(Y, onlyClass) {
   const cache = perfTrackCache;
   const terms = ['1st', '2nd', 'final'];
-  const classes = [...new Set(cache.students.filter(s => s.academic_year === Y)
-    .map(s => s.class_assigned))].sort()
+  const classes = sortClassesNatural(cache.students.filter(s => s.academic_year === Y)
+    .map(s => s.class_assigned))
     .filter(c => !onlyClass || c === onlyClass);
 
   const classRows = classes.map(cls => {
@@ -9248,7 +9282,7 @@ function perfTrackCompute(Y, onlyClass) {
   });
 
   const yoyClasses = onlyClass ? [onlyClass] :
-    [...new Set(cache.students.map(s => s.class_assigned))].sort();
+    sortClassesNatural(cache.students.map(s => s.class_assigned));
   const yoyRows = yoyClasses.map(cls => {
     const avgs = cache.years.map(yy => {
       const roster = cache.students.filter(s => s.academic_year === yy && s.class_assigned === cls);
