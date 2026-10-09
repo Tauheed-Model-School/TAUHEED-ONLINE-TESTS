@@ -7734,6 +7734,7 @@ async function showAdminPerformance() {
 
 const perfSections = [
   { id: 'students', label: 'Student Results', icon: '\uD83D\uDCCB', sub: 'Student roster, marks entry, class results and performance tracking. Admin only.', tabs: [
+    ['overview', 'Overview'],
     ['students', 'Students'],
     ['terms', 'Enter Marks'],
     ['results', 'Class Results'],
@@ -7801,6 +7802,10 @@ function perfRender() {
   else if (perfSubTab === 'tracking') {
     if (!perfTrackCache.loaded && !perfTrackLoading) perfTrackLoad();
     else perfRenderTracking(body);
+  }
+  else if (perfSubTab === 'overview') {
+    if (!perfTrackCache.loaded && !perfTrackLoading) perfTrackLoad();
+    else perfRenderOverview(body);
   }
   else if (perfSubTab === 'attendance') perfRenderAttendance(body);
   else if (perfSubTab === 'bise') perfRenderBise(body);
@@ -8983,7 +8988,7 @@ function perfTrackWeighted(cache, year, teacherIds, name) {
 
 async function perfTrackLoad(force) {
   if (perfTrackLoading) return;
-  if (!force && perfTrackCache.students.length) { if (perfSubTab === 'tracking') perfRender(); return; }
+  if (!force && perfTrackCache.students.length) { if (perfSubTab === 'tracking' || perfSubTab === 'overview') perfRender(); return; }
   perfTrackLoading = true;
   showLoader('Loading tracking data...');
   try {
@@ -9011,7 +9016,123 @@ async function perfTrackLoad(force) {
     perfTrackLoading = false;
     hideLoader();
   }
-  if (perfSubTab === 'tracking') perfRender();
+  if (perfSubTab === 'tracking' || perfSubTab === 'overview') perfRender();
+}
+
+/* ---------- overview : whole-school class comparison ---------- */
+let perfOverviewSort = 'weighted';  // 'weighted' | 'name'
+
+function perfOverviewSortChanged() {
+  perfOverviewSort = perf$('perfOverviewSort').value;
+  perfRender();
+}
+
+function perfOverviewCompute(Y) {
+  const cache = perfTrackCache;
+  const data = perfTrackCompute(Y, '');
+  const rows = data.classRows.map(r => {
+    const roster = cache.students.filter(s => s.academic_year === Y && s.class_assigned === r.cls && s.status !== 'dropped');
+    const teacherIds = perfTeachers.filter(t => t.class_assigned === r.cls).map(t => t.id);
+    let s = 0, n = 0;
+    roster.forEach(stu => {
+      const pw = perfTrackWeighted(cache, Y, teacherIds, stu.student_name);
+      if (pw != null) { s += pw; n++; }
+    });
+    const weighted = n ? s / n : null;
+    return { cls: r.cls, n: r.n, termAvgs: r.termAvgs, trend: r.trend, weighted: weighted, withMarks: n };
+  });
+  rows.filter(r => r.weighted != null)
+    .sort((a, b) => b.weighted - a.weighted)
+    .forEach((r, i) => r.rank = i + 1);
+  if (perfOverviewSort === 'name') rows.sort((a, b) => a.cls.localeCompare(b.cls));
+  else rows.sort((a, b) => (b.weighted == null ? -1 : b.weighted) - (a.weighted == null ? -1 : a.weighted));
+  return rows;
+}
+
+function perfRenderOverview(body) {
+  const cache = perfTrackCache;
+  let html = '<div class="perf-card"><h3>School Overview</h3>' +
+    '<p class="perf-sub">Whole-school performance at a glance — every class compared side by side. ' +
+    'All Terms uses the 20 / 30 / 50 term weights. Green rows are the top 3, red rows are below 50%.</p>';
+  if (!cache.years.length && !cache.loaded) {
+    if (!perfTrackLoading) perfTrackLoad();
+    body.innerHTML = html + '<p class="perf-empty">Loading overview data\u2026</p></div>';
+    return;
+  }
+  if (!cache.years.length) {
+    body.innerHTML = html + '<p class="perf-empty">No data yet — enter marks first.</p></div>';
+    return;
+  }
+  const Y = perfTrackYear || cache.years[0];
+  html += '<div class="perf-topbar">' +
+    '<div class="perf-yearbox"><label>Academic year</label>' +
+    '<select id="perfTrackYear" class="perf-input" style="width:auto" onchange="perfTrackYearChanged()">' +
+    cache.years.map(y => '<option value="' + escapeHTML(y) + '"' + (Y === y ? ' selected' : '') + '>' +
+      escapeHTML(y) + '</option>').join('') + '</select></div>' +
+    '<div class="perf-yearbox"><label>Sort by</label>' +
+    '<select id="perfOverviewSort" class="perf-input" style="width:auto" onchange="perfOverviewSortChanged()">' +
+    '<option value="weighted"' + (perfOverviewSort === 'weighted' ? ' selected' : '') + '>All Terms %</option>' +
+    '<option value="name"' + (perfOverviewSort === 'name' ? ' selected' : '') + '>Class name</option>' +
+    '</select></div>' +
+    '<div class="perf-yearbox"><label>\u00A0</label>' +
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfTrackLoad(true)">Refresh</button></div>' +
+    '<div class="perf-yearbox"><label>\u00A0</label>' +
+    '<button class="perf-btn perf-btn-gold perf-btn-sm" onclick="perfPrintOverview()">Print Overview</button></div></div>';
+
+  const rows = perfOverviewCompute(Y);
+  const withMarks = rows.filter(r => r.weighted != null);
+  if (!rows.length) {
+    body.innerHTML = html + '<p class="perf-empty">No classes with students for this year.</p></div>';
+    return;
+  }
+  const best = withMarks.length ? withMarks.reduce((a, b) => b.weighted > a.weighted ? b : a) : null;
+  const weak = withMarks.length ? withMarks.reduce((a, b) => b.weighted < a.weighted ? b : a) : null;
+  const schoolAvg = withMarks.length ? withMarks.reduce((s, r) => s + r.weighted, 0) / withMarks.length : null;
+  const card = (label, value, sub, color) =>
+    '<div class="stat-card"><div class="stat-label">' + label + '</div>' +
+    '<div class="stat-value" style="' + (color ? 'color:' + color + ';' : '') + '">' + value + '</div>' +
+    (sub ? '<div class="perf-sub">' + sub + '</div>' : '') + '</div>';
+  html += '<div class="stats-grid" style="margin:14px 0">' +
+    card('\uD83C\uDFC6 Best class', best ? escapeHTML(best.cls) : '\u2014',
+      best ? best.weighted.toFixed(1) + '% All Terms' : '', '#0d7a58') +
+    card('\u26A0\uFE0F Needs attention', weak ? escapeHTML(weak.cls) : '\u2014',
+      weak ? weak.weighted.toFixed(1) + '% All Terms' : '', '#b91c1c') +
+    card('\uD83D\uDCCA School average', schoolAvg != null ? schoolAvg.toFixed(1) + '%' : '\u2014',
+      withMarks.length + ' of ' + rows.length + ' classes with marks', '') +
+    '</div>';
+
+  html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
+    '<th>Rank</th><th>Class</th><th>Students</th><th>1st Term</th><th>2nd Term</th><th>Final Term</th>' +
+    '<th>All Terms</th><th>Trend</th><th>Grade</th></tr></thead><tbody>' +
+    rows.map(r => {
+      const style = r.rank && r.rank <= 3 ? ' style="background:#eefbf4"' :
+        (r.weighted != null && r.weighted < 50 ? ' style="background:#fdf0f0"' : '');
+      return '<tr' + style + '><td><b>' + (r.rank || '\u2014') + '</b></td>' +
+        '<td><b>' + escapeHTML(r.cls) + '</b></td><td>' + r.n + '</td>' +
+        r.termAvgs.map(a => '<td>' + (a != null ? a.toFixed(1) + '%' : '\u2014') + '</td>').join('') +
+        '<td><b>' + (r.weighted != null ? r.weighted.toFixed(1) + '%' : '\u2014') + '</b></td>' +
+        '<td>' + perfTrendArrow(r.trend) + '</td>' +
+        '<td><b>' + perfGrade(r.weighted) + '</b></td></tr>';
+    }).join('') + '</tbody></table></div>';
+  body.innerHTML = html + '</div>';
+}
+
+function perfPrintOverview() {
+  const Y = perfTrackYear || (perfTrackCache.years.length ? perfTrackCache.years[0] : '');
+  const rows = perfOverviewCompute(Y);
+  if (!rows.length) { showToast('Nothing to print yet.', 'error'); return; }
+  const inner = '<div class="h"><h1>TAUHEED MODEL SCHOOL</h1>' +
+    '<p>School Performance Overview — Academic Year ' + escapeHTML(Y) + '</p></div>' +
+    '<table><thead><tr><th>Rank</th><th>Class</th><th>Students</th><th>1st Term</th><th>2nd Term</th>' +
+    '<th>Final Term</th><th>All Terms (20/30/50)</th><th>Grade</th></tr></thead><tbody>' +
+    rows.map(r => '<tr><td class="c"><b>' + (r.rank || '\u2014') + '</b></td>' +
+      '<td><b>' + escapeHTML(r.cls) + '</b></td><td class="c">' + r.n + '</td>' +
+      r.termAvgs.map(a => '<td class="c">' + (a != null ? a.toFixed(1) + '%' : '\u2014') + '</td>').join('') +
+      '<td class="c"><b>' + (r.weighted != null ? r.weighted.toFixed(1) + '%' : '\u2014') + '</b></td>' +
+      '<td class="c"><b>' + perfGrade(r.weighted) + '</b></td></tr>').join('') +
+    '</tbody></table>' +
+    '<div class="sig"><div>Class Incharge</div><div>Campus Director</div><div>Principal</div></div>';
+  perfPrintDoc('School Overview ' + Y, inner);
 }
 
 function perfRenderTracking(body) {
