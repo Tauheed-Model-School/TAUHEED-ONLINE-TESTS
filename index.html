@@ -7851,6 +7851,134 @@ function perfRender() {
 }
 
 /* ---------- rankings ---------- */
+let perfRankView = 'class';  // 'class' | 'teacher'
+let perfRankExpanded = {};     // teacher-wise detail toggles, key = group + '|' + name
+
+function perfSetRankView(v) { perfRankView = v; perfRankExpanded = {}; perfRender(); }
+function perfToggleRankDetail(key) { perfRankExpanded[key] = !perfRankExpanded[key]; perfRender(); }
+
+/* one ranking entry per teacher row (class+subject); an 'all' class teacher
+   gets one entry for every subject they teach */
+function perfBuildRankInput(g) {
+  const input = [];
+  perfTeachers.filter(t => t.class_group === g.key).forEach(t => {
+    const tRows = perfTermResults.filter(r => r.teacher_id === t.id);
+    const subjects = [...new Set(tRows.map(r => r.subject).filter(Boolean))];
+    const subs = subjects.length ? subjects : [t.subject || '\u2014'];
+    subs.forEach(subj => {
+      const terms = {};
+      tRows.filter(r => (r.subject || t.subject) === subj)
+        .forEach(r => { terms[r.term] = Number(r.class_avg); });
+      const att = perfAttendance.find(a => a.teacher_id === t.id);
+      input.push({
+        ...t,
+        subject: subj,
+        terms,
+        attendance: att ? { present: att.present_days, total: att.total_days } : null,
+      });
+    });
+  });
+  return input;
+}
+
+/* aggregate a group's class-wise entries per teacher person */
+function perfAggregateByTeacher(input) {
+  const byPerson = {};
+  input.forEach(e => {
+    const key = (e.name || '').trim().toLowerCase();
+    if (!key) return;
+    if (!byPerson[key]) byPerson[key] = { name: (e.name || '').trim(), rows: [] };
+    byPerson[key].rows.push(e);
+  });
+  return Object.values(byPerson).map(p => {
+    const scored = p.rows.map(r => ({ ...r, score: perfScoreTeacher(r.terms || {}, r.attendance || null) }));
+    const complete = scored.filter(r => r.score.complete);
+    const att = scored.find(r => r.attendance && r.attendance.total > 0);
+    const classes = sortClassesNatural(p.rows.map(r => r.class_assigned).filter(Boolean));
+    const subjects = [...new Set(p.rows.map(r => r.subject).filter(Boolean))];
+    const base = { name: p.name, rows: scored, classes, subjects, nRows: p.rows.length, nComplete: complete.length };
+    if (!complete.length) return { ...base, complete: false };
+    const avg = arr => arr.reduce((s, v) => s + v, 0) / arr.length;
+    const academic = avg(complete.map(r => r.score.academic));
+    const improvement = avg(complete.map(r => r.score.improvement));
+    const bonus = Math.min(5, improvement * 0.25);
+    const academicAdj = Math.min(100, academic + bonus);
+    let attPct = null, overall, attendanceMissing = true;
+    if (att) {
+      attPct = att.attendance.present / att.attendance.total * 100;
+      overall = 0.80 * academicAdj + 0.20 * attPct;
+      attendanceMissing = false;
+    } else {
+      overall = academicAdj;
+    }
+    return { ...base, complete: true, score: {
+      academic: perfR2(academic), improvement: perfR2(improvement), bonus: perfR2(bonus),
+      attPct: attPct === null ? null : perfR2(attPct), attendanceMissing,
+      overall: perfR2(overall),
+    }};
+  });
+}
+
+function perfRankAggregates(list) {
+  const ranked = list.filter(a => a.complete).sort((a, b) => b.score.overall - a.score.overall);
+  let lastScore = null, lastRank = 0;
+  ranked.forEach((a, i) => {
+    if (lastScore === null || a.score.overall !== lastScore) { lastRank = i + 1; lastScore = a.score.overall; }
+    a.rank = lastRank;
+  });
+  return { ranked, incomplete: list.filter(a => !a.complete) };
+}
+
+function perfRenderTeacherWiseGroup(g, input) {
+  const { ranked, incomplete } = perfRankAggregates(perfAggregateByTeacher(input));
+  let html = '<div class="perf-card"><h3><span class="perf-dot"></span>' + escapeHTML(g.label) + ' Group</h3>' +
+    '<p class="perf-sub">' + escapeHTML(perfYear) + ' · ' + ranked.length + ' ranked' +
+    (incomplete.length ? ' · ' + incomplete.length + ' incomplete' : '') +
+    ' · click a teacher to see every class</p>';
+  if (ranked.length) {
+    html += '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
+      '<th>Rank</th><th>Teacher</th><th>Classes</th><th>Subjects</th><th>Academic</th>' +
+      '<th>Growth</th><th>Attend.</th><th>Score</th></tr></thead><tbody>';
+    ranked.forEach(a => {
+      const s = a.score;
+      const key = g.key + '|' + a.name.trim().toLowerCase();
+      const open = !!perfRankExpanded[key];
+      html += '<tr onclick="perfToggleRankDetail(\'' + key.replace(/'/g, "\\'") + '\')" style="cursor:pointer">' +
+        '<td>' + perfRankBadge(a.rank) + '</td>' +
+        '<td><b>' + escapeHTML(a.name) + '</b> <span class="perf-sub">' + (open ? '\u25B2' : '\u25BC') + '</span></td>' +
+        '<td>' + a.nComplete + '/' + a.nRows + ' classes<br><span class="perf-sub">' +
+        escapeHTML(a.classes.join(', ')) + '</span></td>' +
+        '<td><span class="perf-sub">' + escapeHTML(a.subjects.join(', ')) + '</span></td>' +
+        '<td>' + s.academic + '</td>' +
+        '<td>+' + s.improvement + ' <span class="perf-flag">+' + s.bonus + '</span></td>' +
+        '<td>' + (s.attendanceMissing ? '<span class="perf-flag">not entered</span>' : s.attPct + '%') + '</td>' +
+        '<td><span class="perf-score">' + s.overall + '</span></td></tr>';
+      if (open) {
+        html += '<tr><td></td><td colspan="7"><div class="perf-scroll"><table class="perf-table">' +
+          '<thead><tr><th>Class</th><th>Subject</th><th>1st</th><th>2nd</th><th>Final</th><th>Score</th></tr></thead><tbody>' +
+          [...a.rows].sort((x, y) => compareClassNatural(x.class_assigned, y.class_assigned) ||
+            String(x.subject || '').localeCompare(String(y.subject || '')))
+          .map(r => '<tr><td>' + escapeHTML(r.class_assigned || '\u2014') + '</td>' +
+            '<td>' + escapeHTML(r.subject || '\u2014') + '</td>' +
+            (r.score.complete
+              ? '<td>' + r.score.t1 + '</td><td>' + r.score.t2 + '</td><td>' + r.score.tf + '</td>' +
+                '<td><b>' + r.score.overall + '</b></td>'
+              : '<td colspan="4"><span class="perf-sub">incomplete — needs all three terms</span></td>') +
+            '</tr>').join('') +
+          '</tbody></table></div></td></tr>';
+      }
+    });
+    html += '</tbody></table></div>';
+  } else {
+    html += '<p class="perf-empty">No ranked teachers yet — enter all three term results on the Enter Marks tab.</p>';
+  }
+  if (incomplete.length) {
+    html += '<p class="perf-sub"><b>Incomplete:</b> ' +
+      incomplete.map(a => escapeHTML(a.name)).join(', ') + '</p>';
+  }
+  return html + '</div>';
+}
+
 function perfRenderRankings(body) {
   let html = '<div class="perf-card"><h3>How the ranking works</h3>' +
     '<div class="perf-formula">' +
@@ -7860,30 +7988,19 @@ function perfRenderRankings(body) {
     '<b>BISE score (9th / 10th)</b> = 60% × Average marks + 40% × Pass percentage<br>' +
     'Teachers are ranked separately within Primary, Middle and Secondary groups. ' +
     'A class teacher (subject "all") is ranked separately for each subject they teach.<br>' +
-    'A teacher needs all three term results to appear in the ranking.' +
+    'A teacher needs all three term results to appear in the ranking.<br>' +
+    'Teacher-wise view averages a teacher\u2019s academic scores across all their classes.' +
     '</div></div>';
 
+  html += '<div class="perf-subnav" style="margin-bottom:12px">' +
+    '<button class="perf-subnav-btn' + (perfRankView === 'class' ? ' active' : '') +
+    '" onclick="perfSetRankView(\'class\')">Class-wise</button>' +
+    '<button class="perf-subnav-btn' + (perfRankView === 'teacher' ? ' active' : '') +
+    '" onclick="perfSetRankView(\'teacher\')">Teacher-wise</button></div>';
+
   PERF_GROUPS.forEach(g => {
-    // one ranking entry per teacher per subject (an 'all' class teacher
-    // gets one row for every subject they teach)
-    const input = [];
-    perfTeachers.filter(t => t.class_group === g.key).forEach(t => {
-      const tRows = perfTermResults.filter(r => r.teacher_id === t.id);
-      const subjects = [...new Set(tRows.map(r => r.subject).filter(Boolean))];
-      const subs = subjects.length ? subjects : [t.subject || '—'];
-      subs.forEach(subj => {
-        const terms = {};
-        tRows.filter(r => (r.subject || t.subject) === subj)
-          .forEach(r => { terms[r.term] = Number(r.class_avg); });
-        const att = perfAttendance.find(a => a.teacher_id === t.id);
-        input.push({
-          ...t,
-          subject: subj,
-          terms,
-          attendance: att ? { present: att.present_days, total: att.total_days } : null,
-        });
-      });
-    });
+    const input = perfBuildRankInput(g);
+    if (perfRankView === 'teacher') { html += perfRenderTeacherWiseGroup(g, input); return; }
     const { ranked, incomplete } = perfRankTeachers(input);
     html += '<div class="perf-card"><h3><span class="perf-dot"></span>' + escapeHTML(g.label) + ' Group</h3>' +
       '<p class="perf-sub">' + escapeHTML(perfYear) + ' · ' + ranked.length + ' ranked' +
