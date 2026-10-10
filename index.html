@@ -9909,11 +9909,15 @@ function perfImportMarksCsvText(text) {
   const subjNorm = {};
   perfEntrySubjects.forEach(s => { subjNorm[s.trim().toLowerCase()] = s; });
   const colSubj = {};
+  const unmatchedCols = [];
   let matchedCols = 0;
   for (let j = 1; j < header.length; j++) {
-    const s = subjNorm[header[j].trim().toLowerCase()] || null;
+    const hj = header[j].trim();
+    if (!hj) continue;
+    const s = subjNorm[hj.toLowerCase()] || null;
     colSubj[j] = s;
     if (s) matchedCols++;
+    else if (!/^(roll\s*no\.?|roll|name|student(\s*name)?)$/i.test(hj)) unmatchedCols.push(hj);
   }
   if (!matchedCols) {
     showToast('Koi subject column match nahi hua. Naam ye hon: ' + perfEntrySubjects.join(', '), 'error');
@@ -9969,8 +9973,10 @@ function perfImportMarksCsvText(text) {
   if (nSkip) msg += ' ' + nSkip + ' row(s) skip — roster se match nahi hui' +
     (skipRows.length ? ' (row ' + skipRows.join(', ') + ')' : '') + '.';
   if (nBad) msg += ' ' + nBad + ' ghalat number ignore kiye.';
+  if (unmatchedCols.length) msg += ' WARNING: ye columns match nahi hue, inke marks import NAHI hue: ' +
+    unmatchedCols.join(', ') + '.';
   msg += ' Grid check karke Save Marks dabayen.';
-  showToast(msg, nStu ? 'success' : 'error');
+  showToast(msg, nStu ? (unmatchedCols.length ? 'error' : 'success') : 'error');
 }
 
 /* print the result sheet straight from the Term Results entry tab */
