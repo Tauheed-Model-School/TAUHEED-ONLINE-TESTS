@@ -9764,6 +9764,14 @@ function perfPrintDoc(title, inner, preWin) {
   w.print();
 }
 
+function perfOrd(n) {
+  n = Math.round(Number(n));
+  if (!isFinite(n)) return '—';
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+/* Elegant full-A4 report card — fills the whole page, B&W, ready to hand out */
 function perfPrintReportCard() {
   const data = perfResCompute();
   const rec = data.list.find(x => x.stu.id === perfResStudentId);
@@ -9771,42 +9779,107 @@ function perfPrintReportCard() {
   const stu = rec.stu;
   const term = perfResTerm;
   const row = perfResCache.rows.find(r => r.stu.id === stu.id);
+  const nInClass = data.list.length;
+
   let trows = '';
   rec.cells.forEach((c, i) => {
     const sj = data.subjects[i];
-    trows += '<tr><td><b>' + escapeHTML(sj) + '</b></td>';
+    trows += '<tr><td class="sl">' + escapeHTML(sj) + '</td>';
     if (term === 'all') {
       const d = row.perSubj[sj];
       trows += ['1st', '2nd', 'final'].map(t =>
-        '<td class="c">' + (d[t].ob != null ? perfR2(d[t].ob) + (d[t].pt ? ' / ' + perfR2(d[t].pt) : '') : '—') + '</td>').join('') +
-        '<td class="c"><b>' + (c.pct != null ? c.pct.toFixed(1) + '%' : '—') + '</b></td>';
+        '<td>' + (d[t].ob != null ? perfR2(d[t].ob) + (d[t].pt ? ' <span class="lt">/ ' + perfR2(d[t].pt) + '</span>' : '') : '—') + '</td>').join('') +
+        '<td class="b">' + (c.pct != null ? c.pct.toFixed(1) + '%' : '—') + '</td>';
     } else {
       const pct = (c.ob != null && c.pt) ? (c.ob / c.pt * 100) : null;
-      trows += '<td class="c">' + (c.ob != null ? perfR2(c.ob) : '—') + '</td>' +
-        '<td class="c">' + (c.pt ? perfR2(c.pt) : '—') + '</td>' +
-        '<td class="c">' + (pct != null ? pct.toFixed(1) + '%' : '—') + '</td>';
+      trows += '<td>' + (c.ob != null ? perfR2(c.ob) : '—') + '</td>' +
+        '<td>' + (c.pt ? perfR2(c.pt) : '—') + '</td>' +
+        '<td class="b">' + (pct != null ? pct.toFixed(1) + '%' : '—') + '</td>';
     }
     trows += '</tr>';
   });
   const head = term === 'all'
     ? '<tr><th>Subject</th><th>1st Term</th><th>2nd Term</th><th>Final Term</th><th>Overall %</th></tr>'
-    : '<tr><th>Subject</th><th>Obtained</th><th>Paper Total</th><th>%</th></tr>';
+    : '<tr><th>Subject</th><th>Obtained Marks</th><th>Paper Total</th><th>Percentage</th></tr>';
+
   const totalLine = term === 'all'
-    ? 'Overall: <b>' + (rec.pct != null ? rec.pct.toFixed(1) + '%' : '—') + '</b>'
-    : 'Total: <b>' + (rec.totalOb != null ? perfR2(rec.totalOb) + ' / ' + perfR2(rec.totalPt) : '—') + '</b>' +
-      (rec.pct != null ? ' (' + rec.pct.toFixed(1) + '%)' : '');
+    ? '<span class="k">Overall</span><span class="v">' + (rec.pct != null ? rec.pct.toFixed(1) + '%' : '—') + '</span>'
+    : '<span class="k">Total Marks</span><span class="v">' +
+      (rec.totalOb != null ? perfR2(rec.totalOb) + ' / ' + perfR2(rec.totalPt) : '—') + '</span>';
+  const pctLine = rec.pct != null
+    ? '<span class="k">Percentage</span><span class="v big">' + rec.pct.toFixed(1) + '%</span>' : '';
+  const posLine = '<span class="k">Position in Class</span><span class="v">' +
+    (rec.pos === '—' ? '—' : perfOrd(rec.pos) + ' <span class="lt">of ' + nInClass + '</span>') + '</span>';
+  const tLine = perfClassTeacherLine(stu.class_assigned);
+
+  const css =
+    '@page{size:A4 portrait;margin:0}' +
+    'html,body{margin:0;padding:0}' +
+    'body{font-family:Georgia,"Times New Roman",serif;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    '.rc-page{width:210mm;min-height:297mm;padding:9mm;box-sizing:border-box}' +
+    '.rc-frame{border:4px double #000;min-height:279mm;box-sizing:border-box;padding:9mm 10mm;display:flex;flex-direction:column}' +
+    '.rc-head{text-align:center;border-bottom:3px double #000;padding-bottom:5mm;margin-bottom:6mm}' +
+    '.rc-school{font-size:26pt;font-weight:bold;letter-spacing:5px;margin:0}' +
+    '.rc-title{font-size:15pt;letter-spacing:8px;margin:3mm 0 1mm;text-transform:uppercase}' +
+    '.rc-term{font-size:11pt;letter-spacing:1px;color:#333}' +
+    '.rc-student{display:flex;justify-content:space-between;gap:6mm;border:1.5px solid #000;padding:3.5mm 5mm;margin-bottom:6mm;font-size:11.5pt}' +
+    '.rc-student .k{display:block;font-size:8pt;letter-spacing:2px;text-transform:uppercase;color:#555}' +
+    '.rc-student .v{font-weight:bold;font-size:13pt}' +
+    '.rc-table{width:100%;border-collapse:collapse;font-size:11pt;margin-bottom:6mm}' +
+    '.rc-table th,.rc-table td{border:1px solid #000;padding:2.8mm 3mm;text-align:center}' +
+    '.rc-table th{background:#e8e8e8;font-size:10pt;letter-spacing:1px;text-transform:uppercase}' +
+    '.rc-table td.sl{text-align:left;font-weight:bold}' +
+    '.rc-table td.b{font-weight:bold}' +
+    '.rc-table tbody tr:nth-child(even) td{background:#f5f5f5}' +
+    '.rc-table .lt{color:#555;font-size:9.5pt}' +
+    '.rc-summary{display:flex;align-items:stretch;justify-content:space-between;gap:4mm;border:1.5px solid #000;padding:5mm;margin-bottom:5mm}' +
+    '.rc-sum{display:flex;flex-direction:column;justify-content:center;gap:1mm;font-size:10.5pt}' +
+    '.rc-sum .k{font-size:8pt;letter-spacing:2px;text-transform:uppercase;color:#555}' +
+    '.rc-sum .v{font-weight:bold;font-size:14pt}' +
+    '.rc-sum .v.big{font-size:20pt}' +
+    '.rc-sum .lt{font-weight:normal;font-size:10pt;color:#555}' +
+    '.rc-grade{width:30mm;height:30mm;min-width:30mm;border:4px double #000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24pt;font-weight:bold}' +
+    '.rc-scale{text-align:center;font-size:9pt;letter-spacing:0.5px;color:#333;border-top:1px solid #000;border-bottom:1px solid #000;padding:2.5mm 0;margin-bottom:6mm}' +
+    '.rc-remarks{font-size:11pt;margin-bottom:2mm}' +
+    '.rc-remarks .k{font-size:8pt;letter-spacing:2px;text-transform:uppercase;color:#555;display:block;margin-bottom:2mm}' +
+    '.rc-lines{height:24mm;background:repeating-linear-gradient(to bottom,transparent 0,transparent 7.5mm,#000 7.5mm,#000 7.6mm)}' +
+    '.rc-foot{margin-top:auto;padding-top:8mm;display:flex;justify-content:space-between;gap:8mm;font-size:10pt}' +
+    '.rc-foot div{flex:1;border-top:1.5px solid #000;padding-top:2mm;text-align:center;letter-spacing:1px}' +
+    '.rc-teacherline{text-align:center;font-size:10pt;margin-bottom:4mm;color:#333}' +
+    '@media print{.rc-page{padding:9mm}}';
+
   const inner =
-    '<div class="h"><h1>TAUHEED MODEL SCHOOL</h1>' +
-    '<p>Report Card · ' + escapeHTML(perfTermLabel(term)) + ' · Academic Year ' + escapeHTML(perfYear) + '</p></div>' +
-    '<div class="info"><div><b>Student:</b> ' + escapeHTML(stu.student_name) + '</div>' +
-    '<div><b>Class:</b> ' + escapeHTML(stu.class_assigned) + '</div>' +
-    (stu.roll_no ? '<div><b>Roll No:</b> ' + escapeHTML(stu.roll_no) + '</div>' : '') + '</div>' +
-    '<table><thead>' + head + '</thead><tbody>' + trows + '</tbody></table>' +
-    '<div class="sum">' + totalLine +
-    ' &nbsp;&nbsp; <b>Grade:</b> ' + rec.grade +
-    ' &nbsp;&nbsp; <b>Position in Class:</b> ' + (rec.pos === '—' ? '—' : rec.pos) + '</div>' +
-    '<div class="sig"><div>Class Teacher</div><div>Principal</div><div>Date</div></div>';
-  perfPrintDoc('Report Card - ' + stu.student_name, inner);
+    '<div class="rc-page"><div class="rc-frame">' +
+    '<div class="rc-head">' +
+    '<div class="rc-school">TAUHEED MODEL SCHOOL</div>' +
+    '<div class="rc-title">✦ Report Card ✦</div>' +
+    '<div class="rc-term">' + escapeHTML(perfTermLabel(term)) + ' &nbsp;·&nbsp; Academic Year ' + escapeHTML(perfYear) + '</div>' +
+    '</div>' +
+    '<div class="rc-student">' +
+    '<div><span class="k">Student Name</span><span class="v">' + escapeHTML(stu.student_name) + '</span></div>' +
+    '<div><span class="k">Class</span><span class="v">' + escapeHTML(stu.class_assigned) + '</span></div>' +
+    (stu.roll_no ? '<div><span class="k">Roll No</span><span class="v">' + escapeHTML(stu.roll_no) + '</span></div>' : '') +
+    '</div>' +
+    (tLine ? '<div class="rc-teacherline">' + tLine + '</div>' : '') +
+    '<table class="rc-table"><thead>' + head + '</thead><tbody>' + trows + '</tbody></table>' +
+    '<div class="rc-summary">' +
+    '<div class="rc-sum">' + totalLine + '</div>' +
+    (pctLine ? '<div class="rc-sum">' + pctLine + '</div>' : '') +
+    '<div class="rc-grade">' + escapeHTML(rec.grade) + '</div>' +
+    '<div class="rc-sum">' + posLine + '</div>' +
+    '</div>' +
+    '<div class="rc-scale">Grading Scale &nbsp;·&nbsp; A+ : 90–100 &nbsp;·&nbsp; A : 80–89 &nbsp;·&nbsp; B : 70–79 &nbsp;·&nbsp; C : 60–69 &nbsp;·&nbsp; D : 50–59 &nbsp;·&nbsp; E : 40–49 &nbsp;·&nbsp; F : Below 40</div>' +
+    '<div class="rc-remarks"><span class="k">Class Teacher\u2019s Remarks</span><div class="rc-lines"></div></div>' +
+    '<div class="rc-foot"><div>Class Teacher</div><div>Principal</div><div>Parent / Guardian</div><div>Date</div></div>' +
+    '</div></div>';
+
+  const w = window.open('', '_blank');
+  if (!w || w.closed) { showToast('Popup blocked — please allow popups for this site.', 'error'); return; }
+  w.document.write('<html><head><title>Report Card - ' + escapeHTML(stu.student_name) +
+    '</title><style>' + css + '</style></head><body>' + inner + '</body></html>');
+  w.document.close();
+  w.focus();
+  w.print();
 }
 
 function perfClassTeacherLine(cls) {
