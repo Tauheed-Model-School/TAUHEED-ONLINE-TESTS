@@ -8484,6 +8484,20 @@ function perfRenderStudents(body) {
     '<div class="perf-yearbox"><label>&nbsp;</label>' +
     '<button class="perf-btn perf-btn-gold perf-btn-sm" onclick="perfPromoteClass()">Promote ' + activeCount + ' students</button></div></div>');
 
+  html += perfCollapseCard('\u270F\uFE0F Rename class',
+    '<p class="perf-sub">Change a class name <b>without touching any results</b>. ' +
+    'The name is updated in the student roster, teacher assignments and subject lists — ' +
+    'marks stay linked through teachers and students, so every result follows automatically. ' +
+    'Nothing is deleted. Portal login account labels are not changed.</p>' +
+    '<div class="perf-topbar"><div class="perf-yearbox"><label>Class</label>' +
+    '<select id="perfRenameFrom" class="perf-input" style="width:auto">' +
+    classes.map(c => '<option value="' + escapeHTML(c) + '"' + (c === perfRosterClass ? ' selected' : '') + '>' +
+      escapeHTML(c) + '</option>').join('') + '</select></div>' +
+    '<div class="perf-yearbox"><label>New name</label>' +
+    '<input type="text" id="perfRenameTo" class="perf-input" style="width:150px" placeholder="e.g. Five A"></div>' +
+    '<div class="perf-yearbox"><label>\u00A0</label>' +
+    '<button class="perf-btn perf-btn-gold perf-btn-sm" onclick="perfRenameClass()">Rename class</button></div></div>');
+
   html += perfCollapseCard('<span style="color:#b91c1c">\u26a0\ufe0f Danger zone</span>',
     '<p class="perf-sub">Permanently delete all <b>' + roster.length + '</b> students of ' + escapeHTML(perfRosterClass) +
     ' from the roster, along with their term marks for ' + escapeHTML(perfYear) + '. This cannot be undone.</p>' +
@@ -8492,6 +8506,53 @@ function perfRenderStudents(body) {
 
   body.innerHTML = html + '</div>';
   if (perfLastCredentials.length && perfCredClass === perfRosterClass) perfRenderCredentials();
+}
+
+async function perfRenameClass() {
+  const from = perf$('perfRenameFrom').value;
+  const to = (perf$('perfRenameTo').value || '').trim();
+  if (!from) { showToast('Select a class first.', 'error'); return; }
+  if (!to) { showToast('Type the new class name.', 'error'); return; }
+  if (to === from) { showToast('New name is the same as the old name.', 'error'); return; }
+  showLoader('Checking...');
+  try {
+    const [eS, eT] = await Promise.all([
+      supabaseClient.from('perf_students').select('id').eq('class_assigned', to).limit(1),
+      supabaseClient.from('perf_teachers').select('id').eq('class_assigned', to).limit(1),
+    ]);
+    if (eS.error) throw eS.error;
+    if (eT.error) throw eT.error;
+    if ((eS.data && eS.data.length) || (eT.data && eT.data.length)) {
+      showToast('"' + to + '" already exists — merging classes is not supported. Choose a different name.', 'error');
+      return;
+    }
+    const [cS, cT, cSub] = await Promise.all([
+      supabaseClient.from('perf_students').select('id', { count: 'exact', head: true }).eq('class_assigned', from),
+      supabaseClient.from('perf_teachers').select('id', { count: 'exact', head: true }).eq('class_assigned', from),
+      supabaseClient.from('perf_class_subjects').select('id', { count: 'exact', head: true }).eq('class_assigned', from),
+    ]);
+    const nS = cS.count || 0, nT = cT.count || 0, nSub = cSub.count || 0;
+    if (!confirm('Rename "' + from + '" to "' + to + '"?\n\n' +
+      nS + ' students, ' + nT + ' teachers, ' + nSub + ' subject entries will be renamed.\n' +
+      'No marks or results will be touched. Continue?')) return;
+    showLoader('Renaming class...');
+    const u1 = await supabaseClient.from('perf_students').update({ class_assigned: to }).eq('class_assigned', from);
+    if (u1.error) throw u1.error;
+    const u2 = await supabaseClient.from('perf_teachers').update({ class_assigned: to }).eq('class_assigned', from);
+    if (u2.error) throw u2.error;
+    const u3 = await supabaseClient.from('perf_class_subjects').update({ class_assigned: to }).eq('class_assigned', from);
+    if (u3.error) throw u3.error;
+    if (perfRosterClass === from) perfRosterClass = to;
+    perfTrackCache = { years: [], students: [], marks: [], totals: [], loaded: false };
+    await perfLoadAll();
+    showToast('Class renamed to "' + to + '" — ' + nS + ' students, ' + nT + ' teachers updated. Results untouched.', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Rename failed: ' + (err.message || err), 'error');
+  } finally {
+    hideLoader();
+    perfRender();
+  }
 }
 
 function perfRosterClassChanged() {
