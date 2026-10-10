@@ -9898,10 +9898,14 @@ function perfImportMarksCsvFile(ev) {
   const f = ev.target.files && ev.target.files[0];
   if (!f) return;
   const rd = new FileReader();
-  rd.onload = () => { try { perfImportMarksCsvText(String(rd.result || '')); } finally { ev.target.value = ''; } };
+  rd.onload = async () => {
+    try { await perfImportMarksCsvText(String(rd.result || '')); }
+    catch (e) { showToast('Import failed: ' + (e.message || e), 'error'); }
+    finally { ev.target.value = ''; }
+  };
   rd.readAsText(f);
 }
-function perfImportMarksCsvText(text) {
+async function perfImportMarksCsvText(text) {
   if (!perfEntryClass || !perfEntrySubjects.length) { showToast('Select a class first.', 'error'); return; }
   const rows = perfParseCsv(text);
   if (rows.length < 2) { showToast('CSV is empty.', 'error'); return; }
@@ -9919,9 +9923,36 @@ function perfImportMarksCsvText(text) {
     if (s) matchedCols++;
     else if (!/^(roll\s*no\.?|roll|name|student(\s*name)?)$/i.test(hj)) unmatchedCols.push(hj);
   }
-  if (!matchedCols) {
+  if (!matchedCols && !unmatchedCols.length) {
     showToast('Koi subject column match nahi hua. Naam ye hon: ' + perfEntrySubjects.join(', '), 'error');
     return;
+  }
+  /* new subjects in the file -> offer to add them to the class, then import */
+  if (unmatchedCols.length) {
+    if (confirm('CSV mein ye naye subjects mile hain:\n\n' + unmatchedCols.join(', ') +
+      '\n\nKya inko "' + perfEntryClass + '" ke subjects mein ADD kar dun?\n(Cancel = inke marks skip ho jayenge)')) {
+      showLoader('Adding subjects...');
+      try {
+        const { data, error } = await supabaseClient.from('perf_class_subjects')
+          .insert(unmatchedCols.map(s => ({ class_assigned: perfEntryClass, subject: s }))).select();
+        if (error) throw error;
+        const rows = (data && data.length) ? data :
+          unmatchedCols.map((s, i) => ({ id: 'tmp' + Date.now() + i, class_assigned: perfEntryClass, subject: s }));
+        rows.forEach(d => perfClassSubjects.push(d));
+        perfEntrySubjects = perfClassSubjects.filter(s => s.class_assigned === perfEntryClass)
+          .sort((a, b) => a.id - b.id).map(s => s.subject);
+        perfEntrySubjects.forEach(s => { subjNorm[s.trim().toLowerCase()] = s; });
+        for (let j = 1; j < header.length; j++) {
+          const hj = header[j].trim();
+          if (hj) colSubj[j] = subjNorm[hj.toLowerCase()] || null;
+        }
+        unmatchedCols.length = 0;
+        perfEntryRows.forEach(r => { perfEntrySubjects.forEach(s => { if (!(s in r.marks)) r.marks[s] = ''; }); });
+        perfEntryDirty = true;
+      } catch (err) {
+        showToast('Subjects add nahi ho sake: ' + (err.message || err), 'error');
+      } finally { hideLoader(); }
+    }
   }
   const roster = perfStudents.filter(s => s.class_assigned === perfEntryClass &&
     s.academic_year === perfYear && s.status !== 'dropped');
@@ -9977,6 +10008,61 @@ function perfImportMarksCsvText(text) {
     unmatchedCols.join(', ') + '.';
   msg += ' Grid check karke Save Marks dabayen.';
   showToast(msg, nStu ? (unmatchedCols.length ? 'error' : 'success') : 'error');
+}
+
+/* add a subject column straight from the entry sheet */
+async function perfEntryAddSubject() {
+  if (!perfEntryClass) return;
+  const name = prompt('Naye subject ka naam likhen:');
+  if (name === null) return;
+  const clean = name.trim();
+  if (!clean) { showToast('Naam khali hai.', 'error'); return; }
+  if (perfEntrySubjects.some(s => s.trim().toLowerCase() === clean.toLowerCase())) {
+    showToast('Ye subject pehle se maujood hai.', 'error'); return;
+  }
+  showLoader('Adding subject...');
+  try {
+    const { data, error } = await supabaseClient.from('perf_class_subjects')
+      .insert({ class_assigned: perfEntryClass, subject: clean }).select();
+    if (error) throw error;
+    perfEntryCollect();
+    const rows = (data && data.length) ? data : [{ id: 'tmp' + Date.now(), class_assigned: perfEntryClass, subject: clean }];
+    rows.forEach(d => perfClassSubjects.push(d));
+    perfEntrySubjects = perfClassSubjects.filter(s => s.class_assigned === perfEntryClass)
+      .sort((a, b) => a.id - b.id).map(s => s.subject);
+    perfEntryRows.forEach(r => { perfEntrySubjects.forEach(s => { if (!(s in r.marks)) r.marks[s] = ''; }); });
+    if (!(clean in perfEntryPaper)) perfEntryPaper[clean] = 100;
+    perfEntryDirty = true;
+    perfRender();
+    showToast('Subject add ho gaya: ' + clean, 'success');
+  } catch (err) {
+    showToast('Add failed: ' + (err.message || err), 'error');
+  } finally { hideLoader(); }
+}
+
+/* remove a subject column straight from the entry sheet (saved marks are kept) */
+async function perfEntryDelSubject(subject) {
+  if (!perfEntryClass || !subject) return;
+  if (!confirm('"' + subject + '" ko is class ke subjects se hata dun?\n\nNote: pehle se save shuda marks delete NAHI honge.')) return;
+  showLoader('Removing subject...');
+  try {
+    const rec = perfClassSubjects.find(s => s.class_assigned === perfEntryClass && s.subject === subject);
+    if (rec && rec.id && String(rec.id).indexOf('tmp') !== 0) {
+      const { error } = await supabaseClient.from('perf_class_subjects').delete().eq('id', rec.id);
+      if (error) throw error;
+    }
+    perfClassSubjects = perfClassSubjects.filter(s => s !== rec);
+    perfEntryCollect();
+    perfEntrySubjects = perfClassSubjects.filter(s => s.class_assigned === perfEntryClass)
+      .sort((a, b) => a.id - b.id).map(s => s.subject);
+    perfEntryRows.forEach(r => { delete r.marks[subject]; });
+    delete perfEntryPaper[subject];
+    perfEntryDirty = true;
+    perfRender();
+    showToast('Subject hata diya: ' + subject, 'success');
+  } catch (err) {
+    showToast('Remove failed: ' + (err.message || err), 'error');
+  } finally { hideLoader(); }
 }
 
 /* print the result sheet straight from the Term Results entry tab */
@@ -10104,8 +10190,14 @@ function perfRenderTerms(body) {
     }
   }
 
+  html += '<div class="perf-topbar"><button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfEntryAddSubject()">+ Add subject</button>' +
+    '<span class="perf-sub">Column header ke \u00d7 se subject hatayen.</span></div>';
   html += '<div class="perf-scroll"><table class="perf-table"><thead><tr><th>#</th><th>Student</th>';
-  perfEntrySubjects.forEach(s => { html += '<th>' + escapeHTML(s) + '</th>'; });
+  perfEntrySubjects.forEach(s => {
+    html += '<th>' + escapeHTML(s) +
+      ' <button class="perf-btn perf-btn-danger perf-btn-sm" style="padding:0 7px;line-height:1.4" title="Remove subject" ' +
+      'onclick="perfEntryDelSubject(\'' + escapeHTML(s).replace(/'/g, "\\'") + '\')">\u00d7</button></th>';
+  });
   html += '<th>Total</th><th></th></tr></thead><tbody id="perfEntryBody">';
   perfEntryRows.forEach((r, i) => { html += perfEntryRowHtml(i, r); });
   html += '</tbody></table></div>';
