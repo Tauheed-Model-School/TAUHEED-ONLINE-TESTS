@@ -7798,6 +7798,7 @@ const perfSections = [
   { id: 'students', label: 'Student Results', icon: '\uD83D\uDCCB', sub: 'Student roster, marks entry, class results and performance tracking. Admin only.', tabs: [
     ['overview', 'Overview'],
     ['highlights', 'Top Students'],
+    ['sections', 'Section Compare'],
     ['students', 'Students'],
     ['terms', 'Enter Marks'],
     ['results', 'Class Results'],
@@ -7873,6 +7874,10 @@ function perfRender() {
   else if (perfSubTab === 'highlights') {
     if (!perfTrackCache.loaded && !perfTrackLoading) perfTrackLoad();
     else perfRenderHighlights(body);
+  }
+  else if (perfSubTab === 'sections') {
+    if (!perfTrackCache.loaded && !perfTrackLoading) perfTrackLoad();
+    else perfRenderSectionCompare(body);
   }
   else if (perfSubTab === 'attendance') perfRenderAttendance(body);
   else if (perfSubTab === 'bise') perfRenderBise(body);
@@ -9913,6 +9918,188 @@ function perfOrd(n) {
   if (!isFinite(n)) return '—';
   const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+/* ---------- section compare : which section is best in each subject ---------- */
+let perfCmpBase = '';
+let perfCmpTerm = 'all';   // 'all' | '1st' | '2nd' | 'final'
+
+function perfBaseClass(cls) {
+  const m = String(cls || '').trim().match(/^(.*?)[\s\-]+([A-Za-z])$/);
+  return m ? m[1].trim() : String(cls || '').trim();
+}
+function perfSetCmpBase(v) { perfCmpBase = v; perfRender(); }
+function perfSetCmpTerm(t) { perfCmpTerm = t; perfRender(); }
+
+/* average % of one section in one subject (term or All Terms 20/30/50) */
+function perfSectionSubjectAvg(cache, Y, cls, sj, term) {
+  const roster = cache.students.filter(s => s.academic_year === Y && s.class_assigned === cls && s.status !== 'dropped');
+  if (!roster.length) return null;
+  const tset = new Set(perfTeachers.filter(t => t.class_assigned === cls).map(t => String(t.id)));
+  const termVal = (tm) => {
+    let pt = 0;
+    cache.totals.forEach(t => {
+      if (t.academic_year !== Y || t.term !== tm) return;
+      if (tset.size && !tset.has(String(t.teacher_id))) return;
+      if ((t.subject || '') === sj) { const p = Number(t.paper_total); if (isFinite(p) && p > pt) pt = p; }
+    });
+    if (!pt) return null;
+    let s = 0, n = 0;
+    roster.forEach(stu => {
+      const nm = (stu.student_name || '').trim().toLowerCase();
+      let ob = null;
+      for (const m of cache.marks) {
+        if (m.academic_year !== Y || m.term !== tm) continue;
+        if (tset.size && !tset.has(String(m.teacher_id))) continue;
+        if ((m.student_name || '').trim().toLowerCase() !== nm) continue;
+        if ((m.subject || '') !== sj) continue;
+        const v = Number(m.obtained_marks);
+        if (isFinite(v)) { ob = v; break; }
+      }
+      if (ob != null) { s += ob / pt * 100; n++; }
+    });
+    return n ? s / n : null;
+  };
+  if (term !== 'all') return termVal(term);
+  const weights = { '1st': 20, '2nd': 30, 'final': 50 };
+  let sw = 0, sv = 0;
+  ['1st', '2nd', 'final'].forEach(tm => {
+    const v = termVal(tm);
+    if (v != null) { sv += weights[tm] * v; sw += weights[tm]; }
+  });
+  return sw ? sv / sw : null;
+}
+
+function perfSectionCompareData(Y, base) {
+  const cache = perfTrackCache;
+  const sections = sortClassesNatural(
+    [...new Set(cache.students.filter(s => s.academic_year === Y).map(s => s.class_assigned))]
+  ).filter(c => perfBaseClass(c) === base);
+  const tset = new Set(perfTeachers.filter(t => sections.includes(t.class_assigned)).map(t => String(t.id)));
+  const subjSet = {};
+  cache.marks.forEach(m => {
+    if (m.academic_year !== Y || !tset.has(String(m.teacher_id))) return;
+    if (m.subject) subjSet[m.subject] = 1;
+  });
+  const subjects = Object.keys(subjSet).sort((a, b) => String(a).localeCompare(String(b)));
+  const grid = subjects.map(sj => ({
+    sj,
+    vals: sections.map(cls => perfSectionSubjectAvg(cache, Y, cls, sj, perfCmpTerm)),
+  }));
+  return { sections, subjects, grid };
+}
+
+function perfRenderSectionCompare(body) {
+  const cache = perfTrackCache;
+  let html = '<div class="perf-card"><h3>Section Compare</h3>' +
+    '<p class="perf-sub">Compare sections of one class subject by subject — see which section is strongest in each subject. ' +
+    'Green cell wins the subject, red cell is the weakest.</p>';
+  if (!cache.years.length) {
+    body.innerHTML = html + '<p class="perf-empty">No data yet — enter marks first.</p></div>';
+    return;
+  }
+  const Y = perfTrackYear || cache.years[0];
+  const classes = [...new Set(cache.students.filter(s => s.academic_year === Y).map(s => s.class_assigned))];
+  const baseMap = {};
+  classes.forEach(c => { const b = perfBaseClass(c); (baseMap[b] = baseMap[b] || []).push(c); });
+  const bases = Object.keys(baseMap).filter(b => baseMap[b].length >= 2)
+    .sort((a, b) => compareClassNatural(a, b));
+  if (!bases.length) {
+    body.innerHTML = html + '<p class="perf-empty">No class has more than one section in ' + escapeHTML(Y) + '.</p></div>';
+    return;
+  }
+  if (!perfCmpBase || !bases.includes(perfCmpBase)) perfCmpBase = bases[0];
+
+  html += '<div class="perf-topbar">' +
+    '<div class="perf-yearbox"><label>Academic year</label>' +
+    '<select class="perf-input" style="width:auto" onchange="perfTrackYear=this.value;perfCmpBase=\'\';perfRender()">' +
+    cache.years.map(y => '<option value="' + escapeHTML(y) + '"' + (Y === y ? ' selected' : '') + '>' +
+      escapeHTML(y) + '</option>').join('') + '</select></div>' +
+    '<div class="perf-yearbox"><label>Class</label>' +
+    '<select class="perf-input" style="width:auto" onchange="perfSetCmpBase(this.value)">' +
+    bases.map(b => '<option value="' + escapeHTML(b) + '"' + (perfCmpBase === b ? ' selected' : '') + '>' +
+      escapeHTML(b) + ' (' + baseMap[b].length + ' sections)</option>').join('') + '</select></div>' +
+    '<div class="perf-yearbox"><label>\u00A0</label><div class="perf-subnav">' +
+    ['all', '1st', '2nd', 'final'].map(t =>
+      '<button class="perf-subnav-btn' + (perfCmpTerm === t ? ' active' : '') +
+      '" onclick="perfSetCmpTerm(\'' + t + '\')">' +
+      (t === 'all' ? 'All Terms' : perfTermLabel(t)) + '</button>').join('') + '</div></div>' +
+    '<div class="perf-yearbox"><label>\u00A0</label>' +
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfTrackLoad(true)">Refresh</button></div>' +
+    '<div class="perf-yearbox"><label>\u00A0</label>' +
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfPrintSectionCompare()">Print Comparison</button></div></div>';
+
+  const data = perfSectionCompareData(Y, perfCmpBase);
+  if (!data.subjects.length) {
+    body.innerHTML = html + '<p class="perf-empty">No subject marks entered for these sections yet.</p></div>';
+    return;
+  }
+  const wins = data.sections.map(() => 0);
+  const rowsHtml = data.grid.map(g => {
+    const known = g.vals.map((v, i) => v == null ? null : i).filter(i => i != null);
+    let best = null, worst = null;
+    if (known.length >= 2) {
+      const vs = known.map(i => g.vals[i]);
+      best = Math.max(...vs); worst = Math.min(...vs);
+      known.forEach(i => { if (Math.abs(g.vals[i] - best) < 1e-9) wins[i]++; });
+    }
+    return '<tr><td><b>' + escapeHTML(g.sj) + '</b></td>' + g.vals.map(v => {
+      if (v == null) return '<td>\u2014</td>';
+      const style = (best != null && Math.abs(v - best) < 1e-9) ? ' style="background:#eefbf4;font-weight:bold"' :
+        (worst != null && best !== worst && Math.abs(v - worst) < 1e-9) ? ' style="background:#fdf0f0"' : '';
+      const medal = (best != null && Math.abs(v - best) < 1e-9 && known.length >= 2) ? ' \uD83C\uDFC6' : '';
+      return '<td' + style + '>' + v.toFixed(1) + '%' + medal + '</td>';
+    }).join('') + '</tr>';
+  }).join('');
+
+  const winMax = Math.max(...wins);
+  const winLine = data.sections.map((cls, i) =>
+    '<b>' + escapeHTML(cls) + '</b>: ' + wins[i] + ' subject' + (wins[i] === 1 ? '' : 's')).join(' &nbsp;·&nbsp; ');
+  const overall = data.sections.map((cls, i) => {
+    const vs = data.grid.map(g => g.vals[i]).filter(v => v != null);
+    return vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null;
+  });
+
+  html += '<p class="perf-sub" style="margin:10px 0 4px">' + winLine + '</p>';
+  html += '<div class="perf-scroll"><table class="perf-table"><thead><tr><th>Subject</th>' +
+    data.sections.map(cls => '<th>' + escapeHTML(cls) + '</th>').join('') + '</tr></thead><tbody>' +
+    rowsHtml +
+    '<tr style="border-top:2px solid #000"><td><b>Overall</b></td>' +
+    overall.map((v, i) => {
+      if (v == null) return '<td>\u2014</td>';
+      const style = Math.abs(v - Math.max(...overall.filter(x => x != null))) < 1e-9 && overall.filter(x => x != null).length > 1
+        ? ' style="background:#eefbf4;font-weight:bold"' : '';
+      return '<td' + style + '><b>' + v.toFixed(1) + '%</b></td>';
+    }).join('') + '</tr>' +
+    '</tbody></table></div>';
+  const leaders = data.sections.filter((cls, i) => wins[i] === winMax);
+  if (winMax > 0) html += '<p class="perf-sub" style="margin-top:10px">\uD83C\uDFC6 ' +
+    (leaders.length === 1
+      ? '<b>' + escapeHTML(leaders[0]) + '</b> leads in ' + winMax + ' of ' + data.subjects.length + ' subjects.'
+      : '<b>' + leaders.map(escapeHTML).join('</b> &amp; <b>') + '</b> are tied at ' + winMax + ' subjects each.') + '</p>';
+  body.innerHTML = html + '</div>';
+}
+
+function perfPrintSectionCompare() {
+  const cache = perfTrackCache;
+  const Y = perfTrackYear || (cache.years.length ? cache.years[0] : '');
+  const data = perfSectionCompareData(Y, perfCmpBase);
+  if (!data.subjects.length) { showToast('Nothing to print yet.', 'error'); return; }
+  const inner = '<div class="h"><h1>TAUHEED MODEL SCHOOL</h1>' +
+    '<p>Section Comparison — Class ' + escapeHTML(perfCmpBase) + ' · ' +
+    (perfCmpTerm === 'all' ? 'All Terms' : perfTermLabel(perfCmpTerm)) + ' · Academic Year ' + escapeHTML(Y) + '</p></div>' +
+    '<table><thead><tr><th>Subject</th>' +
+    data.sections.map(cls => '<th>' + escapeHTML(cls) + '</th>').join('') + '</tr></thead><tbody>' +
+    data.grid.map(g => {
+      const known = g.vals.filter(v => v != null);
+      const best = known.length >= 2 ? Math.max(...known) : null;
+      return '<tr><td><b>' + escapeHTML(g.sj) + '</b></td>' + g.vals.map(v =>
+        '<td class="c">' + (v == null ? '\u2014' :
+          (best != null && Math.abs(v - best) < 1e-9 ? '<b>' + v.toFixed(1) + '% ★</b>' : v.toFixed(1) + '%')) +
+        '</td>').join('') + '</tr>';
+    }).join('') + '</tbody></table>' +
+    '<div class="sig"><div>Class Incharge</div><div>Campus Director</div><div>Principal</div></div>';
+  perfPrintDoc('Section Comparison ' + perfCmpBase + ' ' + Y, inner);
 }
 
 /* Elegant full-A4 report card — fills the whole page, B&W, ready to hand out */
