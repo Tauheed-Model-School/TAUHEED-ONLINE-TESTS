@@ -9625,7 +9625,8 @@ function perfRenderResults(body) {
   const data = perfResCompute();
   const term = perfResTerm;
   html += '<div class="perf-topbar" style="justify-content:flex-end">' +
-    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfPrintClassResult()">Print Class Result</button></div>';
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfPrintClassResult()">Print Class Result</button>' +
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfPrintAllReportCards()">Print All Report Cards</button></div>';
   if (!data.list.length) {
     body.innerHTML = html + '<p class="perf-empty">No students in this class roster.</p></div>';
     return;
@@ -9863,47 +9864,8 @@ function perfOrd(n) {
 }
 
 /* Elegant full-A4 report card — fills the whole page, B&W, ready to hand out */
-function perfPrintReportCard() {
-  const data = perfResCompute();
-  const rec = data.list.find(x => x.stu.id === perfResStudentId);
-  if (!rec) return;
-  const stu = rec.stu;
-  const term = perfResTerm;
-  const row = perfResCache.rows.find(r => r.stu.id === stu.id);
-  const nInClass = data.list.length;
-
-  let trows = '';
-  rec.cells.forEach((c, i) => {
-    const sj = data.subjects[i];
-    trows += '<tr><td class="sl">' + escapeHTML(sj) + '</td>';
-    if (term === 'all') {
-      const d = row.perSubj[sj];
-      trows += ['1st', '2nd', 'final'].map(t =>
-        '<td>' + (d[t].ob != null ? perfR2(d[t].ob) + (d[t].pt ? ' <span class="lt">/ ' + perfR2(d[t].pt) + '</span>' : '') : '—') + '</td>').join('') +
-        '<td class="b">' + (c.pct != null ? c.pct.toFixed(1) + '%' : '—') + '</td>';
-    } else {
-      const pct = (c.ob != null && c.pt) ? (c.ob / c.pt * 100) : null;
-      trows += '<td>' + (c.ob != null ? perfR2(c.ob) : '—') + '</td>' +
-        '<td>' + (c.pt ? perfR2(c.pt) : '—') + '</td>' +
-        '<td class="b">' + (pct != null ? pct.toFixed(1) + '%' : '—') + '</td>';
-    }
-    trows += '</tr>';
-  });
-  const head = term === 'all'
-    ? '<tr><th>Subject</th><th>1st Term</th><th>2nd Term</th><th>Final Term</th><th>Overall %</th></tr>'
-    : '<tr><th>Subject</th><th>Obtained Marks</th><th>Paper Total</th><th>Percentage</th></tr>';
-
-  const totalLine = term === 'all'
-    ? '<span class="k">Overall</span><span class="v">' + (rec.pct != null ? rec.pct.toFixed(1) + '%' : '—') + '</span>'
-    : '<span class="k">Total Marks</span><span class="v">' +
-      (rec.totalOb != null ? perfR2(rec.totalOb) + ' / ' + perfR2(rec.totalPt) : '—') + '</span>';
-  const pctLine = rec.pct != null
-    ? '<span class="k">Percentage</span><span class="v big">' + rec.pct.toFixed(1) + '%</span>' : '';
-  const posLine = '<span class="k">Position in Class</span><span class="v">' +
-    (rec.pos === '—' ? '—' : perfOrd(rec.pos) + ' <span class="lt">of ' + nInClass + '</span>') + '</span>';
-  const tLine = perfClassTeacherLine(stu.class_assigned);
-
-  const css =
+function perfReportCardCss() {
+  return (
     '@page{size:A4 portrait;margin:0}' +
     'html,body{margin:0;padding:0}' +
     'body{font-family:Georgia,"Times New Roman",serif;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
@@ -9937,7 +9899,41 @@ function perfPrintReportCard() {
     '.rc-foot{margin-top:auto;padding-top:8mm;display:flex;justify-content:space-between;gap:8mm;font-size:10pt}' +
     '.rc-foot div{flex:1;border-top:1.5px solid #000;padding-top:2mm;text-align:center;letter-spacing:1px}' +
     '.rc-teacherline{text-align:center;font-size:10pt;margin-bottom:4mm;color:#333}' +
-    '@media print{.rc-page{padding:9mm}}';
+    '@media print{.rc-page{padding:9mm}}'
+  );
+}
+
+function perfReportCardInner(stu, rec, data, row, term, nInClass) {
+  let trows = '';
+  rec.cells.forEach((c, i) => {
+    const sj = data.subjects[i];
+    trows += '<tr><td class="sl">' + escapeHTML(sj) + '</td>';
+    if (term === 'all') {
+      const d = row.perSubj[sj];
+      trows += ['1st', '2nd', 'final'].map(t =>
+        '<td>' + (d[t].ob != null ? perfR2(d[t].ob) + (d[t].pt ? ' <span class="lt">/ ' + perfR2(d[t].pt) + '</span>' : '') : '—') + '</td>').join('') +
+        '<td class="b">' + (c.pct != null ? c.pct.toFixed(1) + '%' : '—') + '</td>';
+    } else {
+      const pct = (c.ob != null && c.pt) ? (c.ob / c.pt * 100) : null;
+      trows += '<td>' + (c.ob != null ? perfR2(c.ob) : '—') + '</td>' +
+        '<td>' + (c.pt ? perfR2(c.pt) : '—') + '</td>' +
+        '<td class="b">' + (pct != null ? pct.toFixed(1) + '%' : '—') + '</td>';
+    }
+    trows += '</tr>';
+  });
+  const head = term === 'all'
+    ? '<tr><th>Subject</th><th>1st Term</th><th>2nd Term</th><th>Final Term</th><th>Overall %</th></tr>'
+    : '<tr><th>Subject</th><th>Obtained Marks</th><th>Paper Total</th><th>Percentage</th></tr>';
+
+  const totalLine = term === 'all'
+    ? '<span class="k">Overall</span><span class="v">' + (rec.pct != null ? rec.pct.toFixed(1) + '%' : '—') + '</span>'
+    : '<span class="k">Total Marks</span><span class="v">' +
+      (rec.totalOb != null ? perfR2(rec.totalOb) + ' / ' + perfR2(rec.totalPt) : '—') + '</span>';
+  const pctLine = rec.pct != null
+    ? '<span class="k">Percentage</span><span class="v big">' + rec.pct.toFixed(1) + '%</span>' : '';
+  const posLine = '<span class="k">Position in Class</span><span class="v">' +
+    (rec.pos === '—' ? '—' : perfOrd(rec.pos) + ' <span class="lt">of ' + nInClass + '</span>') + '</span>';
+  const tLine = perfClassTeacherLine(stu.class_assigned);
 
   const inner =
     '<div class="rc-page"><div class="rc-frame">' +
@@ -9963,14 +9959,48 @@ function perfPrintReportCard() {
     '<div class="rc-remarks"><span class="k">Class Teacher\u2019s Remarks</span><div class="rc-lines"></div></div>' +
     '<div class="rc-foot"><div>Class Teacher</div><div>Principal</div><div>Parent / Guardian</div><div>Date</div></div>' +
     '</div></div>';
+  return inner;
+}
 
+function perfPrintReportCard() {
+  const data = perfResCompute();
+  const rec = data.list.find(x => x.stu.id === perfResStudentId);
+  if (!rec) return;
+  const stu = rec.stu;
+  const row = perfResCache.rows.find(r => r.stu.id === stu.id);
   const w = window.open('', '_blank');
   if (!w || w.closed) { showToast('Popup blocked — please allow popups for this site.', 'error'); return; }
   w.document.write('<html><head><title>Report Card - ' + escapeHTML(stu.student_name) +
-    '</title><style>' + css + '</style></head><body>' + inner + '</body></html>');
+    '</title><style>' + perfReportCardCss() + '</style></head><body>' +
+    perfReportCardInner(stu, rec, data, row, perfResTerm, data.list.length) + '</body></html>');
   w.document.close();
   w.focus();
   w.print();
+}
+
+/* whole class, one click: every report card on its own A4 page in one print job */
+function perfPrintAllReportCards() {
+  const data = perfResCompute();
+  if (!data.list.length) { showToast('No students in this class roster.', 'error'); return; }
+  const w = window.open('', '_blank'); // open now — browsers block late popups
+  if (!w || w.closed) { showToast('Popup blocked — please allow popups for this site.', 'error'); return; }
+  showLoader('Preparing report cards...');
+  try {
+    const term = perfResTerm;
+    const nInClass = data.list.length;
+    const pages = data.list.map(rec => {
+      const row = perfResCache.rows.find(r => r.stu.id === rec.stu.id);
+      return perfReportCardInner(rec.stu, rec, data, row, term, nInClass);
+    }).join('');
+    const css = perfReportCardCss() +
+      '@media print{.rc-page{break-after:page}.rc-page:last-child{break-after:auto}}';
+    w.document.write('<html><head><title>Report Cards - ' + escapeHTML(perfResClass) +
+      '</title><style>' + css + '</style></head><body>' + pages + '</body></html>');
+    w.document.close();
+    w.focus();
+    w.print();
+    showToast(data.list.length + ' report cards ready — print ya Save as PDF karen.', 'success');
+  } finally { hideLoader(); }
 }
 
 function perfClassTeacherLine(cls) {
