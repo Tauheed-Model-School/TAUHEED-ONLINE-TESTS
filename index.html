@@ -7774,6 +7774,7 @@ async function showAdminPerformance() {
 const perfSections = [
   { id: 'students', label: 'Student Results', icon: '\uD83D\uDCCB', sub: 'Student roster, marks entry, class results and performance tracking. Admin only.', tabs: [
     ['overview', 'Overview'],
+    ['highlights', 'Top Students'],
     ['students', 'Students'],
     ['terms', 'Enter Marks'],
     ['results', 'Class Results'],
@@ -7845,6 +7846,10 @@ function perfRender() {
   else if (perfSubTab === 'overview') {
     if (!perfTrackCache.loaded && !perfTrackLoading) perfTrackLoad();
     else perfRenderOverview(body);
+  }
+  else if (perfSubTab === 'highlights') {
+    if (!perfTrackCache.loaded && !perfTrackLoading) perfTrackLoad();
+    else perfRenderHighlights(body);
   }
   else if (perfSubTab === 'attendance') perfRenderAttendance(body);
   else if (perfSubTab === 'bise') perfRenderBise(body);
@@ -9148,7 +9153,7 @@ function perfTrackWeighted(cache, year, teacherIds, name) {
 
 async function perfTrackLoad(force) {
   if (perfTrackLoading) return;
-  if (!force && perfTrackCache.students.length) { if (perfSubTab === 'tracking' || perfSubTab === 'overview') perfRender(); return; }
+  if (!force && perfTrackCache.students.length) { if (perfSubTab === 'tracking' || perfSubTab === 'overview' || perfSubTab === 'highlights') perfRender(); return; }
   perfTrackLoading = true;
   showLoader('Loading tracking data...');
   try {
@@ -9176,7 +9181,7 @@ async function perfTrackLoad(force) {
     perfTrackLoading = false;
     hideLoader();
   }
-  if (perfSubTab === 'tracking' || perfSubTab === 'overview') perfRender();
+  if (perfSubTab === 'tracking' || perfSubTab === 'overview' || perfSubTab === 'highlights') perfRender();
 }
 
 /* ---------- overview : whole-school class comparison ---------- */
@@ -9207,6 +9212,92 @@ function perfOverviewCompute(Y) {
   if (perfOverviewSort === 'name') rows.sort((a, b) => compareClassNatural(a.cls, b.cls));
   else rows.sort((a, b) => (b.weighted == null ? -1 : b.weighted) - (a.weighted == null ? -1 : a.weighted));
   return rows;
+}
+
+/* school-wide student ranking for the Top Students tab */
+function perfStudentHighlights(Y) {
+  const cache = perfTrackCache;
+  const classes = sortClassesNatural(
+    cache.students.filter(s => s.academic_year === Y).map(s => s.class_assigned));
+  const list = [];
+  classes.forEach(cls => {
+    const roster = cache.students.filter(s => s.academic_year === Y && s.class_assigned === cls && s.status !== 'dropped');
+    const teacherIds = perfTeachers.filter(t => t.class_assigned === cls).map(t => t.id);
+    roster.forEach(stu => {
+      const w = perfTrackWeighted(cache, Y, teacherIds, stu.student_name);
+      if (w != null) list.push({ stu, cls, pct: w, grade: perfGrade(w) });
+    });
+  });
+  list.sort((a, b) => b.pct - a.pct);
+  let lastPct = null, lastRank = 0;
+  list.forEach((x, i) => {
+    if (lastPct === null || Math.abs(x.pct - lastPct) > 1e-9) { lastRank = i + 1; lastPct = x.pct; }
+    x.rank = lastRank;
+  });
+  return list;
+}
+
+function perfRenderHighlights(body) {
+  const cache = perfTrackCache;
+  let html = '<div class="perf-card"><h3>Top Students</h3>' +
+    '<p class="perf-sub">Whole-school student ranking — All Terms weighted % (20 / 30 / 50). ' +
+    'Best and weakest students of the entire school at a glance.</p>';
+  if (!cache.years.length && !cache.loaded) {
+    if (!perfTrackLoading) perfTrackLoad();
+    body.innerHTML = html + '<p class="perf-empty">Loading student data\u2026</p></div>';
+    return;
+  }
+  if (!cache.years.length) {
+    body.innerHTML = html + '<p class="perf-empty">No data yet — enter marks first.</p></div>';
+    return;
+  }
+  const Y = perfTrackYear || cache.years[0];
+  html += '<div class="perf-topbar">' +
+    '<div class="perf-yearbox"><label>Academic year</label>' +
+    '<select id="perfTrackYear" class="perf-input" style="width:auto" onchange="perfTrackYearChanged()">' +
+    cache.years.map(y => '<option value="' + escapeHTML(y) + '"' + (Y === y ? ' selected' : '') + '>' +
+      escapeHTML(y) + '</option>').join('') + '</select></div>' +
+    '<div class="perf-yearbox"><label>\u00A0</label>' +
+    '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfTrackLoad(true)">Refresh</button></div></div>';
+
+  const totalStudents = cache.students.filter(s => s.academic_year === Y && s.status !== 'dropped').length;
+  const list = perfStudentHighlights(Y);
+  const best = list.length ? list[0] : null;
+  const weak = list.length ? list[list.length - 1] : null;
+  const card = (label, value, sub, color) =>
+    '<div class="stat-card"><div class="stat-label">' + label + '</div>' +
+    '<div class="stat-value" style="' + (color ? 'color:' + color + ';' : '') + '">' + value + '</div>' +
+    (sub ? '<div class="perf-sub">' + sub + '</div>' : '') + '</div>';
+  const stuLine = x => x ? escapeHTML(x.stu.student_name) : '\u2014';
+  const stuSub = x => x ? escapeHTML(x.cls) + ' · ' + x.pct.toFixed(1) + '% · Grade ' + x.grade +
+    (x.stu.roll_no ? ' · Roll ' + escapeHTML(x.stu.roll_no) : '') : '';
+  html += '<div class="stats-grid" style="margin:14px 0">' +
+    card('\uD83C\uDF93 Total students', totalStudents,
+      list.length + ' with marks entered', '') +
+    card('\uD83C\uDFC6 Best student', stuLine(best), stuSub(best), '#0d7a58') +
+    card('\u26A0\uFE0F Weakest student', stuLine(weak), stuSub(weak), '#b91c1c') +
+    '</div>';
+
+  const table = (rows, title, sub) => {
+    if (!rows.length) return '<p class="perf-empty">' + title + ': none yet.</p>';
+    return '<h4 style="margin:14px 0 8px">' + title + '</h4>' +
+      (sub ? '<p class="perf-sub">' + sub + '</p>' : '') +
+      '<div class="perf-scroll"><table class="perf-table"><thead><tr>' +
+      '<th>Rank</th><th>Student</th><th>Class</th><th>Roll No</th><th>All Terms %</th><th>Grade</th>' +
+      '</tr></thead><tbody>' +
+      rows.map(x => '<tr><td><b>' + x.rank + '</b></td>' +
+        '<td><b>' + escapeHTML(x.stu.student_name) + '</b></td>' +
+        '<td>' + escapeHTML(x.cls) + '</td>' +
+        '<td>' + (x.stu.roll_no ? escapeHTML(x.stu.roll_no) : '\u2014') + '</td>' +
+        '<td><b>' + x.pct.toFixed(1) + '%</b></td>' +
+        '<td><b>' + x.grade + '</b></td></tr>').join('') +
+      '</tbody></table></div>';
+  };
+  html += table(list.slice(0, 10), '\uD83C\uDFC6 Top 10 students — whole school',
+    'Highest All Terms weighted % across every class.');
+  html += table(list.slice(-10).reverse(), '\u26A0\uFE0F Needs attention — bottom 10',
+    'Lowest All Terms weighted %. Inhe extra tawajjah ki zaroorat hai.');
+  body.innerHTML = html + '</div>';
 }
 
 function perfRenderOverview(body) {
