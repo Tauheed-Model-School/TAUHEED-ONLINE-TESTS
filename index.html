@@ -1863,6 +1863,83 @@
 
     #loginForm .btn-primary:hover::after { left: 120%; }
 
+    /* =========================================================
+       LOGIN DARK LUXURY (2026-11-14) — glass card, cream + gold
+       Overrides the card colours only; layout & functions untouched.
+    ========================================================= */
+
+    /* Deeper, darker backdrop so splash flows into login */
+    #loginScreen {
+      background:
+        radial-gradient(900px 500px at 12% 8%, rgba(201,162,39,.14), transparent 60%),
+        radial-gradient(800px 520px at 88% 92%, rgba(11,107,79,.28), transparent 60%),
+        linear-gradient(135deg, #06231a 0%, #0a3d2c 55%, #0b5c44 100%);
+    }
+
+    .login-shell { background: transparent; }
+
+    /* Glass card */
+    .login-shell .login-card {
+      background: rgba(9, 38, 28, .55);
+      -webkit-backdrop-filter: blur(18px);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(201,162,39,.32);
+      color: #f5efe0;
+    }
+
+    /* Gold gradient heading */
+    .login-shell .login-card h1 {
+      color: #f3df9a;
+      background: linear-gradient(115deg, #f9ecb8 0%, #d4af37 45%, #f6e27a 70%, #c9a227 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .login-shell .login-card .subtitle { color: rgba(245,239,224,.68); }
+
+    .login-shell .login-card .form-group label { color: rgba(245,239,224,.88); }
+
+    /* Dark inputs */
+    .login-card .input {
+      background: rgba(255,255,255,.06);
+      border-color: rgba(255,255,255,.16);
+      color: #f5efe0;
+    }
+
+    .login-card .input::placeholder { color: rgba(245,239,224,.38); }
+
+    .login-card .input:focus {
+      border-color: var(--gold);
+      background: rgba(255,255,255,.09);
+      box-shadow: 0 0 0 4px rgba(201,162,39,.22);
+    }
+
+    .login-card .login-input-icon { color: rgba(245,239,224,.5); }
+    .login-card .form-group:focus-within .login-input-icon { color: var(--gold); }
+
+    /* Dark role tabs */
+    .login-shell .role-tabs {
+      background: rgba(255,255,255,.07);
+      border-color: rgba(255,255,255,.10);
+      box-shadow: none;
+    }
+
+    .login-shell .role-tab { color: rgba(245,239,224,.6); }
+    .login-shell .role-tab:hover:not(.active) { color: #f5efe0; }
+
+    .login-shell .forgot-link { color: #e8cf7a; }
+    .login-shell .forgot-link:hover { color: #f6e27a; }
+
+    .login-shell .login-foot { color: rgba(245,239,224,.55); }
+
+    /* Error box readable on dark */
+    .login-card .error-box {
+      background: rgba(220,53,69,.16);
+      color: #ffb3b3;
+      border: 1px solid rgba(220,53,69,.35);
+    }
+
     /* =========================
        MOBILE — login
     ========================= */
