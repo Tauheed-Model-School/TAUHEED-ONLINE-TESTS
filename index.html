@@ -959,8 +959,16 @@
       #navigation {
         display: flex;
         width: 100%;
-        justify-content: space-around;
+        justify-content: flex-start;
         align-items: center;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      #navigation::-webkit-scrollbar {
+        display: none;
       }
 
       .nav-title {
@@ -968,7 +976,8 @@
       }
 
       .nav-btn {
-        flex: 1;
+        flex: 1 0 auto;
+        min-width: 62px;
         flex-direction: column;
         gap: 2px;
         text-align: center;
@@ -1118,6 +1127,20 @@
         height: 19px;
         margin-right: 4px;
         flex-shrink: 0;
+      }
+
+      /* Toasts above the bottom nav bar (was hidden behind it) */
+      .toast {
+        bottom: 76px;
+        right: 12px;
+        left: 12px;
+        max-width: none;
+      }
+
+      /* Tables: smooth finger scrolling on mobile */
+      .table-wrap {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
       }
 
       /* KaTeX Math Equations Horizontal Scroll */
