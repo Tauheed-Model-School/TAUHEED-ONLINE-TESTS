@@ -1711,11 +1711,13 @@
     body.splashing #loginScreen { opacity: 0; }
     #loginScreen { transition: opacity .5s ease; }
     body.splashing .login-shell { animation: none; }
+    body.splashing .login-shell .login-card > * { animation: none; }
 
     @media (prefers-reduced-motion: reduce) {
       #splash { display: none; }
       body.splashing #loginScreen { opacity: 1; }
       body.splashing .login-shell { animation: loginFadeUp .6s ease both; }
+      .login-shell .login-card > * { animation: none; }
     }
 
     /* Global button & input polish */
@@ -1759,6 +1761,107 @@
       border-radius: 14px;
       box-shadow: 0 16px 40px rgba(0,0,0,.25);
     }
+
+    /* =========================================================
+       LOGIN MODERN REFRESH (2026-11-14) — splash theme match
+       Scoped to the login card only; the rest of the app is untouched.
+    ========================================================= */
+
+    /* Shell: subtle gold hairline */
+    .login-shell {
+      box-shadow: 0 40px 90px rgba(0,0,0,.35), 0 0 0 1px rgba(201,162,39,.28);
+    }
+
+    /* Brand panel: serif school name + gold divider + glowing logo */
+    .login-brand h2 {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 30px;
+    }
+
+    .login-brand .brand-tag {
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(201,162,39,.35);
+    }
+
+    .login-brand .brand-logo {
+      box-shadow: 0 0 0 5px rgba(201,162,39,.18), 0 12px 30px rgba(0,0,0,.35);
+    }
+
+    /* Card heading: elegant serif + gold rule */
+    .login-shell .login-card h1 {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 28px;
+      margin-bottom: 0;
+    }
+
+    .login-shell .login-card h1::after {
+      content: "";
+      display: block;
+      width: 44px;
+      height: 3px;
+      margin: 10px auto 0;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--gold), #e8cf7a);
+    }
+
+    .login-shell .login-card .school-logo {
+      border-radius: 50%;
+    }
+
+    /* Cascade entrance: card elements arrive one by one */
+    .login-shell .login-card > * { animation: loginFadeUp .55s ease both; }
+    .login-shell .login-card > *:nth-child(1) { animation-delay: .05s; }
+    .login-shell .login-card > *:nth-child(2) { animation-delay: .12s; }
+    .login-shell .login-card > *:nth-child(3) { animation-delay: .19s; }
+    .login-shell .login-card > *:nth-child(4) { animation-delay: .26s; }
+    .login-shell .login-card > *:nth-child(5) { animation-delay: .33s; }
+    .login-shell .login-card > *:nth-child(6) { animation-delay: .33s; }
+    .login-shell .login-card > *:nth-child(7) { animation-delay: .45s; }
+
+    /* Input icons */
+    .login-input-wrap { position: relative; }
+
+    .login-input-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #8fa398;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .login-card .input { padding-left: 42px; }
+
+    .login-card .form-group:focus-within .login-input-icon { color: var(--green); }
+
+    .login-card .input:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 4px rgba(201,162,39,.20);
+    }
+
+    /* Sign In button: shine sweep */
+    #loginForm .btn-primary {
+      position: relative;
+      overflow: hidden;
+      letter-spacing: .04em;
+      font-size: 15.5px;
+    }
+
+    #loginForm .btn-primary::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -60%;
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+      transform: skewX(-20deg);
+      transition: left .6s ease;
+      pointer-events: none;
+    }
+
+    #loginForm .btn-primary:hover::after { left: 120%; }
 
     /* =========================
        MOBILE — login
@@ -2008,7 +2111,7 @@
 
     <div class="login-card">
 
-    <img src="https://ykvegtlzgzyfwmlvmpti.supabase.co/storage/v1/object/public/portal-assets/5408eabb-78a5-4447-b3df-c6deb0c25c89.jpg" alt="TMS Logo" class="school-logo" style="object-fit: cover; border: 2px solid var(--border);">
+    <img src="https://ykvegtlzgzyfwmlvmpti.supabase.co/storage/v1/object/public/portal-assets/5408eabb-78a5-4447-b3df-c6deb0c25c89.jpg" alt="TMS Logo" class="school-logo" style="object-fit: cover; border: 2.5px solid #c9a227;">
       <h1>Welcome Back</h1>
 
       <div class="subtitle">
@@ -2034,18 +2137,22 @@
       <form id="loginForm">
         <div class="form-group">
           <label>Username</label>
-          <input
-            id="loginUsername"
-            class="input"
-            autocomplete="username"
-            placeholder="Enter username"
-            required
-          >
+          <div class="login-input-wrap">
+            <svg class="login-input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <input
+              id="loginUsername"
+              class="input"
+              autocomplete="username"
+              placeholder="Enter username"
+              required
+            >
+          </div>
         </div>
 
         <div class="form-group">
           <label>Password</label>
           <div class="password-wrapper">
+            <svg class="login-input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             <input 
               id="loginPassword" 
               class="input" 
