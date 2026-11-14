@@ -1863,6 +1863,72 @@
 
     #loginForm .btn-primary:hover::after { left: 120%; }
 
+    /* =========================================================
+       DASHBOARD MODERN THEME (2026-11-14) — balanced, less white
+       Colours only; layout, IDs and JS untouched.
+    ========================================================= */
+
+    :root {
+      --bg: #e9efe9;
+      --card: #fdfdf8;
+      --border: #dbe4db;
+      --green-light: #dcefe4;
+      --shadow-soft: 0 4px 16px rgba(16, 37, 29, .05);
+    }
+
+    /* Topbar: deep green like the sidebar, no more white band */
+    .topbar {
+      background: linear-gradient(90deg, #054a2a 0%, #075c33 55%, #0a6b3c 100%);
+      border-bottom: 1px solid rgba(201,162,39,.35);
+      box-shadow: 0 2px 16px rgba(4, 61, 35, .25);
+    }
+
+    .topbar .brand { color: #fff; }
+    .topbar .brand small { color: rgba(255,255,255,.62); }
+    .topbar .user-pill { background: rgba(255,255,255,.14); color: #fff; }
+    .topbar .btn-secondary { background: rgba(255,255,255,.14); color: #fff; }
+    .topbar .btn-secondary:hover { background: rgba(255,255,255,.24); }
+
+    /* Warm cards instead of pure white */
+    .card, .stat-card, .test-card, .exam-header, .modal, .loader-box,
+    .question-editor, .answer-option {
+      background: #fdfdf8;
+    }
+
+    /* Perf components (later in the file, so scoped under #app to win) */
+    #app .perf-card, #app .perf-subnav-btn, #app .perf-sec-btn,
+    #app .perf-chip, #app .perf-btn-ghost, #app .perf-input {
+      background: #fdfdf8;
+    }
+
+    /* Stat cards: soft tinted variants */
+    .stats-grid .stat-card:nth-child(4n+1) { background: #e9f5ec; }
+    .stats-grid .stat-card:nth-child(4n+2) { background: #fdf6e0; }
+    .stats-grid .stat-card:nth-child(4n+3) { background: #e7f1f6; }
+    .stats-grid .stat-card:nth-child(4n+4) { background: #f4efe6; }
+    .stats-grid .stat-card:nth-child(4n+2) .stat-value { color: #8a6d1a; }
+    .stats-grid .stat-card:nth-child(4n+3) .stat-value { color: #1f5f7a; }
+    .stats-grid .stat-card:nth-child(4n+4) .stat-value { color: #6b5a3e; }
+
+    /* Page titles: serif, brand feel */
+    .page-title {
+      font-family: Georgia, 'Times New Roman', serif;
+      color: var(--green-dark);
+      letter-spacing: -.3px;
+    }
+
+    /* Tables: tinted header + row hover */
+    thead th { background: #edf3ed; color: #5b6b60; }
+    tbody tr:hover td { background: #f6f9f5; }
+
+    /* Softer secondary surfaces */
+    .btn-secondary { background: #e3ece6; }
+    .badge-gray { background: #e9ede8; }
+    .question-builder { background: #f2f7f2; }
+    .input, .select, .textarea { background: #f8fbf8; }
+    .question-toolbar { background: #eef4ee; }
+    .question-toolbar button { background: #fdfdf8; }
+
     /* =========================
        MOBILE — login
     ========================= */
