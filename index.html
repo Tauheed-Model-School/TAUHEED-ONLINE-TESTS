@@ -1607,6 +1607,117 @@
       animation: loginFadeUp .3s ease both;
     }
 
+    /* =========================================================
+       SPLASH INTRO — brand reveal on open (Beauty Club style)
+    ========================================================= */
+
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      background:
+        radial-gradient(640px 380px at 50% 46%, rgba(201,162,39,.22), transparent 65%),
+        linear-gradient(160deg, #072e21 0%, #0b3d2c 55%, #0b6b4f 100%);
+      cursor: pointer;
+      transition: opacity .6s ease, visibility .6s ease;
+    }
+
+    #splash.splash-out {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .splash-logo {
+      width: 108px;
+      height: 108px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--gold);
+      box-shadow: 0 0 0 6px rgba(201,162,39,.15), 0 18px 44px rgba(0,0,0,.45);
+      background: #fff;
+      margin-bottom: 26px;
+      animation: splashPop .7s cubic-bezier(.22,.8,.3,1) both;
+    }
+
+    .splash-name {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: clamp(30px, 7vw, 52px);
+      font-weight: 700;
+      letter-spacing: .12em;
+      color: #fdf8ec;
+      line-height: 1.2;
+    }
+
+    .splash-name span {
+      display: inline-block;
+      animation: splashFadeUp .7s ease both;
+    }
+
+    .splash-name span:nth-child(1) { animation-delay: .35s; }
+    .splash-name span:nth-child(2) { animation-delay: .5s; }
+    .splash-name span:nth-child(3) { animation-delay: .65s; }
+
+    .splash-rule {
+      width: 0;
+      height: 2px;
+      margin: 22px auto 16px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      animation: splashDraw 1s ease .8s both;
+    }
+
+    .splash-tag {
+      font-size: 13px;
+      letter-spacing: .42em;
+      text-transform: uppercase;
+      color: rgba(253,248,236,.75);
+      animation: splashFadeUp .8s ease 1.1s both;
+    }
+
+    .splash-skip {
+      position: absolute;
+      bottom: 26px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.45);
+      animation: splashFadeUp .8s ease 1.4s both;
+    }
+
+    @keyframes splashPop {
+      from { opacity: 0; transform: scale(.75); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes splashFadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes splashDraw {
+      from { width: 0; }
+      to   { width: 180px; }
+    }
+
+    /* Hold the login screen until the splash finishes */
+    body.splashing #loginScreen { opacity: 0; }
+    #loginScreen { transition: opacity .5s ease; }
+    body.splashing .login-shell { animation: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      #splash { display: none; }
+      body.splashing #loginScreen { opacity: 1; }
+      body.splashing .login-shell { animation: loginFadeUp .6s ease both; }
+    }
+
     /* Global button & input polish */
     .btn-primary {
       background: linear-gradient(135deg, #0d7a58, #0b6b4f 60%, #095c43);
@@ -1818,7 +1929,38 @@
 </style>
 </head>
 
-<body>
+<body class="splashing">
+
+  <!-- =====================================================
+       SPLASH INTRO — brand reveal on open (Beauty Club style)
+  ====================================================== -->
+
+  <div id="splash" role="button" aria-label="Skip intro" title="Tap to skip">
+    <img src="https://ykvegtlzgzyfwmlvmpti.supabase.co/storage/v1/object/public/portal-assets/5408eabb-78a5-4447-b3df-c6deb0c25c89.jpg" alt="TMS Logo" class="splash-logo">
+    <div class="splash-name"><span>TAUHEED</span> <span>MODEL</span> <span>SCHOOL</span></div>
+    <div class="splash-rule"></div>
+    <div class="splash-tag">Online Examination Portal</div>
+    <div class="splash-skip">Tap anywhere to continue</div>
+  </div>
+
+  <script>
+    (function () {
+      var splash = document.getElementById('splash');
+      if (!splash) { document.body.classList.remove('splashing'); return; }
+      var done = false;
+      function finish() {
+        if (done) return;
+        done = true;
+        splash.classList.add('splash-out');
+        document.body.classList.remove('splashing');
+        setTimeout(function () { splash.remove(); }, 700);
+      }
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { finish(); return; }
+      splash.addEventListener('click', finish);
+      setTimeout(finish, 2400);
+    })();
+  </script>
+  <noscript><style>body.splashing #loginScreen{opacity:1}body.splashing .login-shell{animation:loginFadeUp .6s ease both}#splash{display:none}</style></noscript>
 
   <!-- =====================================================
        LOADER
