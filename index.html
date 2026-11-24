@@ -11091,9 +11091,12 @@ function perfBlankListPageHtml(cls, students, subjects, totals, prevByName, prev
    (zoom) just enough to fit one A4 portrait page — a class never
    spills onto a second page, whatever its size. */
 function perfBlankListPrintDoc(w, title, pagesHtml) {
+  const tip = '<div class="print-tip">Print karne se pehle dialog mein Scale: <b>100%</b> (ya "Fit to page") aur Paper size: <b>A4</b> rakhein — warna side se cut hoga. Har class ke end par 2 blank rows hain (naye bachon ke liye).</div>';
   w.document.write('<html><head><title>' + escapeHTML(title) + '</title><style>' +
     '@page{size:A4 portrait;margin:10mm}' +
     'body{font-family:Arial,sans-serif;color:#000;margin:8px;font-size:12px;width:700px}' +
+    '.print-tip{background:#fff3cd;border:2px solid #c9a227;padding:8px 10px;margin-bottom:12px;font-size:13px}' +
+    '@media print{.print-tip{display:none}}' +
     '.cls-page{page-break-before:always}' +
     '.cls-page:first-child{page-break-before:auto}' +
     '.h{text-align:center;border-bottom:3px double #000;padding-bottom:6px;margin-bottom:10px}' +
@@ -11114,7 +11117,7 @@ function perfBlankListPrintDoc(w, title, pagesHtml) {
     '.t2 td{height:20px}.t2 th,.t2 td{padding:4px 6px}.t2 table{font-size:12px}' +
     '.t3 td{height:16px}.t3 th,.t3 td{padding:3px 5px}.t3 table{font-size:11px}.t3 .h h1{font-size:16px}.t3 .sig{margin-top:14px}' +
     '@media print{body{margin:0}}' +
-    '</style></head><body>' + pagesHtml + '</body></html>');
+    '</style></head><body>' + tip + pagesHtml + '</body></html>');
   w.document.close();
   try {
     // A4 portrait printable height: 297mm minus 20mm margins ≈ 1046px at 96dpi
