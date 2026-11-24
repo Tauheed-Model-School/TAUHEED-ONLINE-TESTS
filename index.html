@@ -10996,6 +10996,101 @@ async function perfPrintEntrySheet() {
   }
 }
 
+/* print a BLANK marks list for teachers to fill in by hand:
+   class-section + term, one row per roster student, previous term's
+   result pre-printed, empty cells ahead for the new term's marks.
+   Photo of the filled list -> CSV -> existing CSV import. */
+async function perfPrintBlankMarksList() {
+  if (!perfEntryClass) { showToast('Select a class first.', 'error'); return; }
+  if (!perfEntrySubjects.length) { showToast('No subjects defined for this class.', 'error'); return; }
+  const prevTerm = { '2nd': '1st', 'final': '2nd', '1st': null }[perfTermSel] || null;
+  const w = window.open('', '_blank'); // open now — browsers block late popups
+  if (!w) { showToast('Popup blocked — please allow popups for this site.', 'error'); return; }
+  try {
+    // paper totals from the on-screen inputs (admin sets 50 for 2nd term)
+    const totals = {};
+    document.querySelectorAll('[data-pt]').forEach(inp => {
+      const v = parseFloat(inp.value);
+      const sj = inp.getAttribute('data-pt');
+      if (sj && isFinite(v) && v > 0) totals[sj] = v;
+    });
+    // roster for this class-section + year (same source as the entry grid)
+    let students = perfStudents.filter(s => s.class_assigned === perfEntryClass &&
+      s.status !== 'dropped' && s.academic_year === perfYear);
+    if (!students.length) {
+      const typed = perfEntryRows.map(r => (r.name || '').trim()).filter(Boolean);
+      if (!typed.length) { showToast('No students in roster — add students on the Students tab first.', 'error'); w.close(); return; }
+      students = typed.map(n => ({ student_name: n, roll_no: '' }));
+    }
+    students = students.slice().sort((a, b) => {
+      const ra = parseInt(a.roll_no, 10), rb = parseInt(b.roll_no, 10);
+      if (isFinite(ra) && isFinite(rb)) return ra - rb;
+      if (isFinite(ra)) return -1;
+      if (isFinite(rb)) return 1;
+      return String(a.student_name || '').localeCompare(String(b.student_name || ''));
+    });
+    // previous term's result per student (total + % + position)
+    const prevByName = {};
+    if (prevTerm) {
+      const savedTerm = perfResTerm;
+      perfResClass = perfEntryClass;
+      perfResTerm = prevTerm;
+      showLoader('Loading previous result...');
+      try { await perfLoadResults(); } finally { hideLoader(); }
+      const data = perfResCompute();
+      data.list.forEach(x => {
+        const key = (x.stu.student_name || '').trim().toLowerCase();
+        if (x.totalOb != null && x.totalPt > 0) {
+          prevByName[key] = Math.round(x.totalOb) + '/' + Math.round(x.totalPt) +
+            ' (' + Math.round(x.pct) + '%)' + (x.pos ? ' · ' + perfOrd(x.pos) : '');
+        } else prevByName[key] = '—';
+      });
+      perfResTerm = savedTerm;
+    }
+    const term = perfTermLabel(perfTermSel);
+    const prevHead = prevTerm ? '<th style="width:118px">Prev. Result<br><span style="font-weight:normal">' + escapeHTML(perfTermLabel(prevTerm)) + '</span></th>' : '';
+    const headCells = perfEntrySubjects.map(s => {
+      const t = totals[s];
+      return '<th>' + escapeHTML(s) + (t ? ' <span style="font-weight:normal">(' + t + ')</span>' : '') + '</th>';
+    }).join('');
+    let rows = '';
+    students.forEach((s, i) => {
+      const key = (s.student_name || '').trim().toLowerCase();
+      rows += '<tr><td class="c">' + (i + 1) + '</td><td class="c">' + escapeHTML(String(s.roll_no || '')) + '</td>' +
+        '<td>' + escapeHTML(s.student_name || '') + '</td>' +
+        (prevTerm ? '<td class="c">' + escapeHTML(prevByName[key] || '—') + '</td>' : '') +
+        perfEntrySubjects.map(() => '<td></td>').join('') + '<td></td></tr>';
+    });
+    const inner = '<div class="h"><h1>TAUHEED MODEL SCHOOL</h1>' +
+      '<p><b>' + escapeHTML(term) + ' Examination ' + escapeHTML(perfYear) + ' — Marks Entry List</b></p>' +
+      '<p>Class: <b>' + escapeHTML(perfEntryClass) + '</b> &nbsp;|&nbsp; Total Students: <b>' + students.length + '</b></p></div>' +
+      '<table><thead><tr><th class="c" style="width:32px">Sr.</th><th class="c" style="width:52px">Roll No</th><th>Name</th>' +
+      prevHead + headCells + '<th class="c" style="width:56px">Total</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div class="sig"><div>Subject Teacher</div><div>Class Teacher</div><div>Date</div></div>';
+    w.document.write('<html><head><title>Blank Marks List — ' + escapeHTML(perfEntryClass) + ' (' + escapeHTML(term) + ')</title><style>' +
+      '@page{size:A4 landscape;margin:10mm}' +
+      'body{font-family:Arial,sans-serif;color:#000;margin:10px;font-size:13px}' +
+      '.h{text-align:center;border-bottom:3px double #000;padding-bottom:8px;margin-bottom:12px}' +
+      '.h h1{margin:0;font-size:20px;letter-spacing:1px}' +
+      '.h p{margin:3px 0;font-size:13px}' +
+      'table{width:100%;border-collapse:collapse;font-size:12px}' +
+      'th,td{border:1px solid #000;padding:6px 7px;text-align:left}' +
+      'th{background:#eee}' +
+      'td{height:30px}' +
+      '.c{text-align:center}' +
+      '.sig{display:flex;justify-content:space-between;margin-top:40px;font-size:13px}' +
+      '.sig div{border-top:1px solid #000;padding-top:4px;width:28%;text-align:center}' +
+      '@media print{body{margin:0}}' +
+      '</style></head><body>' + inner + '</body></html>');
+    w.document.close();
+    w.focus();
+    w.print();
+  } catch (err) {
+    try { w.close(); } catch (e) {}
+    throw err;
+  }
+}
+
 /* ---------- term results : class-wise subject grid ----------
    Columns = the class's defined subjects. Each subject's marks are
    attributed to its teacher (exact subject match, else the 'all'
@@ -11071,7 +11166,8 @@ function perfRenderTerms(body) {
   html += perfCollapseCard('📥 Import marks from CSV',
     '<p class="perf-sub">Excel se CSV banaen: pehla column <b>Roll No</b>, doosra <b>Name</b>, baqi columns subjects ke naam — ' +
     '<code>' + perfEntrySubjects.map(escapeHTML).join(', ') + '</code>. ' +
-    'Ek <b>MAX</b> wali row se paper totals bhi de sakte hain. Import ke baad grid check karke <b>Save Marks</b> dabayen.</p>' +
+    'Ek <b>MAX</b> wali row se paper totals bhi de sakte hain. Import ke baad grid check karke <b>Save Marks</b> dabayen. ' +
+    'Teachers ko haath se bharne ke liye khaali list chahiye to neeche <b>Print Blank List</b> dabayen — 2nd ya Final term ho to pichle term ka result bhi us par chhapa hoga.</p>' +
     '<div class="perf-topbar"><label class="perf-btn perf-btn-ghost perf-btn-sm" style="cursor:pointer">Choose CSV file' +
     '<input type="file" id="perfMarksCsv" accept=".csv,text/csv" style="display:none" onchange="perfImportMarksCsvFile(event)"></label>' +
     '<button class="perf-btn perf-btn-ghost perf-btn-sm" onclick="perfMarksCsvSample()">Sample CSV</button></div>');
@@ -11106,6 +11202,7 @@ function perfRenderTerms(body) {
   html += '</tbody></table></div>';
 
   html += '<div class="perf-topbar" style="margin-top:12px"><div class="perf-sub" id="perfEntrySummary" style="margin:0"></div>' +
+    '<button class="perf-btn perf-btn-ghost" onclick="perfPrintBlankMarksList()">🖨️ Print Blank List</button>' +
     '<button class="perf-btn perf-btn-ghost" onclick="perfPrintEntrySheet()">Print Result Sheet</button>' +
     '<button class="perf-btn perf-btn-gold" onclick="perfEntrySave()">Save Marks</button></div>';
 
