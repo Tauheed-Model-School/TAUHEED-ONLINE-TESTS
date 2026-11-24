@@ -10996,10 +10996,120 @@ async function perfPrintEntrySheet() {
   }
 }
 
-/* print a BLANK marks list for teachers to fill in by hand:
-   class-section + term, one row per roster student, previous term's
-   result pre-printed, empty cells ahead for the new term's marks.
-   Photo of the filled list -> CSV -> existing CSV import. */
+/* ---------- blank marks lists for teachers (print) ----------
+   Single class: Print Blank List. Whole school, one click:
+   Print All Lists (one page per class-section, portrait A4).
+   Previous term's result is pre-printed; empty cells ahead are
+   for the new term's marks. Photo of the filled list -> CSV ->
+   existing CSV import. */
+function perfBlankListSortStudents(students) {
+  return students.slice().sort((a, b) => {
+    const ra = parseInt(a.roll_no, 10), rb = parseInt(b.roll_no, 10);
+    if (isFinite(ra) && isFinite(rb)) return ra - rb;
+    if (isFinite(ra)) return -1;
+    if (isFinite(rb)) return 1;
+    return String(a.student_name || '').localeCompare(String(b.student_name || ''));
+  });
+}
+
+/* roster students for one class-section, roll-no order */
+function perfBlankListRoster(cls) {
+  return perfBlankListSortStudents(perfStudents.filter(s => s.class_assigned === cls &&
+    s.status !== 'dropped' && s.academic_year === perfYear));
+}
+
+/* previous term's result per student: "385/400 (96%) · 1st" or "—" */
+async function perfBlankListPrev(cls, prevTerm) {
+  const prevByName = {};
+  const savedClass = perfResClass, savedTerm = perfResTerm;
+  perfResClass = cls;
+  perfResTerm = prevTerm;
+  try {
+    await perfLoadResults();
+    const data = perfResCompute();
+    data.list.forEach(x => {
+      const key = (x.stu.student_name || '').trim().toLowerCase();
+      if (x.totalOb != null && x.totalPt > 0) {
+        prevByName[key] = Math.round(x.totalOb) + '/' + Math.round(x.totalPt) +
+          ' (' + Math.round(x.pct) + '%)' + (x.pos ? ' · ' + perfOrd(x.pos) : '');
+      } else prevByName[key] = '—';
+    });
+  } finally {
+    perfResTerm = savedTerm;
+    perfResClass = savedClass;
+  }
+  return prevByName;
+}
+
+/* paper totals per subject for the selected term (saved totals) */
+async function perfBlankListTotalsMap() {
+  const map = {};
+  try {
+    const rows = await perfSelectAll(() => supabaseClient.from('perf_term_results').select('subject,paper_total')
+      .eq('academic_year', perfYear).eq('term', perfTermSel));
+    rows.forEach(r => {
+      const pt = Number(r.paper_total);
+      if (r.subject && isFinite(pt) && pt > 0) map[r.subject] = Math.max(map[r.subject] || 0, pt);
+    });
+  } catch (e) { /* fall back to defaults */ }
+  return map;
+}
+
+/* one class-section's list as printable HTML (header + table + signatures) */
+function perfBlankListPageHtml(cls, students, subjects, totals, prevByName, prevTerm) {
+  const tier = students.length <= 17 ? 't1' : students.length <= 26 ? 't2' : 't3';
+  const term = perfTermLabel(perfTermSel);
+  const prevHead = prevTerm ? '<th style="width:100px">Prev. Result<br><span style="font-weight:normal">' + escapeHTML(perfTermLabel(prevTerm)) + '</span></th>' : '';
+  const headCells = subjects.map(s => {
+    const t = totals[s];
+    return '<th>' + escapeHTML(s) + (t ? ' <span style="font-weight:normal">(' + t + ')</span>' : '') + '</th>';
+  }).join('');
+  let rows = '';
+  students.forEach((s, i) => {
+    const key = (s.student_name || '').trim().toLowerCase();
+    rows += '<tr><td class="c">' + (i + 1) + '</td><td class="c">' + escapeHTML(String(s.roll_no || '')) + '</td>' +
+      '<td>' + escapeHTML(s.student_name || '') + '</td>' +
+      (prevTerm ? '<td class="c">' + escapeHTML(prevByName[key] || '—') + '</td>' : '') +
+      subjects.map(() => '<td></td>').join('') + '<td></td></tr>';
+  });
+  return '<div class="cls-page ' + tier + '"><div class="h"><h1>TAUHEED MODEL SCHOOL</h1>' +
+    '<p><b>' + escapeHTML(term) + ' Examination ' + escapeHTML(perfYear) + ' — Marks Entry List</b> &nbsp;|&nbsp; Class: <b>' + escapeHTML(cls) + '</b> &nbsp;|&nbsp; Students: <b>' + students.length + '</b></p></div>' +
+    '<table><thead><tr><th class="c" style="width:28px">Sr.</th><th class="c" style="width:44px">Roll No</th><th>Name</th>' +
+    prevHead + headCells + '<th class="c" style="width:48px">Total</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div class="sig"><div>Subject Teacher</div><div>Class Teacher</div><div>Date</div></div></div>';
+}
+
+/* write the print window: portrait A4, one class per page, compact
+   rows sized so a whole class tries to fit on one page */
+function perfBlankListPrintDoc(w, title, pagesHtml) {
+  w.document.write('<html><head><title>' + escapeHTML(title) + '</title><style>' +
+    '@page{size:A4 portrait;margin:8mm}' +
+    'body{font-family:Arial,sans-serif;color:#000;margin:8px;font-size:12px}' +
+    '.cls-page{page-break-before:always}' +
+    '.cls-page:first-child{page-break-before:auto}' +
+    '.h{text-align:center;border-bottom:3px double #000;padding-bottom:6px;margin-bottom:10px}' +
+    '.h h1{margin:0;font-size:18px;letter-spacing:1px}' +
+    '.h p{margin:2px 0;font-size:12px}' +
+    'table{width:100%;border-collapse:collapse;font-size:12px;border:2px solid #000}' +
+    'thead{display:table-header-group}' +
+    'tr{page-break-inside:avoid}' +
+    'th,td{border:1px solid #000;padding:5px 6px;text-align:left}' +
+    'th{background:#ddd}' +
+    'td{height:22px}' +
+    'tbody tr:nth-child(even) td{background:#f6f6f6}' +
+    '.c{text-align:center}' +
+    '.sig{display:flex;justify-content:space-between;margin-top:22px;font-size:12px}' +
+    '.sig div{border-top:1px solid #000;padding-top:4px;width:28%;text-align:center}' +
+    '.t1 td{height:26px}.t1 th,.t1 td{padding:6px 7px}.t1 table{font-size:13px}' +
+    '.t2 td{height:20px}.t2 th,.t2 td{padding:4px 6px}.t2 table{font-size:12px}' +
+    '.t3 td{height:16px}.t3 th,.t3 td{padding:3px 5px}.t3 table{font-size:11px}.t3 .h h1{font-size:16px}.t3 .sig{margin-top:14px}' +
+    '@media print{body{margin:0}}' +
+    '</style></head><body>' + pagesHtml + '</body></html>');
+  w.document.close();
+  w.focus();
+  w.print();
+}
+
 async function perfPrintBlankMarksList() {
   if (!perfEntryClass) { showToast('Select a class first.', 'error'); return; }
   if (!perfEntrySubjects.length) { showToast('No subjects defined for this class.', 'error'); return; }
@@ -11007,85 +11117,69 @@ async function perfPrintBlankMarksList() {
   const w = window.open('', '_blank'); // open now — browsers block late popups
   if (!w) { showToast('Popup blocked — please allow popups for this site.', 'error'); return; }
   try {
-    // paper totals from the on-screen inputs (admin sets 50 for 2nd term)
+    // paper totals: saved totals first, then on-screen inputs;
+    // a 100 for 2nd term is just the untouched portal default (all 2nd-term papers are 50)
     const totals = {};
+    const savedTotals = await perfBlankListTotalsMap();
     document.querySelectorAll('[data-pt]').forEach(inp => {
       const v = parseFloat(inp.value);
       const sj = inp.getAttribute('data-pt');
       if (sj && isFinite(v) && v > 0) totals[sj] = v;
     });
-    // roster for this class-section + year (same source as the entry grid)
-    let students = perfStudents.filter(s => s.class_assigned === perfEntryClass &&
-      s.status !== 'dropped' && s.academic_year === perfYear);
+    perfEntrySubjects.forEach(s => {
+      if (savedTotals[s]) totals[s] = savedTotals[s];
+      else if (perfTermSel === '2nd' && totals[s] === 100) totals[s] = 50;
+      else if (!totals[s]) totals[s] = perfTermSel === '2nd' ? 50 : 100;
+    });
+    let students = perfBlankListRoster(perfEntryClass);
     if (!students.length) {
       const typed = perfEntryRows.map(r => (r.name || '').trim()).filter(Boolean);
       if (!typed.length) { showToast('No students in roster — add students on the Students tab first.', 'error'); w.close(); return; }
-      students = typed.map(n => ({ student_name: n, roll_no: '' }));
+      students = perfBlankListSortStudents(typed.map(n => ({ student_name: n, roll_no: '' })));
     }
-    students = students.slice().sort((a, b) => {
-      const ra = parseInt(a.roll_no, 10), rb = parseInt(b.roll_no, 10);
-      if (isFinite(ra) && isFinite(rb)) return ra - rb;
-      if (isFinite(ra)) return -1;
-      if (isFinite(rb)) return 1;
-      return String(a.student_name || '').localeCompare(String(b.student_name || ''));
-    });
-    // previous term's result per student (total + % + position)
-    const prevByName = {};
+    let prevByName = {};
     if (prevTerm) {
-      const savedTerm = perfResTerm;
-      perfResClass = perfEntryClass;
-      perfResTerm = prevTerm;
       showLoader('Loading previous result...');
-      try { await perfLoadResults(); } finally { hideLoader(); }
-      const data = perfResCompute();
-      data.list.forEach(x => {
-        const key = (x.stu.student_name || '').trim().toLowerCase();
-        if (x.totalOb != null && x.totalPt > 0) {
-          prevByName[key] = Math.round(x.totalOb) + '/' + Math.round(x.totalPt) +
-            ' (' + Math.round(x.pct) + '%)' + (x.pos ? ' · ' + perfOrd(x.pos) : '');
-        } else prevByName[key] = '—';
-      });
-      perfResTerm = savedTerm;
+      try { prevByName = await perfBlankListPrev(perfEntryClass, prevTerm); } finally { hideLoader(); }
     }
-    const term = perfTermLabel(perfTermSel);
-    const prevHead = prevTerm ? '<th style="width:118px">Prev. Result<br><span style="font-weight:normal">' + escapeHTML(perfTermLabel(prevTerm)) + '</span></th>' : '';
-    const headCells = perfEntrySubjects.map(s => {
-      const t = totals[s];
-      return '<th>' + escapeHTML(s) + (t ? ' <span style="font-weight:normal">(' + t + ')</span>' : '') + '</th>';
-    }).join('');
-    let rows = '';
-    students.forEach((s, i) => {
-      const key = (s.student_name || '').trim().toLowerCase();
-      rows += '<tr><td class="c">' + (i + 1) + '</td><td class="c">' + escapeHTML(String(s.roll_no || '')) + '</td>' +
-        '<td>' + escapeHTML(s.student_name || '') + '</td>' +
-        (prevTerm ? '<td class="c">' + escapeHTML(prevByName[key] || '—') + '</td>' : '') +
-        perfEntrySubjects.map(() => '<td></td>').join('') + '<td></td></tr>';
-    });
-    const inner = '<div class="h"><h1>TAUHEED MODEL SCHOOL</h1>' +
-      '<p><b>' + escapeHTML(term) + ' Examination ' + escapeHTML(perfYear) + ' — Marks Entry List</b></p>' +
-      '<p>Class: <b>' + escapeHTML(perfEntryClass) + '</b> &nbsp;|&nbsp; Total Students: <b>' + students.length + '</b></p></div>' +
-      '<table><thead><tr><th class="c" style="width:32px">Sr.</th><th class="c" style="width:52px">Roll No</th><th>Name</th>' +
-      prevHead + headCells + '<th class="c" style="width:56px">Total</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-      '<div class="sig"><div>Subject Teacher</div><div>Class Teacher</div><div>Date</div></div>';
-    w.document.write('<html><head><title>Blank Marks List — ' + escapeHTML(perfEntryClass) + ' (' + escapeHTML(term) + ')</title><style>' +
-      '@page{size:A4 landscape;margin:10mm}' +
-      'body{font-family:Arial,sans-serif;color:#000;margin:10px;font-size:13px}' +
-      '.h{text-align:center;border-bottom:3px double #000;padding-bottom:8px;margin-bottom:12px}' +
-      '.h h1{margin:0;font-size:20px;letter-spacing:1px}' +
-      '.h p{margin:3px 0;font-size:13px}' +
-      'table{width:100%;border-collapse:collapse;font-size:12px}' +
-      'th,td{border:1px solid #000;padding:6px 7px;text-align:left}' +
-      'th{background:#eee}' +
-      'td{height:30px}' +
-      '.c{text-align:center}' +
-      '.sig{display:flex;justify-content:space-between;margin-top:40px;font-size:13px}' +
-      '.sig div{border-top:1px solid #000;padding-top:4px;width:28%;text-align:center}' +
-      '@media print{body{margin:0}}' +
-      '</style></head><body>' + inner + '</body></html>');
-    w.document.close();
-    w.focus();
-    w.print();
+    perfBlankListPrintDoc(w, 'Blank Marks List — ' + perfEntryClass + ' (' + perfTermLabel(perfTermSel) + ')',
+      perfBlankListPageHtml(perfEntryClass, students, perfEntrySubjects, totals, prevByName, prevTerm));
   } catch (err) {
+    try { w.close(); } catch (e) {}
+    throw err;
+  }
+}
+
+/* whole school, one click: blank lists for every class-section */
+async function perfPrintAllBlankLists() {
+  const classes = perfRosterClasses();
+  if (!classes.length) { showToast('No classes in roster.', 'error'); return; }
+  const prevTerm = { '2nd': '1st', 'final': '2nd', '1st': null }[perfTermSel] || null;
+  const w = window.open('', '_blank'); // open now — browsers block late popups
+  if (!w) { showToast('Popup blocked — please allow popups for this site.', 'error'); return; }
+  showLoader('Preparing all class lists...');
+  try {
+    const savedTotals = await perfBlankListTotalsMap();
+    let pages = '';
+    let done = 0;
+    const skipped = [];
+    for (const cls of classes) {
+      const subjects = perfClassSubjects.filter(s => s.class_assigned === cls)
+        .sort((a, b) => a.id - b.id).map(s => s.subject);
+      const students = perfBlankListRoster(cls);
+      if (!students.length || !subjects.length) { skipped.push(cls); continue; }
+      const totals = {};
+      subjects.forEach(s => { totals[s] = savedTotals[s] || (perfTermSel === '2nd' ? 50 : 100); });
+      const prevByName = prevTerm ? await perfBlankListPrev(cls, prevTerm) : {};
+      pages += perfBlankListPageHtml(cls, students, subjects, totals, prevByName, prevTerm);
+      done++;
+    }
+    hideLoader();
+    if (!done) { showToast('No class has both students and subjects yet.', 'error'); w.close(); return; }
+    perfBlankListPrintDoc(w, 'Blank Marks Lists — All Classes (' + perfTermLabel(perfTermSel) + ' ' + perfYear + ')', pages);
+    showToast('Printing ' + done + ' class list(s)' + (skipped.length ? ' — skipped ' + skipped.length + ' (no students/subjects).' : '.'), 'success');
+  } catch (err) {
+    hideLoader();
     try { w.close(); } catch (e) {}
     throw err;
   }
@@ -11203,6 +11297,7 @@ function perfRenderTerms(body) {
 
   html += '<div class="perf-topbar" style="margin-top:12px"><div class="perf-sub" id="perfEntrySummary" style="margin:0"></div>' +
     '<button class="perf-btn perf-btn-ghost" onclick="perfPrintBlankMarksList()">🖨️ Print Blank List</button>' +
+    '<button class="perf-btn perf-btn-ghost" onclick="perfPrintAllBlankLists()">🖨️ Print All Lists</button>' +
     '<button class="perf-btn perf-btn-ghost" onclick="perfPrintEntrySheet()">Print Result Sheet</button>' +
     '<button class="perf-btn perf-btn-gold" onclick="perfEntrySave()">Save Marks</button></div>';
 
