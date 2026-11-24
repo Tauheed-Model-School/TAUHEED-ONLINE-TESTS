@@ -11072,6 +11072,12 @@ function perfBlankListPageHtml(cls, students, subjects, totals, prevByName, prev
       (prevTerm ? '<td class="c prev">' + escapeHTML(prevByName[key] || '—') + '</td>' : '') +
       subjects.map(() => '<td></td>').join('') + '<td></td></tr>';
   });
+  // two blank rows at the end for new admissions
+  for (let b = 1; b <= 2; b++) {
+    rows += '<tr><td class="c">' + (students.length + b) + '</td><td class="c"></td><td></td>' +
+      (prevTerm ? '<td></td>' : '') +
+      subjects.map(() => '<td></td>').join('') + '<td></td></tr>';
+  }
   return '<div class="cls-page ' + tier + '"><div class="h"><h1>TAUHEED MODEL SCHOOL</h1>' +
     '<p><b>' + escapeHTML(term) + ' Examination ' + escapeHTML(perfYear) + ' — Marks Entry List</b> &nbsp;|&nbsp; Class: <b>' + escapeHTML(cls) + '</b> &nbsp;|&nbsp; Students: <b>' + students.length + '</b></p></div>' +
     '<table><thead><tr><th class="c" style="width:28px">Sr.</th><th class="c" style="width:44px">Roll No</th><th>Name</th>' +
