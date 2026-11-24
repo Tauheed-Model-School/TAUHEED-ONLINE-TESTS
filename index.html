@@ -11080,11 +11080,14 @@ function perfBlankListPageHtml(cls, students, subjects, totals, prevByName, prev
 }
 
 /* write the print window: portrait A4, one class per page, compact
-   rows sized so a whole class tries to fit on one page */
+   rows sized so a whole class tries to fit on one page.
+   Fit-to-page: each .cls-page is measured after render and shrunk
+   (zoom) just enough to fit one A4 portrait page — a class never
+   spills onto a second page, whatever its size. */
 function perfBlankListPrintDoc(w, title, pagesHtml) {
   w.document.write('<html><head><title>' + escapeHTML(title) + '</title><style>' +
     '@page{size:A4 portrait;margin:8mm}' +
-    'body{font-family:Arial,sans-serif;color:#000;margin:8px;font-size:12px}' +
+    'body{font-family:Arial,sans-serif;color:#000;margin:8px;font-size:12px;width:733px}' +
     '.cls-page{page-break-before:always}' +
     '.cls-page:first-child{page-break-before:auto}' +
     '.h{text-align:center;border-bottom:3px double #000;padding-bottom:6px;margin-bottom:10px}' +
@@ -11107,6 +11110,14 @@ function perfBlankListPrintDoc(w, title, pagesHtml) {
     '@media print{body{margin:0}}' +
     '</style></head><body>' + pagesHtml + '</body></html>');
   w.document.close();
+  try {
+    // A4 portrait printable height: 297mm minus 16mm margins ≈ 1062px at 96dpi
+    const printableH = 1062;
+    w.document.querySelectorAll('.cls-page').forEach(pg => {
+      const h = pg.offsetHeight;
+      if (h > printableH) pg.style.zoom = (printableH / h).toFixed(3);
+    });
+  } catch (e) { /* if measuring fails, print unscaled as before */ }
   w.focus();
   w.print();
 }
