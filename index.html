@@ -11069,7 +11069,7 @@ function perfBlankListPageHtml(cls, students, subjects, totals, prevByName, prev
     const key = (s.student_name || '').trim().toLowerCase();
     rows += '<tr><td class="c">' + (i + 1) + '</td><td class="c">' + escapeHTML(String(s.roll_no || '')) + '</td>' +
       '<td>' + escapeHTML(s.student_name || '') + '</td>' +
-      (prevTerm ? '<td class="c">' + escapeHTML(prevByName[key] || '—') + '</td>' : '') +
+      (prevTerm ? '<td class="c prev">' + escapeHTML(prevByName[key] || '—') + '</td>' : '') +
       subjects.map(() => '<td></td>').join('') + '<td></td></tr>';
   });
   return '<div class="cls-page ' + tier + '"><div class="h"><h1>TAUHEED MODEL SCHOOL</h1>' +
@@ -11098,6 +11098,7 @@ function perfBlankListPrintDoc(w, title, pagesHtml) {
     'td{height:22px}' +
     'tbody tr:nth-child(even) td{background:#f6f6f6}' +
     '.c{text-align:center}' +
+    '.prev{white-space:nowrap;font-size:10px}' +
     '.sig{display:flex;justify-content:space-between;margin-top:22px;font-size:12px}' +
     '.sig div{border-top:1px solid #000;padding-top:4px;width:28%;text-align:center}' +
     '.t1 td{height:26px}.t1 th,.t1 td{padding:6px 7px}.t1 table{font-size:13px}' +
