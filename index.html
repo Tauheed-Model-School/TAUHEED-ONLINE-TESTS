@@ -10289,8 +10289,9 @@ function perfResCompute() {
   });
   const ranked = list.filter(x => x.pct != null).sort((a, b) => b.pct - a.pct);
   let lastPct = null, lastPos = 0;
-  ranked.forEach((x, i) => {
-    if (lastPct == null || Math.abs(x.pct - lastPct) > 1e-9) { lastPos = i + 1; lastPct = x.pct; }
+  ranked.forEach((x) => {
+    // dense ranking: a tie shares the position, the next position is NOT skipped
+    if (lastPct == null || Math.abs(x.pct - lastPct) > 1e-9) { lastPos += 1; lastPct = x.pct; }
     x.pos = lastPos;
   });
   list.forEach(x => { if (x.pos == null) x.pos = '—'; });
